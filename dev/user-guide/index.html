@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>User guide · ForneyLab.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="ForneyLab.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">ForneyLab.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../getting-started/">Getting started</a></li><li class="is-active"><a class="tocitem" href>User guide</a><ul class="internal"><li><a class="tocitem" href="#Specifying-a-model"><span>Specifying a model</span></a></li><li><a class="tocitem" href="#Generating-an-algorithm"><span>Generating an algorithm</span></a></li><li><a class="tocitem" href="#Executing-an-algorithm"><span>Executing an algorithm</span></a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../library/user-api/">User API</a></li><li><a class="tocitem" href="../library/developer-api/">Developer API</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../internals/">Internals</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>User guide</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>User guide</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ForneyLab.jl/blob/master/docs/src/user-guide.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="User-guide"><a class="docs-heading-anchor" href="#User-guide">User guide</a><a id="User-guide-1"></a><a class="docs-heading-anchor-permalink" href="#User-guide" title="Permalink"></a></h1><p>This user guide outlines the usage of ForneyLab for solving inference problems. The main content is divided in three parts:</p><ul><li><a href="#Specifying-a-model">Specifying a model</a></li><li><a href="#Generating-an-algorithm">Generating an algorithm</a></li><li><a href="#Executing-an-algorithm">Executing an algorithm</a></li></ul><p>For installation instructions see the <a href="../getting-started/#Getting-started">Getting started</a> page. To import ForneyLab into the active Julia session run  </p><pre><code class="language-julia">using ForneyLab</code></pre><h2 id="Specifying-a-model"><a class="docs-heading-anchor" href="#Specifying-a-model">Specifying a model</a><a id="Specifying-a-model-1"></a><a class="docs-heading-anchor-permalink" href="#Specifying-a-model" title="Permalink"></a></h2><p>Probabilistic models incorporate the element of randomness to describe an event or phenomenon by using random variables and probability theory. A probabilistic model can be represented diagrammatically by using probabilistic graphical models (PGMs). A factor graph is a type of PGM that is well suited to cast inference tasks in terms of graphical manipulations.</p><h3 id="Creating-a-new-factor-graph"><a class="docs-heading-anchor" href="#Creating-a-new-factor-graph">Creating a new factor graph</a><a id="Creating-a-new-factor-graph-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-new-factor-graph" title="Permalink"></a></h3><p>In ForneyLab, Factor graphs are represented by a <code>FactorGraph</code> type (struct). To instantiate a new (empty) factor graph we use the constructor without arguments</p><pre><code class="language-julia">g = FactorGraph()</code></pre><p>ForneyLab tracks the <em>active</em> factor graph. Operations on the graph, such as adding variables or nodes, only affect the active graph. The call to <code>FactorGraph()</code> creates a new instance of a factor graph and registers it as the active graph.</p><p>To get the active graph run</p><pre><code class="language-julia">fg = currentGraph()</code></pre><p>To set the active graph run</p><pre><code class="language-julia">setCurrentGraph(g)</code></pre><h3 id="Adding-random-variables-(edges)"><a class="docs-heading-anchor" href="#Adding-random-variables-(edges)">Adding random variables (edges)</a><a id="Adding-random-variables-(edges)-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-random-variables-(edges)" title="Permalink"></a></h3><p>Random variables are represented as edges on Forney-style factor graphs. You can add a random variable to the active graph by instantiating a <code>Variable</code>. The constructor accepts an <code>id</code> of type <code>Symbol</code>. For example,</p><pre><code class="language-julia">x = Variable(id=:x)</code></pre><p>associates the variable <code>x</code> to an edge of the active graph.</p><p>Alternatively, the <code>@RV</code> macro achieves the same by a more compact notation. The following line has the same result as the previous one.</p><pre><code class="language-julia">@RV x</code></pre><p>By default, the <code>@RV</code> macro uses the Julia-variable&#39;s name to create an <code>id</code> for the <code>Variable</code> object (<code>:x</code> in this example). However, if this <code>id</code> was already assigned, then ForneyLab creates a default id of the form <code>:variable_n</code>, where <code>n</code> is a number that increments. In case you want to provide a custom <code>id</code>, the <code>@RV</code> macro accepts an optional keyword argument between square brackets. For example,</p><pre><code class="language-julia">@RV [id=:my_id] x</code></pre><p>adds the variable <code>x</code> to the active graph and assigns the <code>:my_id</code> symbol to its <code>id</code> field. Later we will see that this is useful once we start visualizing the factor graph.</p><h3 id="Adding-factor-nodes"><a class="docs-heading-anchor" href="#Adding-factor-nodes">Adding factor nodes</a><a id="Adding-factor-nodes-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-factor-nodes" title="Permalink"></a></h3><p>Factor nodes are used to define a relationship between random variables. A factor node defines a probability distribution over selected random variables. See <a href="../library/user-api/#Factor-nodes">Factor nodes</a> for a complete list of the available factor nodes in ForneyLab.</p><p>We assign a probability distribution to a random variable using the <code>~</code> operator together with the <code>@RV</code> macro. For example, to create a Gaussian random variable <code>y</code>, where its mean and variance are controlled by the random variables <code>m</code> and <code>v</code> respectively, we define</p><pre><code class="language-julia">@RV m
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>User guide · ForneyLab.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="ForneyLab.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">ForneyLab.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../getting-started/">Getting started</a></li><li class="is-active"><a class="tocitem" href>User guide</a><ul class="internal"><li><a class="tocitem" href="#Specifying-a-model"><span>Specifying a model</span></a></li><li><a class="tocitem" href="#Generating-an-algorithm"><span>Generating an algorithm</span></a></li><li><a class="tocitem" href="#Executing-an-algorithm"><span>Executing an algorithm</span></a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../library/user-api/">User API</a></li><li><a class="tocitem" href="../library/developer-api/">Developer API</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../internals/">Internals</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>User guide</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>User guide</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ForneyLab.jl/blob/master/docs/src/user-guide.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="User-guide"><a class="docs-heading-anchor" href="#User-guide">User guide</a><a id="User-guide-1"></a><a class="docs-heading-anchor-permalink" href="#User-guide" title="Permalink"></a></h1><p>This user guide outlines the usage of ForneyLab for solving inference problems. The main content is divided in three parts:</p><ul><li><a href="#Specifying-a-model">Specifying a model</a></li><li><a href="#Generating-an-algorithm">Generating an algorithm</a></li><li><a href="#Executing-an-algorithm">Executing an algorithm</a></li></ul><p>For installation instructions see the <a href="../getting-started/#Getting-started">Getting started</a> page. To import ForneyLab into the active Julia session run  </p><pre><code class="language-julia">using ForneyLab</code></pre><h2 id="Specifying-a-model"><a class="docs-heading-anchor" href="#Specifying-a-model">Specifying a model</a><a id="Specifying-a-model-1"></a><a class="docs-heading-anchor-permalink" href="#Specifying-a-model" title="Permalink"></a></h2><p>Probabilistic models incorporate the element of randomness to describe an event or phenomenon by using random variables and probability theory. A probabilistic model can be represented diagrammatically by using probabilistic graphical models (PGMs). A factor graph is a type of PGM that is well suited to cast inference tasks in terms of graphical manipulations.</p><h3 id="Creating-a-new-factor-graph"><a class="docs-heading-anchor" href="#Creating-a-new-factor-graph">Creating a new factor graph</a><a id="Creating-a-new-factor-graph-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-new-factor-graph" title="Permalink"></a></h3><p>In ForneyLab, Factor graphs are represented by a <code>FactorGraph</code> type (struct). To instantiate a new (empty) factor graph we use the constructor without arguments</p><pre><code class="language-julia">g = FactorGraph()</code></pre><p>ForneyLab tracks the <em>active</em> factor graph. Operations on the graph, such as adding variables or nodes, only affect the active graph. The call to <code>FactorGraph()</code> creates a new instance of a factor graph and registers it as the active graph.</p><p>To get the active graph run</p><pre><code class="language-julia">fg = currentGraph()</code></pre><p>To set the active graph run</p><pre><code class="language-julia">setCurrentGraph(g)</code></pre><h3 id="Adding-random-variables-(edges)"><a class="docs-heading-anchor" href="#Adding-random-variables-(edges)">Adding random variables (edges)</a><a id="Adding-random-variables-(edges)-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-random-variables-(edges)" title="Permalink"></a></h3><p>Random variables are represented as edges on Forney-style factor graphs. You can add a random variable to the active graph by instantiating a <code>Variable</code>. The constructor accepts an <code>id</code> of type <code>Symbol</code>. For example,</p><pre><code class="language-julia">x = Variable(id=:x)</code></pre><p>associates the variable <code>x</code> to an edge of the active graph.</p><p>Alternatively, the <code>@RV</code> macro achieves the same by a more compact notation. The following line has the same result as the previous one.</p><pre><code class="language-julia">@RV x</code></pre><p>By default, the <code>@RV</code> macro uses the Julia-variable&#39;s name to create an <code>id</code> for the <code>Variable</code> object (<code>:x</code> in this example). However, if this <code>id</code> was already assigned, then ForneyLab creates a default id of the form <code>:variable_n</code>, where <code>n</code> is a number that increments. In case you want to provide a custom <code>id</code>, the <code>@RV</code> macro accepts an optional keyword argument between square brackets. For example,</p><pre><code class="language-julia">@RV [id=:my_id] x</code></pre><p>adds the variable <code>x</code> to the active graph and assigns the <code>:my_id</code> symbol to its <code>id</code> field. Later we will see that this is useful once we start visualizing the factor graph.</p><h3 id="Adding-factor-nodes"><a class="docs-heading-anchor" href="#Adding-factor-nodes">Adding factor nodes</a><a id="Adding-factor-nodes-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-factor-nodes" title="Permalink"></a></h3><p>Factor nodes are used to define a relationship between random variables. A factor node defines a probability distribution over selected random variables. See <a href="../library/user-api/#Factor-nodes">Factor nodes</a> for a complete list of the available factor nodes in ForneyLab.</p><p>We assign a probability distribution to a random variable using the <code>~</code> operator together with the <code>@RV</code> macro. For example, to create a Gaussian random variable <code>y</code>, where its mean and variance are controlled by the random variables <code>m</code> and <code>v</code> respectively, we define</p><pre><code class="language-julia">@RV m
 @RV v
 @RV y ~ GaussianMeanVariance(m, v)</code></pre><h3 id="Visualizing-a-factor-graph"><a class="docs-heading-anchor" href="#Visualizing-a-factor-graph">Visualizing a factor graph</a><a id="Visualizing-a-factor-graph-1"></a><a class="docs-heading-anchor-permalink" href="#Visualizing-a-factor-graph" title="Permalink"></a></h3><p>Factor graphs can be visualized using the <code>draw</code> function, which takes a <code>FactorGraph</code> as argument. Let&#39;s visualize the factor graph that we defined in the previous section.</p><pre><code class="language-julia">ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
@@ -12,38 +12,38 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 175)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-175 396,-175 396,4 -4,4"/>
-<!-- 6435276724072909327 -->
-<g id="node1" class="node"><title>6435276724072909327</title>
+<!-- 4458340164349635559 -->
+<g id="node1" class="node"><title>4458340164349635559</title>
 <polygon fill="none" stroke="black" points="262,-72 130,-72 130,-0 262,-0 262,-72"/>
 <text text-anchor="middle" x="196" y="-38.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="196" y="-28.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 183567076308184814992 -->
-<g id="node2" class="node"><title>183567076308184814992</title>
+<!-- 31962700024264487712 -->
+<g id="node2" class="node"><title>31962700024264487712</title>
 </g>
-<!-- 183567076308184814992&#45;&#45;6435276724072909327 -->
-<g id="edge1" class="edge"><title>183567076308184814992&#45;&#45;6435276724072909327</title>
+<!-- 31962700024264487712&#45;&#45;4458340164349635559 -->
+<g id="edge1" class="edge"><title>31962700024264487712&#45;&#45;4458340164349635559</title>
 <path fill="none" stroke="black" d="M54.1528,-125.969C77.1992,-111.514 111.022,-90.3 139.859,-72.2125"/>
-<text text-anchor="start" x="112" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
-<text text-anchor="start" x="120.859" y="-74.8125" font-family="Times,serif" font-size="8.00">2 m </text>
+<text text-anchor="start" x="112" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
+<text text-anchor="start" x="123.859" y="-74.8125" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 110622249259743917862 -->
-<g id="node3" class="node"><title>110622249259743917862</title>
+<!-- 170661941534096917032 -->
+<g id="node3" class="node"><title>170661941534096917032</title>
 </g>
-<!-- 110622249259743917862&#45;&#45;6435276724072909327 -->
-<g id="edge2" class="edge"><title>110622249259743917862&#45;&#45;6435276724072909327</title>
+<!-- 170661941534096917032&#45;&#45;4458340164349635559 -->
+<g id="edge2" class="edge"><title>170661941534096917032&#45;&#45;4458340164349635559</title>
 <path fill="none" stroke="black" d="M196,-116.798C196,-103.31 196,-86.6801 196,-72.0987"/>
-<text text-anchor="start" x="196" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
-<text text-anchor="start" x="180" y="-74.6987" font-family="Times,serif" font-size="8.00">3 v </text>
+<text text-anchor="start" x="196" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
+<text text-anchor="start" x="171" y="-74.6987" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 40343918534751141202 -->
-<g id="node4" class="node"><title>40343918534751141202</title>
+<!-- 99236990068231246642 -->
+<g id="node4" class="node"><title>99236990068231246642</title>
 </g>
-<!-- 40343918534751141202&#45;&#45;6435276724072909327 -->
-<g id="edge3" class="edge"><title>40343918534751141202&#45;&#45;6435276724072909327</title>
+<!-- 99236990068231246642&#45;&#45;4458340164349635559 -->
+<g id="edge3" class="edge"><title>99236990068231246642&#45;&#45;4458340164349635559</title>
 <path fill="none" stroke="black" d="M337.847,-125.969C314.801,-111.514 280.978,-90.3 252.141,-72.2125"/>
-<text text-anchor="start" x="290" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
-<text text-anchor="start" x="227.141" y="-74.8125" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="290" y="-92.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
+<text text-anchor="start" x="233.141" y="-74.8125" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
 </g>
 </svg>
@@ -61,38 +61,38 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 274)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-274 227,-274 227,4 -4,4"/>
-<!-- 3180649547449170863 -->
-<g id="node1" class="node"><title>3180649547449170863</title>
-<polygon fill="lightgrey" stroke="black" points="139,-54 83,-54 83,-0 139,-0 139,-54"/>
-<text text-anchor="middle" x="111" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
-</g>
-<!-- 5535231212967875260 -->
-<g id="node2" class="node"><title>5535231212967875260</title>
+<!-- 1606512072042191343 -->
+<g id="node1" class="node"><title>1606512072042191343</title>
 <polygon fill="none" stroke="black" points="177,-171 45,-171 45,-99 177,-99 177,-171"/>
 <text text-anchor="middle" x="111" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="111" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 5535231212967875260&#45;&#45;3180649547449170863 -->
-<g id="edge2" class="edge"><title>5535231212967875260&#45;&#45;3180649547449170863</title>
+<!-- 16695177799094522426 -->
+<g id="node2" class="node"><title>16695177799094522426</title>
+<polygon fill="lightgrey" stroke="black" points="139,-54 83,-54 83,-0 139,-0 139,-54"/>
+<text text-anchor="middle" x="111" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
+</g>
+<!-- 1606512072042191343&#45;&#45;16695177799094522426 -->
+<g id="edge1" class="edge"><title>1606512072042191343&#45;&#45;16695177799094522426</title>
 <path fill="none" stroke="black" d="M111,-98.9979C111,-84.4044 111,-67.7451 111,-54.2331"/>
 <text text-anchor="start" x="111" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
 <text text-anchor="start" x="86" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="95" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 143160810008993249622 -->
-<g id="node3" class="node"><title>143160810008993249622</title>
+<!-- 179077760023595045862 -->
+<g id="node3" class="node"><title>179077760023595045862</title>
 </g>
-<!-- 143160810008993249622&#45;&#45;5535231212967875260 -->
-<g id="edge1" class="edge"><title>143160810008993249622&#45;&#45;5535231212967875260</title>
+<!-- 179077760023595045862&#45;&#45;1606512072042191343 -->
+<g id="edge2" class="edge"><title>179077760023595045862&#45;&#45;1606512072042191343</title>
 <path fill="none" stroke="black" d="M32.6973,-215.811C35.461,-206.789 39.4267,-196.961 45,-189 49.467,-182.62 54.9133,-176.609 60.7419,-171.09"/>
 <text text-anchor="start" x="45" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
 <text text-anchor="start" x="41.7419" y="-173.69" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 68439383975551245082 -->
-<g id="node4" class="node"><title>68439383975551245082</title>
+<!-- 5606735978103171372 -->
+<g id="node4" class="node"><title>5606735978103171372</title>
 </g>
-<!-- 68439383975551245082&#45;&#45;5535231212967875260 -->
-<g id="edge3" class="edge"><title>68439383975551245082&#45;&#45;5535231212967875260</title>
+<!-- 5606735978103171372&#45;&#45;1606512072042191343 -->
+<g id="edge3" class="edge"><title>5606735978103171372&#45;&#45;1606512072042191343</title>
 <path fill="none" stroke="black" d="M174.989,-215.798C164.173,-202.31 150.838,-185.68 139.145,-171.099"/>
 <text text-anchor="start" x="158" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
 <text text-anchor="start" x="114.145" y="-173.699" font-family="Times,serif" font-size="8.00">1 out </text>
@@ -114,38 +114,38 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 274)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-274 227,-274 227,4 -4,4"/>
-<!-- 3738472667388336931 -->
-<g id="node1" class="node"><title>3738472667388336931</title>
-<polygon fill="lightgrey" stroke="black" points="139,-54 83,-54 83,-0 139,-0 139,-54"/>
-<text text-anchor="middle" x="111" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
-</g>
-<!-- 258237678995728963 -->
-<g id="node2" class="node"><title>258237678995728963</title>
+<!-- 13760269998415754886 -->
+<g id="node1" class="node"><title>13760269998415754886</title>
 <polygon fill="none" stroke="black" points="177,-171 45,-171 45,-99 177,-99 177,-171"/>
 <text text-anchor="middle" x="111" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="111" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 258237678995728963&#45;&#45;3738472667388336931 -->
-<g id="edge3" class="edge"><title>258237678995728963&#45;&#45;3738472667388336931</title>
+<!-- 12628131026038365447 -->
+<g id="node2" class="node"><title>12628131026038365447</title>
+<polygon fill="lightgrey" stroke="black" points="139,-54 83,-54 83,-0 139,-0 139,-54"/>
+<text text-anchor="middle" x="111" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
+</g>
+<!-- 13760269998415754886&#45;&#45;12628131026038365447 -->
+<g id="edge1" class="edge"><title>13760269998415754886&#45;&#45;12628131026038365447</title>
 <path fill="none" stroke="black" d="M111,-98.9979C111,-84.4044 111,-67.7451 111,-54.2331"/>
 <text text-anchor="start" x="111" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
 <text text-anchor="start" x="86" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="95" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 175583447811509488072 -->
-<g id="node3" class="node"><title>175583447811509488072</title>
+<!-- 18873118864377627382 -->
+<g id="node3" class="node"><title>18873118864377627382</title>
 </g>
-<!-- 175583447811509488072&#45;&#45;258237678995728963 -->
-<g id="edge1" class="edge"><title>175583447811509488072&#45;&#45;258237678995728963</title>
+<!-- 18873118864377627382&#45;&#45;13760269998415754886 -->
+<g id="edge2" class="edge"><title>18873118864377627382&#45;&#45;13760269998415754886</title>
 <path fill="none" stroke="black" d="M34.4453,-215.889C37.7446,-206.874 42.2145,-197.03 48,-189 52.5117,-182.738 57.9232,-176.759 63.6541,-171.223"/>
 <text text-anchor="start" x="48" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
 <text text-anchor="start" x="38.6541" y="-173.823" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 54646735610636754332 -->
-<g id="node4" class="node"><title>54646735610636754332</title>
+<!-- 176755573124846748442 -->
+<g id="node4" class="node"><title>176755573124846748442</title>
 </g>
-<!-- 54646735610636754332&#45;&#45;258237678995728963 -->
-<g id="edge2" class="edge"><title>54646735610636754332&#45;&#45;258237678995728963</title>
+<!-- 176755573124846748442&#45;&#45;13760269998415754886 -->
+<g id="edge3" class="edge"><title>176755573124846748442&#45;&#45;13760269998415754886</title>
 <path fill="none" stroke="black" d="M174.989,-215.798C164.173,-202.31 150.838,-185.68 139.145,-171.099"/>
 <text text-anchor="start" x="158" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
 <text text-anchor="start" x="120.145" y="-173.699" font-family="Times,serif" font-size="8.00">2 m </text>
@@ -168,41 +168,41 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 274)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-274 254.5,-274 254.5,4 -4,4"/>
-<!-- 15101684301443052730 -->
-<g id="node1" class="node"><title>15101684301443052730</title>
+<!-- 10275706028797164347 -->
+<g id="node1" class="node"><title>10275706028797164347</title>
 <polygon fill="lightgrey" stroke="black" points="159.5,-54 103.5,-54 103.5,-0 159.5,-0 159.5,-54"/>
 <text text-anchor="middle" x="131.5" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 13983096305317483324 -->
-<g id="node2" class="node"><title>13983096305317483324</title>
-<polygon fill="lightgrey" stroke="black" points="81,-270 0,-270 0,-216 81,-216 81,-270"/>
-<text text-anchor="middle" x="40.5" y="-240.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
-</g>
-<!-- 1913922936442677827 -->
-<g id="node3" class="node"><title>1913922936442677827</title>
+<!-- 12194503340938448121 -->
+<g id="node2" class="node"><title>12194503340938448121</title>
 <polygon fill="none" stroke="black" points="197.5,-171 65.5,-171 65.5,-99 197.5,-99 197.5,-171"/>
 <text text-anchor="middle" x="131.5" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="131.5" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 13983096305317483324&#45;&#45;1913922936442677827 -->
-<g id="edge1" class="edge"><title>13983096305317483324&#45;&#45;1913922936442677827</title>
-<path fill="none" stroke="black" d="M56.1006,-215.813C61.7954,-206.984 68.5527,-197.277 75.5,-189 80.5775,-182.951 86.289,-176.875 92.0727,-171.105"/>
-<text text-anchor="start" x="75.5" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
-<text text-anchor="start" x="67.0727" y="-173.705" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="31.1006" y="-209.413" font-family="Times,serif" font-size="8.00">1 out </text>
-</g>
-<!-- 1913922936442677827&#45;&#45;15101684301443052730 -->
-<g id="edge3" class="edge"><title>1913922936442677827&#45;&#45;15101684301443052730</title>
+<!-- 12194503340938448121&#45;&#45;10275706028797164347 -->
+<g id="edge2" class="edge"><title>12194503340938448121&#45;&#45;10275706028797164347</title>
 <path fill="none" stroke="black" d="M131.5,-98.9979C131.5,-84.4044 131.5,-67.7451 131.5,-54.2331"/>
 <text text-anchor="start" x="131.5" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
 <text text-anchor="start" x="106.5" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="115.5" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 145754137570207797592 -->
-<g id="node4" class="node"><title>145754137570207797592</title>
+<!-- 15482865574200103771 -->
+<g id="node3" class="node"><title>15482865574200103771</title>
+<polygon fill="lightgrey" stroke="black" points="81,-270 0,-270 0,-216 81,-216 81,-270"/>
+<text text-anchor="middle" x="40.5" y="-240.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
 </g>
-<!-- 145754137570207797592&#45;&#45;1913922936442677827 -->
-<g id="edge2" class="edge"><title>145754137570207797592&#45;&#45;1913922936442677827</title>
+<!-- 15482865574200103771&#45;&#45;12194503340938448121 -->
+<g id="edge3" class="edge"><title>15482865574200103771&#45;&#45;12194503340938448121</title>
+<path fill="none" stroke="black" d="M56.1006,-215.813C61.7954,-206.984 68.5527,-197.277 75.5,-189 80.5775,-182.951 86.289,-176.875 92.0727,-171.105"/>
+<text text-anchor="start" x="75.5" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
+<text text-anchor="start" x="67.0727" y="-173.705" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="31.1006" y="-209.413" font-family="Times,serif" font-size="8.00">1 out </text>
+</g>
+<!-- 65188571077907622312 -->
+<g id="node4" class="node"><title>65188571077907622312</title>
+</g>
+<!-- 65188571077907622312&#45;&#45;12194503340938448121 -->
+<g id="edge1" class="edge"><title>65188571077907622312&#45;&#45;12194503340938448121</title>
 <path fill="none" stroke="black" d="M200.758,-215.798C189.052,-202.31 174.619,-185.68 161.963,-171.099"/>
 <text text-anchor="start" x="183.5" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
 <text text-anchor="start" x="142.963" y="-173.699" font-family="Times,serif" font-size="8.00">2 m </text>
@@ -225,97 +225,97 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 391)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-391 592,-391 592,4 -4,4"/>
-<!-- 16029276742503358508 -->
-<g id="node1" class="node"><title>16029276742503358508</title>
-<polygon fill="lightgrey" stroke="black" points="56,-54 0,-54 0,-0 56,-0 56,-54"/>
-<text text-anchor="middle" x="28" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
-</g>
-<!-- 4407850349495956884 -->
-<g id="node2" class="node"><title>4407850349495956884</title>
+<!-- 4028111969228585848 -->
+<g id="node1" class="node"><title>4028111969228585848</title>
 <polygon fill="lightgrey" stroke="black" points="417,-54 361,-54 361,-0 417,-0 417,-54"/>
-<text text-anchor="middle" x="389" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
+<text text-anchor="middle" x="389" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
 </g>
-<!-- 10906394312272191754 -->
-<g id="node3" class="node"><title>10906394312272191754</title>
+<!-- 11008347898336515667 -->
+<g id="node2" class="node"><title>11008347898336515667</title>
 <polygon fill="none" stroke="black" points="246,-171 114,-171 114,-99 246,-99 246,-171"/>
 <text text-anchor="middle" x="180" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="180" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 10906394312272191754&#45;&#45;16029276742503358508 -->
-<g id="edge6" class="edge"><title>10906394312272191754&#45;&#45;16029276742503358508</title>
+<!-- 7705792007220888284 -->
+<g id="node4" class="node"><title>7705792007220888284</title>
+<polygon fill="lightgrey" stroke="black" points="56,-54 0,-54 0,-0 56,-0 56,-54"/>
+<text text-anchor="middle" x="28" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
+</g>
+<!-- 11008347898336515667&#45;&#45;7705792007220888284 -->
+<g id="edge6" class="edge"><title>11008347898336515667&#45;&#45;7705792007220888284</title>
 <path fill="none" stroke="black" d="M129.808,-98.9979C105.423,-81.9922 77.0149,-62.1815 56.4131,-47.8144"/>
-<text text-anchor="start" x="104" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
+<text text-anchor="start" x="104" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
 <text text-anchor="start" x="56.4131" y="-50.4144" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="110.808" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
+<text text-anchor="start" x="113.808" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 13429909484465171705 -->
-<g id="node5" class="node"><title>13429909484465171705</title>
+<!-- 16821865463787534887 -->
+<g id="node7" class="node"><title>16821865463787534887</title>
 <polygon fill="lightgrey" stroke="black" points="227,-54 171,-54 171,-0 227,-0 227,-54"/>
-<text text-anchor="middle" x="199" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
+<text text-anchor="middle" x="199" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 10906394312272191754&#45;&#45;13429909484465171705 -->
-<g id="edge5" class="edge"><title>10906394312272191754&#45;&#45;13429909484465171705</title>
+<!-- 11008347898336515667&#45;&#45;16821865463787534887 -->
+<g id="edge1" class="edge"><title>11008347898336515667&#45;&#45;16821865463787534887</title>
 <path fill="none" stroke="black" d="M186.274,-98.9979C188.89,-84.4044 191.876,-67.7451 194.298,-54.2331"/>
-<text text-anchor="start" x="191" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
+<text text-anchor="start" x="191" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
 <text text-anchor="start" x="169.298" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="170.274" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
+<text text-anchor="start" x="167.274" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 17473214520111107184 -->
-<g id="node4" class="node"><title>17473214520111107184</title>
+<!-- 12901010609380049565 -->
+<g id="node3" class="node"><title>12901010609380049565</title>
 <polygon fill="lightgrey" stroke="black" points="588,-54 532,-54 532,-0 588,-0 588,-54"/>
-<text text-anchor="middle" x="560" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
+<text text-anchor="middle" x="560" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
 </g>
-<!-- 3538341023078536772 -->
-<g id="node6" class="node"><title>3538341023078536772</title>
-<polygon fill="none" stroke="black" points="493,-171 361,-171 361,-99 493,-99 493,-171"/>
-<text text-anchor="middle" x="427" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="427" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
-</g>
-<!-- 3538341023078536772&#45;&#45;4407850349495956884 -->
-<g id="edge1" class="edge"><title>3538341023078536772&#45;&#45;4407850349495956884</title>
-<path fill="none" stroke="black" d="M390.793,-98.8978C386.805,-93.3042 383.344,-87.2776 381,-81 377.842,-72.5439 378.226,-62.8868 379.921,-54.1528"/>
-<text text-anchor="start" x="381" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
-<text text-anchor="start" x="354.921" y="-56.7528" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="374.793" y="-92.4978" font-family="Times,serif" font-size="8.00">3 v </text>
-</g>
-<!-- 3538341023078536772&#45;&#45;17473214520111107184 -->
-<g id="edge2" class="edge"><title>3538341023078536772&#45;&#45;17473214520111107184</title>
-<path fill="none" stroke="black" d="M470.918,-98.9979C490.893,-83.0777 513.953,-64.6991 531.606,-50.6299"/>
-<text text-anchor="start" x="501" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
-<text text-anchor="start" x="506.606" y="-53.2299" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="451.918" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
-</g>
-<!-- 8779539816571711112 -->
-<g id="node7" class="node"><title>8779539816571711112</title>
+<!-- 3677382991906050057 -->
+<g id="node5" class="node"><title>3677382991906050057</title>
 <polygon fill="lightgrey" stroke="black" points="312,-387 232,-387 232,-333 312,-333 312,-387"/>
 <text text-anchor="middle" x="272" y="-357.8" font-family="Times,serif" font-size="9.00">placeholder_z</text>
 </g>
-<!-- 3839614639502913952 -->
-<g id="node8" class="node"><title>3839614639502913952</title>
+<!-- 2098434884220675541 -->
+<g id="node6" class="node"><title>2098434884220675541</title>
 <polygon fill="none" stroke="black" points="308,-288 236,-288 236,-216 308,-216 308,-288"/>
 <text text-anchor="middle" x="272" y="-254.8" font-family="Times,serif" font-size="9.00">+</text>
 <text text-anchor="middle" x="272" y="-244.8" font-family="Times,serif" font-size="9.00">addition_1</text>
 </g>
-<!-- 8779539816571711112&#45;&#45;3839614639502913952 -->
-<g id="edge4" class="edge"><title>8779539816571711112&#45;&#45;3839614639502913952</title>
+<!-- 3677382991906050057&#45;&#45;2098434884220675541 -->
+<g id="edge7" class="edge"><title>3677382991906050057&#45;&#45;2098434884220675541</title>
 <path fill="none" stroke="black" d="M272,-332.798C272,-319.31 272,-302.68 272,-288.099"/>
 <text text-anchor="start" x="272" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">z</text>
 <text text-anchor="start" x="247" y="-290.699" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="247" y="-326.398" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 3839614639502913952&#45;&#45;10906394312272191754 -->
-<g id="edge7" class="edge"><title>3839614639502913952&#45;&#45;10906394312272191754</title>
+<!-- 2098434884220675541&#45;&#45;11008347898336515667 -->
+<g id="edge3" class="edge"><title>2098434884220675541&#45;&#45;11008347898336515667</title>
 <path fill="none" stroke="black" d="M243.897,-215.871C232.589,-201.736 219.571,-185.463 208.248,-171.31"/>
 <text text-anchor="start" x="229" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
 <text text-anchor="start" x="183.248" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="217.897" y="-209.471" font-family="Times,serif" font-size="8.00">2 in1 </text>
 </g>
-<!-- 3839614639502913952&#45;&#45;3538341023078536772 -->
-<g id="edge3" class="edge"><title>3839614639502913952&#45;&#45;3538341023078536772</title>
+<!-- 2454202727959265609 -->
+<g id="node8" class="node"><title>2454202727959265609</title>
+<polygon fill="none" stroke="black" points="493,-171 361,-171 361,-99 493,-99 493,-171"/>
+<text text-anchor="middle" x="427" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="427" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
+</g>
+<!-- 2098434884220675541&#45;&#45;2454202727959265609 -->
+<g id="edge2" class="edge"><title>2098434884220675541&#45;&#45;2454202727959265609</title>
 <path fill="none" stroke="black" d="M308.341,-224.038C329.637,-208.237 356.774,-188.103 379.72,-171.079"/>
 <text text-anchor="start" x="354" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
 <text text-anchor="start" x="354.72" y="-173.679" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="308.341" y="-226.638" font-family="Times,serif" font-size="8.00">3 in2 </text>
+</g>
+<!-- 2454202727959265609&#45;&#45;4028111969228585848 -->
+<g id="edge5" class="edge"><title>2454202727959265609&#45;&#45;4028111969228585848</title>
+<path fill="none" stroke="black" d="M390.793,-98.8978C386.805,-93.3042 383.344,-87.2776 381,-81 377.842,-72.5439 378.226,-62.8868 379.921,-54.1528"/>
+<text text-anchor="start" x="381" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
+<text text-anchor="start" x="354.921" y="-56.7528" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="371.793" y="-92.4978" font-family="Times,serif" font-size="8.00">2 m </text>
+</g>
+<!-- 2454202727959265609&#45;&#45;12901010609380049565 -->
+<g id="edge4" class="edge"><title>2454202727959265609&#45;&#45;12901010609380049565</title>
+<path fill="none" stroke="black" d="M470.918,-98.9979C490.893,-83.0777 513.953,-64.6991 531.606,-50.6299"/>
+<text text-anchor="start" x="501" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
+<text text-anchor="start" x="506.606" y="-53.2299" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="454.918" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
 </g>
 </svg>
@@ -331,77 +331,77 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <!-- Generated by graphviz version 2.38.0 (20140413.2041)
  -->
 <!-- Title: G Pages: 1 -->
-<svg width="387pt" height="395pt"
- viewBox="0.00 0.00 386.50 395.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="385pt" height="395pt"
+ viewBox="0.00 0.00 385.06 395.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 391)">
 <title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-391 382.5,-391 382.5,4 -4,4"/>
-<!-- 4042808389095599847 -->
-<g id="node1" class="node"><title>4042808389095599847</title>
-<polygon fill="none" stroke="black" points="207.5,-171 75.5,-171 75.5,-99 207.5,-99 207.5,-171"/>
-<text text-anchor="middle" x="141.5" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="141.5" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
+<polygon fill="white" stroke="none" points="-4,4 -4,-391 381.057,-391 381.057,4 -4,4"/>
+<!-- 10070435930873511557 -->
+<g id="node1" class="node"><title>10070435930873511557</title>
+<polygon fill="lightgrey" stroke="black" points="160.557,-387 79.5568,-387 79.5568,-333 160.557,-333 160.557,-387"/>
+<text text-anchor="middle" x="120.057" y="-357.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
 </g>
-<!-- 7005237206700967891 -->
-<g id="node4" class="node"><title>7005237206700967891</title>
-<polygon fill="lightgrey" stroke="black" points="85,-54 0,-54 0,-0 85,-0 85,-54"/>
-<text text-anchor="middle" x="42.5" y="-24.8" font-family="Times,serif" font-size="9.00">placeholder_m</text>
+<!-- 2598482726775412839 -->
+<g id="node5" class="node"><title>2598482726775412839</title>
+<polygon fill="none" stroke="black" points="186.057,-288 54.0568,-288 54.0568,-216 186.057,-216 186.057,-288"/>
+<text text-anchor="middle" x="120.057" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="120.057" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
 </g>
-<!-- 4042808389095599847&#45;&#45;7005237206700967891 -->
-<g id="edge1" class="edge"><title>4042808389095599847&#45;&#45;7005237206700967891</title>
-<path fill="none" stroke="black" d="M106.565,-98.8888C100.813,-92.9662 94.9517,-86.8441 89.5,-81 81.4466,-72.3669 72.8238,-62.7555 65.1913,-54.1135"/>
-<text text-anchor="start" x="89.5" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
-<text text-anchor="start" x="40.1913" y="-56.7135" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="87.5652" y="-92.4888" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 10070435930873511557&#45;&#45;2598482726775412839 -->
+<g id="edge3" class="edge"><title>10070435930873511557&#45;&#45;2598482726775412839</title>
+<path fill="none" stroke="black" d="M120.057,-332.798C120.057,-319.31 120.057,-302.68 120.057,-288.099"/>
+<text text-anchor="start" x="120.057" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
+<text text-anchor="start" x="95.0568" y="-290.699" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="95.0568" y="-326.398" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 4746809780684954069 -->
-<g id="node6" class="node"><title>4746809780684954069</title>
-<polygon fill="lightgrey" stroke="black" points="280.5,-54 200.5,-54 200.5,-0 280.5,-0 280.5,-54"/>
-<text text-anchor="middle" x="240.5" y="-24.8" font-family="Times,serif" font-size="9.00">placeholder_v</text>
+<!-- 5725332562628434350 -->
+<g id="node2" class="node"><title>5725332562628434350</title>
+<polygon fill="lightgrey" stroke="black" points="57.0568,-162 1.05675,-162 1.05675,-108 57.0568,-108 57.0568,-162"/>
+<text text-anchor="middle" x="29.0568" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 4042808389095599847&#45;&#45;4746809780684954069 -->
-<g id="edge4" class="edge"><title>4042808389095599847&#45;&#45;4746809780684954069</title>
-<path fill="none" stroke="black" d="M174.191,-98.9979C187.82,-84.4044 203.38,-67.7451 215.999,-54.2331"/>
-<text text-anchor="start" x="197.5" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
-<text text-anchor="start" x="190.999" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="158.191" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 17768229192567318051 -->
+<g id="node3" class="node"><title>17768229192567318051</title>
+<polygon fill="lightgrey" stroke="black" points="181.557,-54 96.5568,-54 96.5568,-0 181.557,-0 181.557,-54"/>
+<text text-anchor="middle" x="139.057" y="-24.8" font-family="Times,serif" font-size="9.00">placeholder_m</text>
 </g>
-<!-- 7232617276324665343 -->
-<g id="node2" class="node"><title>7232617276324665343</title>
-<polygon fill="none" stroke="black" points="353.5,-288 221.5,-288 221.5,-216 353.5,-216 353.5,-288"/>
-<text text-anchor="middle" x="287.5" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="287.5" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
+<!-- 10568546839650587840 -->
+<g id="node4" class="node"><title>10568546839650587840</title>
+<polygon fill="none" stroke="black" points="304.057,-171 172.057,-171 172.057,-99 304.057,-99 304.057,-171"/>
+<text text-anchor="middle" x="238.057" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="238.057" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 7232617276324665343&#45;&#45;4042808389095599847 -->
-<g id="edge2" class="edge"><title>7232617276324665343&#45;&#45;4042808389095599847</title>
-<path fill="none" stroke="black" d="M242.902,-215.871C224.872,-201.67 204.104,-185.311 186.076,-171.112"/>
-<text text-anchor="start" x="219.5" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="161.076" y="-173.712" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="223.902" y="-209.471" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 10568546839650587840&#45;&#45;17768229192567318051 -->
+<g id="edge4" class="edge"><title>10568546839650587840&#45;&#45;17768229192567318051</title>
+<path fill="none" stroke="black" d="M205.366,-98.9979C191.736,-84.4044 176.177,-67.7451 163.557,-54.2331"/>
+<text text-anchor="start" x="189.057" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
+<text text-anchor="start" x="138.557" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="186.366" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 4986644757514779073 -->
-<g id="node5" class="node"><title>4986644757514779073</title>
-<polygon fill="lightgrey" stroke="black" points="378.5,-162 322.5,-162 322.5,-108 378.5,-108 378.5,-162"/>
-<text text-anchor="middle" x="350.5" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
+<!-- 5179228950303945215 -->
+<g id="node6" class="node"><title>5179228950303945215</title>
+<polygon fill="lightgrey" stroke="black" points="377.057,-54 297.057,-54 297.057,-0 377.057,-0 377.057,-54"/>
+<text text-anchor="middle" x="337.057" y="-24.8" font-family="Times,serif" font-size="9.00">placeholder_v</text>
 </g>
-<!-- 7232617276324665343&#45;&#45;4986644757514779073 -->
-<g id="edge5" class="edge"><title>7232617276324665343&#45;&#45;4986644757514779073</title>
-<path fill="none" stroke="black" d="M306.744,-215.871C316.225,-198.565 327.461,-178.056 336.172,-162.154"/>
-<text text-anchor="start" x="321.5" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
-<text text-anchor="start" x="311.172" y="-164.754" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="290.744" y="-209.471" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 10568546839650587840&#45;&#45;5179228950303945215 -->
+<g id="edge2" class="edge"><title>10568546839650587840&#45;&#45;5179228950303945215</title>
+<path fill="none" stroke="black" d="M270.747,-98.9979C284.377,-84.4044 299.936,-67.7451 312.556,-54.2331"/>
+<text text-anchor="start" x="293.057" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">v</text>
+<text text-anchor="start" x="287.556" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="254.747" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 17153106660314260606 -->
-<g id="node3" class="node"><title>17153106660314260606</title>
-<polygon fill="lightgrey" stroke="black" points="328,-387 247,-387 247,-333 328,-333 328,-387"/>
-<text text-anchor="middle" x="287.5" y="-357.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
+<!-- 2598482726775412839&#45;&#45;5725332562628434350 -->
+<g id="edge1" class="edge"><title>2598482726775412839&#45;&#45;5725332562628434350</title>
+<path fill="none" stroke="black" d="M53.944,-221.524C45.2945,-214.978 37.5449,-207.186 32.0568,-198 25.7007,-187.361 24.4498,-173.769 25,-162.024"/>
+<text text-anchor="start" x="32.0568" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
+<text text-anchor="start" x="0" y="-164.624" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="37.944" y="-224.124" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 17153106660314260606&#45;&#45;7232617276324665343 -->
-<g id="edge3" class="edge"><title>17153106660314260606&#45;&#45;7232617276324665343</title>
-<path fill="none" stroke="black" d="M287.5,-332.798C287.5,-319.31 287.5,-302.68 287.5,-288.099"/>
-<text text-anchor="start" x="287.5" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
-<text text-anchor="start" x="262.5" y="-290.699" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="262.5" y="-326.398" font-family="Times,serif" font-size="8.00">1 out </text>
+<!-- 2598482726775412839&#45;&#45;10568546839650587840 -->
+<g id="edge5" class="edge"><title>2598482726775412839&#45;&#45;10568546839650587840</title>
+<path fill="none" stroke="black" d="M156.102,-215.871C170.606,-201.736 187.303,-185.463 201.826,-171.31"/>
+<text text-anchor="start" x="183.057" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="176.826" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="137.102" y="-209.471" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
 </g>
 </svg>
@@ -419,177 +419,177 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <!-- Generated by graphviz version 2.38.0 (20140413.2041)
  -->
 <!-- Title: G Pages: 1 -->
-<svg width="825pt" height="413pt"
- viewBox="0.00 0.00 825.00 413.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="832pt" height="413pt"
+ viewBox="0.00 0.00 832.00 413.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 409)">
 <title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-409 821,-409 821,4 -4,4"/>
-<!-- 13107252866242221421 -->
-<g id="node1" class="node"><title>13107252866242221421</title>
-<polygon fill="none" stroke="black" points="363,-405 291,-405 291,-333 363,-333 363,-405"/>
-<text text-anchor="middle" x="327" y="-371.8" font-family="Times,serif" font-size="9.00">=</text>
-<text text-anchor="middle" x="327" y="-361.8" font-family="Times,serif" font-size="9.00">equ_x_2</text>
+<polygon fill="white" stroke="none" points="-4,4 -4,-409 828,-409 828,4 -4,4"/>
+<!-- 4091012912076527774 -->
+<g id="node1" class="node"><title>4091012912076527774</title>
+<polygon fill="lightgrey" stroke="black" points="327,-54 271,-54 271,-0 327,-0 327,-54"/>
+<text text-anchor="middle" x="299" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
 </g>
-<!-- 4017706057571504579 -->
-<g id="node10" class="node"><title>4017706057571504579</title>
-<polygon fill="none" stroke="black" points="817,-288 685,-288 685,-216 817,-216 817,-288"/>
-<text text-anchor="middle" x="751" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="751" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_3</text>
+<!-- 13519548069956249759 -->
+<g id="node2" class="node"><title>13519548069956249759</title>
+<polygon fill="lightgrey" stroke="black" points="94,-162 38,-162 38,-108 94,-108 94,-162"/>
+<text text-anchor="middle" x="66" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_5</text>
 </g>
-<!-- 13107252866242221421&#45;&#45;4017706057571504579 -->
-<g id="edge4" class="edge"><title>13107252866242221421&#45;&#45;4017706057571504579</title>
-<path fill="none" stroke="black" d="M363.195,-358.598C419.778,-343.851 532.595,-314.25 628,-288 646.517,-282.905 666.563,-277.258 684.991,-272.012"/>
-<text text-anchor="start" x="553" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="665.991" y="-274.612" font-family="Times,serif" font-size="8.00">2 m </text>
-<text text-anchor="start" x="363.195" y="-361.198" font-family="Times,serif" font-size="8.00">1 1 </text>
+<!-- 8783248001109049989 -->
+<g id="node3" class="node"><title>8783248001109049989</title>
+<polygon fill="none" stroke="black" points="618,-171 486,-171 486,-99 618,-99 618,-171"/>
+<text text-anchor="middle" x="552" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="552" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 12531415143777139726 -->
-<g id="node11" class="node"><title>12531415143777139726</title>
-<polygon fill="none" stroke="black" points="363,-288 291,-288 291,-216 363,-216 363,-288"/>
-<text text-anchor="middle" x="327" y="-254.8" font-family="Times,serif" font-size="9.00">=</text>
-<text text-anchor="middle" x="327" y="-244.8" font-family="Times,serif" font-size="9.00">equ_x_1</text>
+<!-- 8109607422443272378 -->
+<g id="node5" class="node"><title>8109607422443272378</title>
+<polygon fill="lightgrey" stroke="black" points="710,-54 654,-54 654,-0 710,-0 710,-54"/>
+<text text-anchor="middle" x="682" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 13107252866242221421&#45;&#45;12531415143777139726 -->
-<g id="edge6" class="edge"><title>13107252866242221421&#45;&#45;12531415143777139726</title>
-<path fill="none" stroke="black" d="M327,-332.871C327,-318.736 327,-302.463 327,-288.31"/>
-<text text-anchor="start" x="327" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="310" y="-290.91" font-family="Times,serif" font-size="8.00">3 3 </text>
-<text text-anchor="start" x="310" y="-326.471" font-family="Times,serif" font-size="8.00">2 2 </text>
+<!-- 8783248001109049989&#45;&#45;8109607422443272378 -->
+<g id="edge13" class="edge"><title>8783248001109049989&#45;&#45;8109607422443272378</title>
+<path fill="none" stroke="black" d="M594.927,-98.9979C614.304,-83.1983 636.65,-64.9774 653.853,-50.9504"/>
+<text text-anchor="start" x="624" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
+<text text-anchor="start" x="628.853" y="-53.5504" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="575.927" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 4303373540968326791 -->
-<g id="node13" class="node"><title>4303373540968326791</title>
+<!-- 4068345191355865066 -->
+<g id="node11" class="node"><title>4068345191355865066</title>
+<polygon fill="lightgrey" stroke="black" points="539,-54 483,-54 483,-0 539,-0 539,-54"/>
+<text text-anchor="middle" x="511" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
+</g>
+<!-- 8783248001109049989&#45;&#45;4068345191355865066 -->
+<g id="edge5" class="edge"><title>8783248001109049989&#45;&#45;4068345191355865066</title>
+<path fill="none" stroke="black" d="M513.228,-98.8498C509.073,-93.3025 505.467,-87.3014 503,-81 499.71,-72.5946 500.062,-62.9497 501.768,-54.2113"/>
+<text text-anchor="start" x="503" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
+<text text-anchor="start" x="476.768" y="-56.8113" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="497.228" y="-92.4498" font-family="Times,serif" font-size="8.00">3 v </text>
+</g>
+<!-- 15745991516601645064 -->
+<g id="node4" class="node"><title>15745991516601645064</title>
+<polygon fill="lightgrey" stroke="black" points="339,-279 247,-279 247,-225 339,-225 339,-279"/>
+<text text-anchor="middle" x="293" y="-249.8" font-family="Times,serif" font-size="9.00">placeholder_y_1</text>
+</g>
+<!-- 11321329849009047073 -->
+<g id="node13" class="node"><title>11321329849009047073</title>
+<polygon fill="none" stroke="black" points="365,-171 233,-171 233,-99 365,-99 365,-171"/>
+<text text-anchor="middle" x="299" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="299" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
+</g>
+<!-- 15745991516601645064&#45;&#45;11321329849009047073 -->
+<g id="edge2" class="edge"><title>15745991516601645064&#45;&#45;11321329849009047073</title>
+<path fill="none" stroke="black" d="M288.758,-224.731C287.526,-213.687 286.798,-200.709 288,-189 288.595,-183.204 289.547,-177.107 290.648,-171.194"/>
+<text text-anchor="start" x="288" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y_1</text>
+<text text-anchor="start" x="265.648" y="-173.794" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="263.758" y="-218.331" font-family="Times,serif" font-size="8.00">1 out </text>
+</g>
+<!-- 11531142181924149710 -->
+<g id="node6" class="node"><title>11531142181924149710</title>
+<polygon fill="none" stroke="black" points="531,-288 459,-288 459,-216 531,-216 531,-288"/>
+<text text-anchor="middle" x="495" y="-254.8" font-family="Times,serif" font-size="9.00">=</text>
+<text text-anchor="middle" x="495" y="-244.8" font-family="Times,serif" font-size="9.00">equ_x_1</text>
+</g>
+<!-- 11531142181924149710&#45;&#45;8783248001109049989 -->
+<g id="edge3" class="edge"><title>11531142181924149710&#45;&#45;8783248001109049989</title>
+<path fill="none" stroke="black" d="M512.412,-215.871C519.418,-201.736 527.483,-185.463 534.499,-171.31"/>
+<text text-anchor="start" x="525" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="509.499" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="495.412" y="-209.471" font-family="Times,serif" font-size="8.00">1 1 </text>
+</g>
+<!-- 11531142181924149710&#45;&#45;11321329849009047073 -->
+<g id="edge1" class="edge"><title>11531142181924149710&#45;&#45;11321329849009047073</title>
+<path fill="none" stroke="black" d="M458.593,-229.639C430.585,-213.205 391.288,-190.148 358.697,-171.027"/>
+<text text-anchor="start" x="403" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="339.697" y="-173.627" font-family="Times,serif" font-size="8.00">2 m </text>
+<text text-anchor="start" x="441.593" y="-232.239" font-family="Times,serif" font-size="8.00">2 2 </text>
+</g>
+<!-- 7431184640151622904 -->
+<g id="node7" class="node"><title>7431184640151622904</title>
+<polygon fill="lightgrey" stroke="black" points="112,-396 20,-396 20,-342 112,-342 112,-396"/>
+<text text-anchor="middle" x="66" y="-366.8" font-family="Times,serif" font-size="9.00">placeholder_y_3</text>
+</g>
+<!-- 1359125384925302020 -->
+<g id="node8" class="node"><title>1359125384925302020</title>
 <polygon fill="none" stroke="black" points="132,-288 0,-288 0,-216 132,-216 132,-288"/>
 <text text-anchor="middle" x="66" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="66" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_4</text>
 </g>
-<!-- 13107252866242221421&#45;&#45;4303373540968326791 -->
-<g id="edge9" class="edge"><title>13107252866242221421&#45;&#45;4303373540968326791</title>
-<path fill="none" stroke="black" d="M290.983,-352.13C250.079,-334.108 182.483,-304.324 132.043,-282.099"/>
-<text text-anchor="start" x="204" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="132.043" y="-284.699" font-family="Times,serif" font-size="8.00">2 m </text>
-<text text-anchor="start" x="273.983" y="-354.73" font-family="Times,serif" font-size="8.00">3 3 </text>
+<!-- 7431184640151622904&#45;&#45;1359125384925302020 -->
+<g id="edge9" class="edge"><title>7431184640151622904&#45;&#45;1359125384925302020</title>
+<path fill="none" stroke="black" d="M66,-341.905C66,-326 66,-305.471 66,-288.148"/>
+<text text-anchor="start" x="66" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y_3</text>
+<text text-anchor="start" x="41" y="-290.748" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="41" y="-335.505" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 16430570563121126053 -->
-<g id="node2" class="node"><title>16430570563121126053</title>
-<polygon fill="lightgrey" stroke="black" points="112,-396 20,-396 20,-342 112,-342 112,-396"/>
-<text text-anchor="middle" x="66" y="-366.8" font-family="Times,serif" font-size="9.00">placeholder_y_3</text>
-</g>
-<!-- 16430570563121126053&#45;&#45;4303373540968326791 -->
-<g id="edge12" class="edge"><title>16430570563121126053&#45;&#45;4303373540968326791</title>
-<path fill="none" stroke="black" d="M63.0444,-341.886C62.2078,-333.33 61.4128,-323.77 61,-315 60.5888,-306.263 60.9383,-296.847 61.6084,-288.058"/>
-<text text-anchor="start" x="61" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y_3</text>
-<text text-anchor="start" x="36.6084" y="-290.658" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="38.0444" y="-335.486" font-family="Times,serif" font-size="8.00">1 out </text>
-</g>
-<!-- 2401209748498071035 -->
-<g id="node3" class="node"><title>2401209748498071035</title>
-<polygon fill="lightgrey" stroke="black" points="797,-396 705,-396 705,-342 797,-342 797,-396"/>
-<text text-anchor="middle" x="751" y="-366.8" font-family="Times,serif" font-size="9.00">placeholder_y_2</text>
-</g>
-<!-- 2401209748498071035&#45;&#45;4017706057571504579 -->
-<g id="edge3" class="edge"><title>2401209748498071035&#45;&#45;4017706057571504579</title>
-<path fill="none" stroke="black" d="M751,-341.905C751,-326 751,-305.471 751,-288.148"/>
-<text text-anchor="start" x="751" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y_2</text>
-<text text-anchor="start" x="726" y="-290.748" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="726" y="-335.505" font-family="Times,serif" font-size="8.00">1 out </text>
-</g>
-<!-- 97498468061099523 -->
-<g id="node4" class="node"><title>97498468061099523</title>
-<polygon fill="lightgrey" stroke="black" points="171,-54 115,-54 115,-0 171,-0 171,-54"/>
-<text text-anchor="middle" x="143" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
-</g>
-<!-- 17557186033656302223 -->
-<g id="node5" class="node"><title>17557186033656302223</title>
-<polygon fill="lightgrey" stroke="black" points="342,-54 286,-54 286,-0 342,-0 342,-54"/>
-<text text-anchor="middle" x="314" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
-</g>
-<!-- 11813659175529272482 -->
-<g id="node6" class="node"><title>11813659175529272482</title>
-<polygon fill="none" stroke="black" points="589,-171 457,-171 457,-99 589,-99 589,-171"/>
-<text text-anchor="middle" x="523" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="523" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
-</g>
-<!-- 18353508442703779613 -->
-<g id="node7" class="node"><title>18353508442703779613</title>
-<polygon fill="lightgrey" stroke="black" points="551,-54 495,-54 495,-0 551,-0 551,-54"/>
-<text text-anchor="middle" x="523" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
-</g>
-<!-- 11813659175529272482&#45;&#45;18353508442703779613 -->
-<g id="edge11" class="edge"><title>11813659175529272482&#45;&#45;18353508442703779613</title>
-<path fill="none" stroke="black" d="M523,-98.9979C523,-84.4044 523,-67.7451 523,-54.2331"/>
-<text text-anchor="start" x="523" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
-<text text-anchor="start" x="498" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="507" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
-</g>
-<!-- 4330771848481276770 -->
-<g id="node8" class="node"><title>4330771848481276770</title>
-<polygon fill="lightgrey" stroke="black" points="94,-162 38,-162 38,-108 94,-108 94,-162"/>
-<text text-anchor="middle" x="66" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_5</text>
-</g>
-<!-- 7662876775419404423 -->
-<g id="node9" class="node"><title>7662876775419404423</title>
-<polygon fill="lightgrey" stroke="black" points="570,-279 478,-279 478,-225 570,-225 570,-279"/>
-<text text-anchor="middle" x="524" y="-249.8" font-family="Times,serif" font-size="9.00">placeholder_y_1</text>
-</g>
-<!-- 7662876775419404423&#45;&#45;11813659175529272482 -->
-<g id="edge2" class="edge"><title>7662876775419404423&#45;&#45;11813659175529272482</title>
-<path fill="none" stroke="black" d="M523.773,-224.905C523.635,-209 523.456,-188.471 523.306,-171.148"/>
-<text text-anchor="start" x="523" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">y_1</text>
-<text text-anchor="start" x="498.306" y="-173.748" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="498.773" y="-218.505" font-family="Times,serif" font-size="8.00">1 out </text>
-</g>
-<!-- 11565378034119194354 -->
-<g id="node12" class="node"><title>11565378034119194354</title>
-<polygon fill="lightgrey" stroke="black" points="779,-162 723,-162 723,-108 779,-108 779,-162"/>
-<text text-anchor="middle" x="751" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
-</g>
-<!-- 4017706057571504579&#45;&#45;11565378034119194354 -->
-<g id="edge13" class="edge"><title>4017706057571504579&#45;&#45;11565378034119194354</title>
-<path fill="none" stroke="black" d="M751,-215.871C751,-198.565 751,-178.056 751,-162.154"/>
-<text text-anchor="start" x="751" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
-<text text-anchor="start" x="726" y="-164.754" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="735" y="-209.471" font-family="Times,serif" font-size="8.00">3 v </text>
-</g>
-<!-- 12531415143777139726&#45;&#45;11813659175529272482 -->
-<g id="edge8" class="edge"><title>12531415143777139726&#45;&#45;11813659175529272482</title>
-<path fill="none" stroke="black" d="M363.407,-229.639C391.415,-213.205 430.712,-190.148 463.303,-171.027"/>
-<text text-anchor="start" x="430" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="444.303" y="-173.627" font-family="Times,serif" font-size="8.00">2 m </text>
-<text text-anchor="start" x="363.407" y="-232.239" font-family="Times,serif" font-size="8.00">2 2 </text>
-</g>
-<!-- 13040049936702296454 -->
-<g id="node14" class="node"><title>13040049936702296454</title>
-<polygon fill="none" stroke="black" points="341,-171 209,-171 209,-99 341,-99 341,-171"/>
-<text text-anchor="middle" x="275" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="275" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
-</g>
-<!-- 12531415143777139726&#45;&#45;13040049936702296454 -->
-<g id="edge7" class="edge"><title>12531415143777139726&#45;&#45;13040049936702296454</title>
-<path fill="none" stroke="black" d="M290.777,-217.433C286.08,-211.416 281.902,-204.86 279,-198 275.47,-189.655 273.826,-180.112 273.21,-171.054"/>
-<text text-anchor="start" x="279" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
-<text text-anchor="start" x="248.21" y="-173.654" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="273.777" y="-220.033" font-family="Times,serif" font-size="8.00">1 1 </text>
-</g>
-<!-- 4303373540968326791&#45;&#45;4330771848481276770 -->
-<g id="edge5" class="edge"><title>4303373540968326791&#45;&#45;4330771848481276770</title>
+<!-- 1359125384925302020&#45;&#45;13519548069956249759 -->
+<g id="edge12" class="edge"><title>1359125384925302020&#45;&#45;13519548069956249759</title>
 <path fill="none" stroke="black" d="M66,-215.871C66,-198.565 66,-178.056 66,-162.154"/>
 <text text-anchor="start" x="66" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_5</text>
 <text text-anchor="start" x="41" y="-164.754" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="50" y="-209.471" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 13040049936702296454&#45;&#45;97498468061099523 -->
-<g id="edge1" class="edge"><title>13040049936702296454&#45;&#45;97498468061099523</title>
-<path fill="none" stroke="black" d="M231.412,-98.9979C211.587,-83.0777 188.701,-64.6991 171.181,-50.6299"/>
-<text text-anchor="start" x="209" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
-<text text-anchor="start" x="171.181" y="-53.2299" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="212.412" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 1933693506643895499 -->
+<g id="node9" class="node"><title>1933693506643895499</title>
+<polygon fill="lightgrey" stroke="black" points="789,-162 733,-162 733,-108 789,-108 789,-162"/>
+<text text-anchor="middle" x="761" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
 </g>
-<!-- 13040049936702296454&#45;&#45;17557186033656302223 -->
-<g id="edge10" class="edge"><title>13040049936702296454&#45;&#45;17557186033656302223</title>
-<path fill="none" stroke="black" d="M287.878,-98.9979C293.247,-84.4044 299.377,-67.7451 304.348,-54.2331"/>
-<text text-anchor="start" x="296" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
-<text text-anchor="start" x="279.348" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="271.878" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 7688461249397867133 -->
+<g id="node10" class="node"><title>7688461249397867133</title>
+<polygon fill="lightgrey" stroke="black" points="804,-396 712,-396 712,-342 804,-342 804,-396"/>
+<text text-anchor="middle" x="758" y="-366.8" font-family="Times,serif" font-size="9.00">placeholder_y_2</text>
+</g>
+<!-- 2711834552431781836 -->
+<g id="node12" class="node"><title>2711834552431781836</title>
+<polygon fill="none" stroke="black" points="824,-288 692,-288 692,-216 824,-216 824,-288"/>
+<text text-anchor="middle" x="758" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="758" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_3</text>
+</g>
+<!-- 7688461249397867133&#45;&#45;2711834552431781836 -->
+<g id="edge11" class="edge"><title>7688461249397867133&#45;&#45;2711834552431781836</title>
+<path fill="none" stroke="black" d="M758,-341.905C758,-326 758,-305.471 758,-288.148"/>
+<text text-anchor="start" x="758" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y_2</text>
+<text text-anchor="start" x="733" y="-290.748" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="733" y="-335.505" font-family="Times,serif" font-size="8.00">1 out </text>
+</g>
+<!-- 2711834552431781836&#45;&#45;1933693506643895499 -->
+<g id="edge6" class="edge"><title>2711834552431781836&#45;&#45;1933693506643895499</title>
+<path fill="none" stroke="black" d="M758.916,-215.871C759.368,-198.565 759.903,-178.056 760.318,-162.154"/>
+<text text-anchor="start" x="759" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
+<text text-anchor="start" x="735.318" y="-164.754" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="742.916" y="-209.471" font-family="Times,serif" font-size="8.00">3 v </text>
+</g>
+<!-- 11321329849009047073&#45;&#45;4091012912076527774 -->
+<g id="edge8" class="edge"><title>11321329849009047073&#45;&#45;4091012912076527774</title>
+<path fill="none" stroke="black" d="M299,-98.9979C299,-84.4044 299,-67.7451 299,-54.2331"/>
+<text text-anchor="start" x="299" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
+<text text-anchor="start" x="274" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="283" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
+</g>
+<!-- 10939655262920382522 -->
+<g id="node14" class="node"><title>10939655262920382522</title>
+<polygon fill="none" stroke="black" points="531,-405 459,-405 459,-333 531,-333 531,-405"/>
+<text text-anchor="middle" x="495" y="-371.8" font-family="Times,serif" font-size="9.00">=</text>
+<text text-anchor="middle" x="495" y="-361.8" font-family="Times,serif" font-size="9.00">equ_x_2</text>
+</g>
+<!-- 10939655262920382522&#45;&#45;11531142181924149710 -->
+<g id="edge4" class="edge"><title>10939655262920382522&#45;&#45;11531142181924149710</title>
+<path fill="none" stroke="black" d="M495,-332.871C495,-318.736 495,-302.463 495,-288.31"/>
+<text text-anchor="start" x="495" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="478" y="-290.91" font-family="Times,serif" font-size="8.00">3 3 </text>
+<text text-anchor="start" x="478" y="-326.471" font-family="Times,serif" font-size="8.00">2 2 </text>
+</g>
+<!-- 10939655262920382522&#45;&#45;1359125384925302020 -->
+<g id="edge10" class="edge"><title>10939655262920382522&#45;&#45;1359125384925302020</title>
+<path fill="none" stroke="black" d="M458.662,-358.769C401.279,-344.132 286.205,-314.533 189,-288 170.58,-282.972 150.655,-277.372 132.315,-272.153"/>
+<text text-anchor="start" x="282" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="132.315" y="-274.753" font-family="Times,serif" font-size="8.00">2 m </text>
+<text text-anchor="start" x="441.662" y="-361.369" font-family="Times,serif" font-size="8.00">3 3 </text>
+</g>
+<!-- 10939655262920382522&#45;&#45;2711834552431781836 -->
+<g id="edge7" class="edge"><title>10939655262920382522&#45;&#45;2711834552431781836</title>
+<path fill="none" stroke="black" d="M531.018,-352.251C572.308,-334.196 640.847,-304.226 691.827,-281.935"/>
+<text text-anchor="start" x="634" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">x</text>
+<text text-anchor="start" x="672.827" y="-284.535" font-family="Times,serif" font-size="8.00">2 m </text>
+<text text-anchor="start" x="531.018" y="-354.851" font-family="Times,serif" font-size="8.00">1 1 </text>
 </g>
 </g>
 </svg>
@@ -604,102 +604,102 @@ ForneyLab.draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="n
 <!-- Generated by graphviz version 2.38.0 (20140413.2041)
  -->
 <!-- Title: G Pages: 1 -->
-<svg width="477pt" height="512pt"
- viewBox="0.00 0.00 477.06 512.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="464pt" height="512pt"
+ viewBox="0.00 0.00 463.71 512.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 508)">
 <title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-508 473.057,-508 473.057,4 -4,4"/>
-<!-- 17934032874542378976 -->
-<g id="node1" class="node"><title>17934032874542378976</title>
-<polygon fill="lightgrey" stroke="black" points="160.557,-504 79.5568,-504 79.5568,-450 160.557,-450 160.557,-504"/>
-<text text-anchor="middle" x="120.057" y="-474.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
+<polygon fill="white" stroke="none" points="-4,4 -4,-508 459.711,-508 459.711,4 -4,4"/>
+<!-- 9252588002433557134 -->
+<g id="node1" class="node"><title>9252588002433557134</title>
+<polygon fill="lightgrey" stroke="black" points="284.711,-54 228.711,-54 228.711,-0 284.711,-0 284.711,-54"/>
+<text text-anchor="middle" x="256.711" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
 </g>
-<!-- 12814535974253499276 -->
-<g id="node6" class="node"><title>12814535974253499276</title>
-<polygon fill="none" stroke="black" points="186.057,-405 54.0568,-405 54.0568,-333 186.057,-333 186.057,-405"/>
-<text text-anchor="middle" x="120.057" y="-371.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="120.057" y="-361.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_3</text>
+<!-- 16101261736776997928 -->
+<g id="node2" class="node"><title>16101261736776997928</title>
+<polygon fill="lightgrey" stroke="black" points="161.711,-162 105.711,-162 105.711,-108 161.711,-108 161.711,-162"/>
+<text text-anchor="middle" x="133.711" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
 </g>
-<!-- 17934032874542378976&#45;&#45;12814535974253499276 -->
-<g id="edge2" class="edge"><title>17934032874542378976&#45;&#45;12814535974253499276</title>
-<path fill="none" stroke="black" d="M120.057,-449.798C120.057,-436.31 120.057,-419.68 120.057,-405.099"/>
-<text text-anchor="start" x="120.057" y="-425.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
-<text text-anchor="start" x="95.0568" y="-407.699" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="95.0568" y="-443.398" font-family="Times,serif" font-size="8.00">1 out </text>
+<!-- 12503690172339614787 -->
+<g id="node3" class="node"><title>12503690172339614787</title>
+<polygon fill="none" stroke="black" points="408.711,-171 276.711,-171 276.711,-99 408.711,-99 408.711,-171"/>
+<text text-anchor="middle" x="342.711" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="342.711" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 3517897359100656353 -->
-<g id="node2" class="node"><title>3517897359100656353</title>
-<polygon fill="lightgrey" stroke="black" points="175.057,-162 119.057,-162 119.057,-108 175.057,-108 175.057,-162"/>
-<text text-anchor="middle" x="147.057" y="-132.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
+<!-- 12503690172339614787&#45;&#45;9252588002433557134 -->
+<g id="edge4" class="edge"><title>12503690172339614787&#45;&#45;9252588002433557134</title>
+<path fill="none" stroke="black" d="M314.313,-98.9979C302.473,-84.4044 288.957,-67.7451 277.995,-54.2331"/>
+<text text-anchor="start" x="299.711" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
+<text text-anchor="start" x="252.995" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="298.313" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 4989839990259774113 -->
-<g id="node3" class="node"><title>4989839990259774113</title>
-<polygon fill="none" stroke="black" points="422.057,-171 290.057,-171 290.057,-99 422.057,-99 422.057,-171"/>
-<text text-anchor="middle" x="356.057" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="356.057" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
+<!-- 11831037077513363981 -->
+<g id="node8" class="node"><title>11831037077513363981</title>
+<polygon fill="lightgrey" stroke="black" points="455.711,-54 399.711,-54 399.711,-0 455.711,-0 455.711,-54"/>
+<text text-anchor="middle" x="427.711" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 5097563005335195187 -->
-<g id="node5" class="node"><title>5097563005335195187</title>
-<polygon fill="lightgrey" stroke="black" points="298.057,-54 242.057,-54 242.057,-0 298.057,-0 298.057,-54"/>
-<text text-anchor="middle" x="270.057" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
+<!-- 12503690172339614787&#45;&#45;11831037077513363981 -->
+<g id="edge3" class="edge"><title>12503690172339614787&#45;&#45;11831037077513363981</title>
+<path fill="none" stroke="black" d="M370.779,-98.9979C382.481,-84.4044 395.84,-67.7451 406.675,-54.2331"/>
+<text text-anchor="start" x="389.711" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
+<text text-anchor="start" x="381.675" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="351.779" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 4989839990259774113&#45;&#45;5097563005335195187 -->
-<g id="edge5" class="edge"><title>4989839990259774113&#45;&#45;5097563005335195187</title>
-<path fill="none" stroke="black" d="M327.659,-98.9979C315.819,-84.4044 302.303,-67.7451 291.34,-54.2331"/>
-<text text-anchor="start" x="313.057" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
-<text text-anchor="start" x="266.34" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="308.659" y="-92.5979" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 460351395053583011 -->
+<g id="node4" class="node"><title>460351395053583011</title>
+<polygon fill="lightgrey" stroke="black" points="56.7111,-279 0.711099,-279 0.711099,-225 56.7111,-225 56.7111,-279"/>
+<text text-anchor="middle" x="28.7111" y="-249.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
 </g>
-<!-- 18013699239411042274 -->
-<g id="node7" class="node"><title>18013699239411042274</title>
-<polygon fill="lightgrey" stroke="black" points="469.057,-54 413.057,-54 413.057,-0 469.057,-0 469.057,-54"/>
-<text text-anchor="middle" x="441.057" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
+<!-- 13169612529842189353 -->
+<g id="node5" class="node"><title>13169612529842189353</title>
+<polygon fill="lightgrey" stroke="black" points="147.211,-504 66.2111,-504 66.2111,-450 147.211,-450 147.211,-504"/>
+<text text-anchor="middle" x="106.711" y="-474.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
 </g>
-<!-- 4989839990259774113&#45;&#45;18013699239411042274 -->
-<g id="edge3" class="edge"><title>4989839990259774113&#45;&#45;18013699239411042274</title>
-<path fill="none" stroke="black" d="M384.125,-98.9979C395.827,-84.4044 409.186,-67.7451 420.021,-54.2331"/>
-<text text-anchor="start" x="403.057" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
-<text text-anchor="start" x="395.021" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="368.125" y="-92.5979" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 14883606812878847433 -->
+<g id="node6" class="node"><title>14883606812878847433</title>
+<polygon fill="none" stroke="black" points="172.711,-405 40.7111,-405 40.7111,-333 172.711,-333 172.711,-405"/>
+<text text-anchor="middle" x="106.711" y="-371.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="106.711" y="-361.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_3</text>
 </g>
-<!-- 2212404871636621129 -->
-<g id="node4" class="node"><title>2212404871636621129</title>
-<polygon fill="lightgrey" stroke="black" points="57.0568,-279 1.05675,-279 1.05675,-225 57.0568,-225 57.0568,-279"/>
-<text text-anchor="middle" x="29.0568" y="-249.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
+<!-- 13169612529842189353&#45;&#45;14883606812878847433 -->
+<g id="edge2" class="edge"><title>13169612529842189353&#45;&#45;14883606812878847433</title>
+<path fill="none" stroke="black" d="M106.711,-449.798C106.711,-436.31 106.711,-419.68 106.711,-405.099"/>
+<text text-anchor="start" x="106.711" y="-425.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
+<text text-anchor="start" x="81.7111" y="-407.699" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="81.7111" y="-443.398" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 12814535974253499276&#45;&#45;2212404871636621129 -->
-<g id="edge7" class="edge"><title>12814535974253499276&#45;&#45;2212404871636621129</title>
-<path fill="none" stroke="black" d="M53.944,-338.524C45.2945,-331.978 37.5449,-324.186 32.0568,-315 25.7007,-304.361 24.4498,-290.769 25,-279.024"/>
-<text text-anchor="start" x="32.0568" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
-<text text-anchor="start" x="0" y="-281.624" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="37.944" y="-341.124" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 14883606812878847433&#45;&#45;460351395053583011 -->
+<g id="edge7" class="edge"><title>14883606812878847433&#45;&#45;460351395053583011</title>
+<path fill="none" stroke="black" d="M45.5766,-332.839C40.1264,-327.513 35.3167,-321.569 31.7111,-315 25.7999,-304.23 24.5585,-290.758 25,-279.125"/>
+<text text-anchor="start" x="31.7111" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
+<text text-anchor="start" x="0" y="-281.725" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="29.5766" y="-326.439" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 3824745787584766095 -->
-<g id="node8" class="node"><title>3824745787584766095</title>
-<polygon fill="none" stroke="black" points="304.057,-288 172.057,-288 172.057,-216 304.057,-216 304.057,-288"/>
-<text text-anchor="middle" x="238.057" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
-<text text-anchor="middle" x="238.057" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
+<!-- 17162136253512510793 -->
+<g id="node7" class="node"><title>17162136253512510793</title>
+<polygon fill="none" stroke="black" points="303.711,-288 171.711,-288 171.711,-216 303.711,-216 303.711,-288"/>
+<text text-anchor="middle" x="237.711" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
+<text text-anchor="middle" x="237.711" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_2</text>
 </g>
-<!-- 12814535974253499276&#45;&#45;3824745787584766095 -->
-<g id="edge4" class="edge"><title>12814535974253499276&#45;&#45;3824745787584766095</title>
-<path fill="none" stroke="black" d="M156.102,-332.871C170.606,-318.736 187.303,-302.463 201.826,-288.31"/>
-<text text-anchor="start" x="182.057" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">m1</text>
-<text text-anchor="start" x="176.826" y="-290.91" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="137.102" y="-326.471" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 14883606812878847433&#45;&#45;17162136253512510793 -->
+<g id="edge1" class="edge"><title>14883606812878847433&#45;&#45;17162136253512510793</title>
+<path fill="none" stroke="black" d="M146.727,-332.871C162.829,-318.736 181.366,-302.463 197.489,-288.31"/>
+<text text-anchor="start" x="176.711" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">m1</text>
+<text text-anchor="start" x="172.489" y="-290.91" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="127.727" y="-326.471" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 3824745787584766095&#45;&#45;3517897359100656353 -->
-<g id="edge6" class="edge"><title>3824745787584766095&#45;&#45;3517897359100656353</title>
-<path fill="none" stroke="black" d="M171.944,-221.524C163.294,-214.978 155.545,-207.186 150.057,-198 143.701,-187.361 142.45,-173.769 143,-162.024"/>
-<text text-anchor="start" x="150.057" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
-<text text-anchor="start" x="118" y="-164.624" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="155.944" y="-224.124" font-family="Times,serif" font-size="8.00">3 v </text>
+<!-- 17162136253512510793&#45;&#45;16101261736776997928 -->
+<g id="edge6" class="edge"><title>17162136253512510793&#45;&#45;16101261736776997928</title>
+<path fill="none" stroke="black" d="M171.698,-228.94C157.965,-221.284 145.126,-211.188 136.711,-198 130.045,-187.553 128.762,-173.98 129.372,-162.198"/>
+<text text-anchor="start" x="136.711" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
+<text text-anchor="start" x="104.372" y="-164.798" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="155.698" y="-231.54" font-family="Times,serif" font-size="8.00">3 v </text>
 </g>
-<!-- 3824745787584766095&#45;&#45;4989839990259774113 -->
-<g id="edge1" class="edge"><title>3824745787584766095&#45;&#45;4989839990259774113</title>
-<path fill="none" stroke="black" d="M274.102,-215.871C288.606,-201.736 305.303,-185.463 319.826,-171.31"/>
-<text text-anchor="start" x="300.057" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m2</text>
-<text text-anchor="start" x="294.826" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="255.102" y="-209.471" font-family="Times,serif" font-size="8.00">2 m </text>
+<!-- 17162136253512510793&#45;&#45;12503690172339614787 -->
+<g id="edge5" class="edge"><title>17162136253512510793&#45;&#45;12503690172339614787</title>
+<path fill="none" stroke="black" d="M269.785,-215.871C282.691,-201.736 297.549,-185.463 310.472,-171.31"/>
+<text text-anchor="start" x="292.711" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m2</text>
+<text text-anchor="start" x="285.472" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="250.785" y="-209.471" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
 </g>
 </svg>
@@ -736,93 +736,93 @@ draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 391)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-391 584,-391 584,4 -4,4"/>
-<!-- 10254214287380816256 -->
-<g id="node1" class="node"><title>10254214287380816256</title>
+<!-- 4688740332647768306 -->
+<g id="node1" class="node"><title>4688740332647768306</title>
+<polygon fill="lightgrey" stroke="black" points="56,-54 0,-54 0,-0 56,-0 56,-54"/>
+<text text-anchor="middle" x="28" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
+</g>
+<!-- 4764094698386713881 -->
+<g id="node2" class="node"><title>4764094698386713881</title>
 <polygon fill="none" stroke="black" points="340,-288 204,-288 204,-216 340,-216 340,-288"/>
 <text text-anchor="middle" x="272" y="-254.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="272" y="-244.8" font-family="Times,serif" font-size="9.00">gaussianmeanprecision_1</text>
 </g>
-<!-- 4010501022886983361 -->
-<g id="node3" class="node"><title>4010501022886983361</title>
+<!-- 934630885477579209 -->
+<g id="node4" class="node"><title>934630885477579209</title>
 <polygon fill="none" stroke="black" points="223,-171 151,-171 151,-99 223,-99 223,-171"/>
 <text text-anchor="middle" x="187" y="-137.8" font-family="Times,serif" font-size="9.00">Gam</text>
 <text text-anchor="middle" x="187" y="-127.8" font-family="Times,serif" font-size="9.00">gamma_1</text>
 </g>
-<!-- 10254214287380816256&#45;&#45;4010501022886983361 -->
-<g id="edge2" class="edge"><title>10254214287380816256&#45;&#45;4010501022886983361</title>
+<!-- 4764094698386713881&#45;&#45;934630885477579209 -->
+<g id="edge6" class="edge"><title>4764094698386713881&#45;&#45;934630885477579209</title>
 <path fill="none" stroke="black" d="M244.449,-215.804C239.914,-209.891 235.295,-203.795 231,-198 224.634,-189.411 217.892,-180.05 211.648,-171.265"/>
 <text text-anchor="start" x="231" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">w</text>
 <text text-anchor="start" x="186.648" y="-173.865" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="225.449" y="-209.404" font-family="Times,serif" font-size="8.00">3 w </text>
 </g>
-<!-- 17215260846172690264 -->
-<g id="node8" class="node"><title>17215260846172690264</title>
+<!-- 6098866976753770410 -->
+<g id="node6" class="node"><title>6098866976753770410</title>
 <polygon fill="none" stroke="black" points="470,-171 338,-171 338,-99 470,-99 470,-171"/>
 <text text-anchor="middle" x="404" y="-137.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="404" y="-127.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 10254214287380816256&#45;&#45;17215260846172690264 -->
-<g id="edge4" class="edge"><title>10254214287380816256&#45;&#45;17215260846172690264</title>
+<!-- 4764094698386713881&#45;&#45;6098866976753770410 -->
+<g id="edge2" class="edge"><title>4764094698386713881&#45;&#45;6098866976753770410</title>
 <path fill="none" stroke="black" d="M312.322,-215.871C328.547,-201.736 347.225,-185.463 363.47,-171.31"/>
 <text text-anchor="start" x="341" y="-191.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
 <text text-anchor="start" x="338.47" y="-173.91" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="293.322" y="-209.471" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 16254010736750153197 -->
-<g id="node2" class="node"><title>16254010736750153197</title>
-<polygon fill="lightgrey" stroke="black" points="56,-54 0,-54 0,-0 56,-0 56,-54"/>
-<text text-anchor="middle" x="28" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_4</text>
-</g>
-<!-- 4010501022886983361&#45;&#45;16254010736750153197 -->
-<g id="edge7" class="edge"><title>4010501022886983361&#45;&#45;16254010736750153197</title>
-<path fill="none" stroke="black" d="M150.92,-109.947C122.15,-90.7669 82.4365,-64.291 56.0229,-46.682"/>
-<text text-anchor="start" x="108" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
-<text text-anchor="start" x="56.0229" y="-49.282" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="133.92" y="-112.547" font-family="Times,serif" font-size="8.00">3 b </text>
-</g>
-<!-- 1371199738447939084 -->
-<g id="node5" class="node"><title>1371199738447939084</title>
-<polygon fill="lightgrey" stroke="black" points="227,-54 171,-54 171,-0 227,-0 227,-54"/>
-<text text-anchor="middle" x="199" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
-</g>
-<!-- 4010501022886983361&#45;&#45;1371199738447939084 -->
-<g id="edge5" class="edge"><title>4010501022886983361&#45;&#45;1371199738447939084</title>
-<path fill="none" stroke="black" d="M190.963,-98.9979C192.615,-84.4044 194.501,-67.7451 196.03,-54.2331"/>
-<text text-anchor="start" x="194" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
-<text text-anchor="start" x="171.03" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
-<text text-anchor="start" x="173.963" y="-92.5979" font-family="Times,serif" font-size="8.00">2 a </text>
-</g>
-<!-- 3143561257173601186 -->
-<g id="node4" class="node"><title>3143561257173601186</title>
+<!-- 14798418146773361581 -->
+<g id="node3" class="node"><title>14798418146773361581</title>
 <polygon fill="lightgrey" stroke="black" points="312.5,-387 231.5,-387 231.5,-333 312.5,-333 312.5,-387"/>
 <text text-anchor="middle" x="272" y="-357.8" font-family="Times,serif" font-size="9.00">placeholder_y</text>
 </g>
-<!-- 3143561257173601186&#45;&#45;10254214287380816256 -->
-<g id="edge6" class="edge"><title>3143561257173601186&#45;&#45;10254214287380816256</title>
+<!-- 14798418146773361581&#45;&#45;4764094698386713881 -->
+<g id="edge7" class="edge"><title>14798418146773361581&#45;&#45;4764094698386713881</title>
 <path fill="none" stroke="black" d="M272,-332.798C272,-319.31 272,-302.68 272,-288.099"/>
 <text text-anchor="start" x="272" y="-308.6" font-family="Times,serif" font-size="8.00" fill="red">y</text>
 <text text-anchor="start" x="247" y="-290.699" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="247" y="-326.398" font-family="Times,serif" font-size="8.00">1 out </text>
 </g>
-<!-- 4167498106160351293 -->
-<g id="node6" class="node"><title>4167498106160351293</title>
+<!-- 934630885477579209&#45;&#45;4688740332647768306 -->
+<g id="edge1" class="edge"><title>934630885477579209&#45;&#45;4688740332647768306</title>
+<path fill="none" stroke="black" d="M150.92,-109.947C122.15,-90.7669 82.4365,-64.291 56.0229,-46.682"/>
+<text text-anchor="start" x="108" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_4</text>
+<text text-anchor="start" x="56.0229" y="-49.282" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="133.92" y="-112.547" font-family="Times,serif" font-size="8.00">3 b </text>
+</g>
+<!-- 9294333248473207883 -->
+<g id="node5" class="node"><title>9294333248473207883</title>
+<polygon fill="lightgrey" stroke="black" points="227,-54 171,-54 171,-0 227,-0 227,-54"/>
+<text text-anchor="middle" x="199" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_3</text>
+</g>
+<!-- 934630885477579209&#45;&#45;9294333248473207883 -->
+<g id="edge4" class="edge"><title>934630885477579209&#45;&#45;9294333248473207883</title>
+<path fill="none" stroke="black" d="M190.963,-98.9979C192.615,-84.4044 194.501,-67.7451 196.03,-54.2331"/>
+<text text-anchor="start" x="194" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_3</text>
+<text text-anchor="start" x="171.03" y="-56.8331" font-family="Times,serif" font-size="8.00">1 out </text>
+<text text-anchor="start" x="173.963" y="-92.5979" font-family="Times,serif" font-size="8.00">2 a </text>
+</g>
+<!-- 7371259546997652208 -->
+<g id="node7" class="node"><title>7371259546997652208</title>
 <polygon fill="lightgrey" stroke="black" points="409,-54 353,-54 353,-0 409,-0 409,-54"/>
 <text text-anchor="middle" x="381" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_1</text>
 </g>
-<!-- 4772842440796812399 -->
-<g id="node7" class="node"><title>4772842440796812399</title>
-<polygon fill="lightgrey" stroke="black" points="580,-54 524,-54 524,-0 580,-0 580,-54"/>
-<text text-anchor="middle" x="552" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
-</g>
-<!-- 17215260846172690264&#45;&#45;4167498106160351293 -->
-<g id="edge1" class="edge"><title>17215260846172690264&#45;&#45;4167498106160351293</title>
+<!-- 6098866976753770410&#45;&#45;7371259546997652208 -->
+<g id="edge5" class="edge"><title>6098866976753770410&#45;&#45;7371259546997652208</title>
 <path fill="none" stroke="black" d="M380.103,-98.932C377.178,-93.1578 374.645,-87.0703 373,-81 370.664,-72.3776 371.204,-62.7688 372.793,-54.1261"/>
 <text text-anchor="start" x="373" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_1</text>
 <text text-anchor="start" x="347.793" y="-56.7261" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="361.103" y="-92.532" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 17215260846172690264&#45;&#45;4772842440796812399 -->
-<g id="edge3" class="edge"><title>17215260846172690264&#45;&#45;4772842440796812399</title>
+<!-- 17304370828153153956 -->
+<g id="node8" class="node"><title>17304370828153153956</title>
+<polygon fill="lightgrey" stroke="black" points="580,-54 524,-54 524,-0 580,-0 580,-54"/>
+<text text-anchor="middle" x="552" y="-24.8" font-family="Times,serif" font-size="9.00">clamp_2</text>
+</g>
+<!-- 6098866976753770410&#45;&#45;17304370828153153956 -->
+<g id="edge3" class="edge"><title>6098866976753770410&#45;&#45;17304370828153153956</title>
 <path fill="none" stroke="black" d="M452.871,-98.9979C476.446,-82.1129 503.883,-62.4623 523.907,-48.1209"/>
 <text text-anchor="start" x="486" y="-74.6" font-family="Times,serif" font-size="8.00" fill="red">clamp_2</text>
 <text text-anchor="start" x="498.907" y="-50.7209" font-family="Times,serif" font-size="8.00">1 out </text>
@@ -841,57 +841,57 @@ draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 289)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-289 293.254,-289 293.254,4 -4,4"/>
-<!-- 10254214287380816256 -->
-<g id="node1" class="node"><title>10254214287380816256</title>
+<!-- 4764094698386713881 -->
+<g id="node1" class="node"><title>4764094698386713881</title>
 <polygon fill="none" stroke="black" points="289.254,-237 153.254,-237 153.254,-165 289.254,-165 289.254,-237"/>
 <text text-anchor="middle" x="221.254" y="-203.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="221.254" y="-193.8" font-family="Times,serif" font-size="9.00">gaussianmeanprecision_1</text>
 </g>
-<!-- 17215260846172690264 -->
-<g id="node2" class="node"><title>17215260846172690264</title>
+<!-- 6098866976753770410 -->
+<g id="node2" class="node"><title>6098866976753770410</title>
 <polygon fill="none" stroke="black" points="147.254,-120 15.2536,-120 15.2536,-48 147.254,-48 147.254,-120"/>
 <text text-anchor="middle" x="81.2536" y="-86.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="81.2536" y="-76.8" font-family="Times,serif" font-size="9.00">gaussianmeanvariance_1</text>
 </g>
-<!-- 10254214287380816256&#45;&#45;17215260846172690264 -->
-<g id="edge1" class="edge"><title>10254214287380816256&#45;&#45;17215260846172690264</title>
+<!-- 4764094698386713881&#45;&#45;6098866976753770410 -->
+<g id="edge1" class="edge"><title>4764094698386713881&#45;&#45;6098866976753770410</title>
 <path fill="none" stroke="black" d="M178.488,-164.871C161.28,-150.736 141.47,-134.463 124.239,-120.31"/>
 <text text-anchor="start" x="156.254" y="-140.6" font-family="Times,serif" font-size="8.00" fill="red">m</text>
 <text text-anchor="start" x="99.2394" y="-122.91" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="159.488" y="-158.471" font-family="Times,serif" font-size="8.00">2 m </text>
 </g>
-<!-- 4010501022886983361 -->
-<g id="node3" class="node"><title>4010501022886983361</title>
+<!-- 934630885477579209 -->
+<g id="node4" class="node"><title>934630885477579209</title>
 </g>
-<!-- 10254214287380816256&#45;&#45;4010501022886983361 -->
-<g id="edge3" class="edge"><title>10254214287380816256&#45;&#45;4010501022886983361</title>
+<!-- 4764094698386713881&#45;&#45;934630885477579209 -->
+<g id="edge3" class="edge"><title>4764094698386713881&#45;&#45;934630885477579209</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M235.61,-164.871C246.733,-137.657 261.092,-102.522 266.277,-89.836"/>
 <text text-anchor="middle" x="255.277" y="-92.436" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="227.61" y="-158.471" font-family="Times,serif" font-size="8.00">3 w</text>
 </g>
-<!-- 4167498106160351293 -->
-<g id="node5" class="node"><title>4167498106160351293</title>
+<!-- 7371259546997652208 -->
+<g id="node5" class="node"><title>7371259546997652208</title>
 </g>
-<!-- 17215260846172690264&#45;&#45;4167498106160351293 -->
-<g id="edge2" class="edge"><title>17215260846172690264&#45;&#45;4167498106160351293</title>
+<!-- 6098866976753770410&#45;&#45;7371259546997652208 -->
+<g id="edge4" class="edge"><title>6098866976753770410&#45;&#45;7371259546997652208</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M52.335,-47.8846C40.4313,-33.4301 28.0326,-18.3746 22,-11.0492"/>
 <text text-anchor="middle" x="11" y="-13.6492" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="44.335" y="-41.4846" font-family="Times,serif" font-size="8.00">2 m</text>
 </g>
-<!-- 4772842440796812399 -->
-<g id="node6" class="node"><title>4772842440796812399</title>
+<!-- 17304370828153153956 -->
+<g id="node6" class="node"><title>17304370828153153956</title>
 </g>
-<!-- 17215260846172690264&#45;&#45;4772842440796812399 -->
-<g id="edge4" class="edge"><title>17215260846172690264&#45;&#45;4772842440796812399</title>
+<!-- 6098866976753770410&#45;&#45;17304370828153153956 -->
+<g id="edge2" class="edge"><title>6098866976753770410&#45;&#45;17304370828153153956</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M110.172,-47.8846C122.076,-33.4301 134.474,-18.3746 140.507,-11.0492"/>
 <text text-anchor="middle" x="129.507" y="-13.6492" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="103.672" y="-41.4846" font-family="Times,serif" font-size="8.00">3 v</text>
 </g>
-<!-- 3143561257173601186 -->
-<g id="node4" class="node"><title>3143561257173601186</title>
+<!-- 14798418146773361581 -->
+<g id="node3" class="node"><title>14798418146773361581</title>
 </g>
-<!-- 3143561257173601186&#45;&#45;10254214287380816256 -->
-<g id="edge5" class="edge"><title>3143561257173601186&#45;&#45;10254214287380816256</title>
+<!-- 14798418146773361581&#45;&#45;4764094698386713881 -->
+<g id="edge5" class="edge"><title>14798418146773361581&#45;&#45;4764094698386713881</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M221.254,-273.944C221.254,-266.61 221.254,-251.541 221.254,-237.081"/>
 <text text-anchor="middle" x="210.254" y="-239.681" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="210.254" y="-267.544" font-family="Times,serif" font-size="8.00">1 out</text>
@@ -909,57 +909,57 @@ draw(g)</code></pre><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 289)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-289 270.254,-289 270.254,4 -4,4"/>
-<!-- 10254214287380816256 -->
-<g id="node1" class="node"><title>10254214287380816256</title>
+<!-- 4764094698386713881 -->
+<g id="node1" class="node"><title>4764094698386713881</title>
 <polygon fill="none" stroke="black" points="266.254,-237 130.254,-237 130.254,-165 266.254,-165 266.254,-237"/>
 <text text-anchor="middle" x="198.254" y="-203.8" font-family="Times,serif" font-size="9.00">𝒩</text>
 <text text-anchor="middle" x="198.254" y="-193.8" font-family="Times,serif" font-size="9.00">gaussianmeanprecision_1</text>
 </g>
-<!-- 4010501022886983361 -->
-<g id="node2" class="node"><title>4010501022886983361</title>
+<!-- 934630885477579209 -->
+<g id="node2" class="node"><title>934630885477579209</title>
 <polygon fill="none" stroke="black" points="117.254,-120 45.2536,-120 45.2536,-48 117.254,-48 117.254,-120"/>
 <text text-anchor="middle" x="81.2536" y="-86.8" font-family="Times,serif" font-size="9.00">Gam</text>
 <text text-anchor="middle" x="81.2536" y="-76.8" font-family="Times,serif" font-size="9.00">gamma_1</text>
 </g>
-<!-- 10254214287380816256&#45;&#45;4010501022886983361 -->
-<g id="edge1" class="edge"><title>10254214287380816256&#45;&#45;4010501022886983361</title>
+<!-- 4764094698386713881&#45;&#45;934630885477579209 -->
+<g id="edge1" class="edge"><title>4764094698386713881&#45;&#45;934630885477579209</title>
 <path fill="none" stroke="black" d="M162.514,-164.871C148.133,-150.736 131.577,-134.463 117.177,-120.31"/>
 <text text-anchor="start" x="144.254" y="-140.6" font-family="Times,serif" font-size="8.00" fill="red">w</text>
 <text text-anchor="start" x="92.1775" y="-122.91" font-family="Times,serif" font-size="8.00">1 out </text>
 <text text-anchor="start" x="143.514" y="-158.471" font-family="Times,serif" font-size="8.00">3 w </text>
 </g>
-<!-- 17215260846172690264 -->
-<g id="node6" class="node"><title>17215260846172690264</title>
+<!-- 6098866976753770410 -->
+<g id="node6" class="node"><title>6098866976753770410</title>
 </g>
-<!-- 10254214287380816256&#45;&#45;17215260846172690264 -->
-<g id="edge2" class="edge"><title>10254214287380816256&#45;&#45;17215260846172690264</title>
+<!-- 4764094698386713881&#45;&#45;6098866976753770410 -->
+<g id="edge3" class="edge"><title>4764094698386713881&#45;&#45;6098866976753770410</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M210.472,-164.871C219.938,-137.657 232.159,-102.522 236.571,-89.836"/>
 <text text-anchor="middle" x="225.571" y="-92.436" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="202.472" y="-158.471" font-family="Times,serif" font-size="8.00">2 m</text>
 </g>
-<!-- 16254010736750153197 -->
-<g id="node3" class="node"><title>16254010736750153197</title>
+<!-- 4688740332647768306 -->
+<g id="node3" class="node"><title>4688740332647768306</title>
 </g>
-<!-- 4010501022886983361&#45;&#45;16254010736750153197 -->
-<g id="edge5" class="edge"><title>4010501022886983361&#45;&#45;16254010736750153197</title>
+<!-- 934630885477579209&#45;&#45;4688740332647768306 -->
+<g id="edge2" class="edge"><title>934630885477579209&#45;&#45;4688740332647768306</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M52.335,-47.8846C40.4313,-33.4301 28.0326,-18.3746 22,-11.0492"/>
 <text text-anchor="middle" x="11" y="-13.6492" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="45.335" y="-41.4846" font-family="Times,serif" font-size="8.00">3 b</text>
 </g>
-<!-- 1371199738447939084 -->
-<g id="node5" class="node"><title>1371199738447939084</title>
+<!-- 9294333248473207883 -->
+<g id="node5" class="node"><title>9294333248473207883</title>
 </g>
-<!-- 4010501022886983361&#45;&#45;1371199738447939084 -->
-<g id="edge3" class="edge"><title>4010501022886983361&#45;&#45;1371199738447939084</title>
+<!-- 934630885477579209&#45;&#45;9294333248473207883 -->
+<g id="edge4" class="edge"><title>934630885477579209&#45;&#45;9294333248473207883</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M110.172,-47.8846C122.076,-33.4301 134.474,-18.3746 140.507,-11.0492"/>
 <text text-anchor="middle" x="129.507" y="-13.6492" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="103.172" y="-41.4846" font-family="Times,serif" font-size="8.00">2 a</text>
 </g>
-<!-- 3143561257173601186 -->
-<g id="node4" class="node"><title>3143561257173601186</title>
+<!-- 14798418146773361581 -->
+<g id="node4" class="node"><title>14798418146773361581</title>
 </g>
-<!-- 3143561257173601186&#45;&#45;10254214287380816256 -->
-<g id="edge4" class="edge"><title>3143561257173601186&#45;&#45;10254214287380816256</title>
+<!-- 14798418146773361581&#45;&#45;4764094698386713881 -->
+<g id="edge5" class="edge"><title>14798418146773361581&#45;&#45;4764094698386713881</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M198.254,-273.944C198.254,-266.61 198.254,-251.541 198.254,-237.081"/>
 <text text-anchor="middle" x="187.254" y="-239.681" font-family="Times,serif" font-size="8.00">1 out</text>
 <text text-anchor="middle" x="187.254" y="-267.544" font-family="Times,serif" font-size="8.00">1 out</text>
@@ -1053,93 +1053,93 @@ marginals = step!(data) # Run the algorithm
 plot(-10:0.01:10, normal(mean(marginals[:x]), var(marginals[:x])), fillalpha=0.3, fillrange = 0)</code></pre><?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="400" viewBox="0 0 2400 1600">
 <defs>
-  <clipPath id="clip200">
+  <clipPath id="clip590">
     <rect x="0" y="0" width="2400" height="1600"/>
   </clipPath>
 </defs>
-<path clip-path="url(#clip200)" d="
+<path clip-path="url(#clip590)" d="
 M0 1600 L2400 1600 L2400 0 L0 0  Z
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip201">
+  <clipPath id="clip591">
     <rect x="480" y="0" width="1681" height="1600"/>
   </clipPath>
 </defs>
-<path clip-path="url(#clip200)" d="
+<path clip-path="url(#clip590)" d="
 M147.848 1486.45 L2352.76 1486.45 L2352.76 47.2441 L147.848 47.2441  Z
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip202">
+  <clipPath id="clip592">
     <rect x="147" y="47" width="2206" height="1440"/>
   </clipPath>
 </defs>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   210.251,1486.45 210.251,47.2441 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   730.277,1486.45 730.277,47.2441 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1250.3,1486.45 1250.3,47.2441 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1770.33,1486.45 1770.33,47.2441 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   2290.35,1486.45 2290.35,47.2441 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   147.848,1486.45 2352.76,1486.45 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   210.251,1486.45 210.251,1469.18 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   730.277,1486.45 730.277,1469.18 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1250.3,1486.45 1250.3,1469.18 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1770.33,1486.45 1770.33,1469.18 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   2290.35,1486.45 2290.35,1469.18 
   "/>
-<path clip-path="url(#clip200)" d="M 0 0 M169.013 1530.29 L198.689 1530.29 L198.689 1534.23 L169.013 1534.23 L169.013 1530.29 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M204.568 1543.18 L212.207 1543.18 L212.207 1516.82 L203.897 1518.49 L203.897 1514.23 L212.161 1512.56 L216.837 1512.56 L216.837 1543.18 L224.476 1543.18 L224.476 1547.12 L204.568 1547.12 L204.568 1543.18 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M239.545 1515.64 Q235.934 1515.64 234.105 1519.2 Q232.3 1522.75 232.3 1529.87 Q232.3 1536.98 234.105 1540.55 Q235.934 1544.09 239.545 1544.09 Q243.179 1544.09 244.985 1540.55 Q246.814 1536.98 246.814 1529.87 Q246.814 1522.75 244.985 1519.2 Q243.179 1515.64 239.545 1515.64 M239.545 1511.93 Q245.355 1511.93 248.411 1516.54 Q251.49 1521.12 251.49 1529.87 Q251.49 1538.6 248.411 1543.21 Q245.355 1547.79 239.545 1547.79 Q233.735 1547.79 230.656 1543.21 Q227.601 1538.6 227.601 1529.87 Q227.601 1521.12 230.656 1516.54 Q233.735 1511.93 239.545 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M702.43 1530.29 L732.105 1530.29 L732.105 1534.23 L702.43 1534.23 L702.43 1530.29 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M737.221 1512.56 L755.578 1512.56 L755.578 1516.5 L741.504 1516.5 L741.504 1524.97 Q742.522 1524.62 743.541 1524.46 Q744.559 1524.27 745.578 1524.27 Q751.365 1524.27 754.744 1527.44 Q758.124 1530.62 758.124 1536.03 Q758.124 1541.61 754.652 1544.71 Q751.179 1547.79 744.86 1547.79 Q742.684 1547.79 740.416 1547.42 Q738.17 1547.05 735.763 1546.31 L735.763 1541.61 Q737.846 1542.74 740.068 1543.3 Q742.291 1543.86 744.767 1543.86 Q748.772 1543.86 751.11 1541.75 Q753.448 1539.64 753.448 1536.03 Q753.448 1532.42 751.11 1530.31 Q748.772 1528.21 744.767 1528.21 Q742.892 1528.21 741.017 1528.62 Q739.166 1529.04 737.221 1529.92 L737.221 1512.56 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M1250.3 1515.64 Q1246.69 1515.64 1244.86 1519.2 Q1243.06 1522.75 1243.06 1529.87 Q1243.06 1536.98 1244.86 1540.55 Q1246.69 1544.09 1250.3 1544.09 Q1253.94 1544.09 1255.74 1540.55 Q1257.57 1536.98 1257.57 1529.87 Q1257.57 1522.75 1255.74 1519.2 Q1253.94 1515.64 1250.3 1515.64 M1250.3 1511.93 Q1256.11 1511.93 1259.17 1516.54 Q1262.25 1521.12 1262.25 1529.87 Q1262.25 1538.6 1259.17 1543.21 Q1256.11 1547.79 1250.3 1547.79 Q1244.49 1547.79 1241.41 1543.21 Q1238.36 1538.6 1238.36 1529.87 Q1238.36 1521.12 1241.41 1516.54 Q1244.49 1511.93 1250.3 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M1760.61 1512.56 L1778.96 1512.56 L1778.96 1516.5 L1764.89 1516.5 L1764.89 1524.97 Q1765.91 1524.62 1766.92 1524.46 Q1767.94 1524.27 1768.96 1524.27 Q1774.75 1524.27 1778.13 1527.44 Q1781.51 1530.62 1781.51 1536.03 Q1781.51 1541.61 1778.04 1544.71 Q1774.56 1547.79 1768.24 1547.79 Q1766.07 1547.79 1763.8 1547.42 Q1761.55 1547.05 1759.15 1546.31 L1759.15 1541.61 Q1761.23 1542.74 1763.45 1543.3 Q1765.67 1543.86 1768.15 1543.86 Q1772.16 1543.86 1774.49 1541.75 Q1776.83 1539.64 1776.83 1536.03 Q1776.83 1532.42 1774.49 1530.31 Q1772.16 1528.21 1768.15 1528.21 Q1766.28 1528.21 1764.4 1528.62 Q1762.55 1529.04 1760.61 1529.92 L1760.61 1512.56 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M2267.23 1543.18 L2274.87 1543.18 L2274.87 1516.82 L2266.56 1518.49 L2266.56 1514.23 L2274.82 1512.56 L2279.5 1512.56 L2279.5 1543.18 L2287.14 1543.18 L2287.14 1547.12 L2267.23 1547.12 L2267.23 1543.18 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M2302.2 1515.64 Q2298.59 1515.64 2296.76 1519.2 Q2294.96 1522.75 2294.96 1529.87 Q2294.96 1536.98 2296.76 1540.55 Q2298.59 1544.09 2302.2 1544.09 Q2305.84 1544.09 2307.64 1540.55 Q2309.47 1536.98 2309.47 1529.87 Q2309.47 1522.75 2307.64 1519.2 Q2305.84 1515.64 2302.2 1515.64 M2302.2 1511.93 Q2308.01 1511.93 2311.07 1516.54 Q2314.15 1521.12 2314.15 1529.87 Q2314.15 1538.6 2311.07 1543.21 Q2308.01 1547.79 2302.2 1547.79 Q2296.39 1547.79 2293.32 1543.21 Q2290.26 1538.6 2290.26 1529.87 Q2290.26 1521.12 2293.32 1516.54 Q2296.39 1511.93 2302.2 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<path clip-path="url(#clip590)" d="M 0 0 M169.013 1530.29 L198.689 1530.29 L198.689 1534.23 L169.013 1534.23 L169.013 1530.29 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M204.568 1543.18 L212.207 1543.18 L212.207 1516.82 L203.897 1518.49 L203.897 1514.23 L212.161 1512.56 L216.837 1512.56 L216.837 1543.18 L224.476 1543.18 L224.476 1547.12 L204.568 1547.12 L204.568 1543.18 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M239.545 1515.64 Q235.934 1515.64 234.105 1519.2 Q232.3 1522.75 232.3 1529.87 Q232.3 1536.98 234.105 1540.55 Q235.934 1544.09 239.545 1544.09 Q243.179 1544.09 244.985 1540.55 Q246.814 1536.98 246.814 1529.87 Q246.814 1522.75 244.985 1519.2 Q243.179 1515.64 239.545 1515.64 M239.545 1511.93 Q245.355 1511.93 248.411 1516.54 Q251.49 1521.12 251.49 1529.87 Q251.49 1538.6 248.411 1543.21 Q245.355 1547.79 239.545 1547.79 Q233.735 1547.79 230.656 1543.21 Q227.601 1538.6 227.601 1529.87 Q227.601 1521.12 230.656 1516.54 Q233.735 1511.93 239.545 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M702.43 1530.29 L732.105 1530.29 L732.105 1534.23 L702.43 1534.23 L702.43 1530.29 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M737.221 1512.56 L755.578 1512.56 L755.578 1516.5 L741.504 1516.5 L741.504 1524.97 Q742.522 1524.62 743.541 1524.46 Q744.559 1524.27 745.578 1524.27 Q751.365 1524.27 754.744 1527.44 Q758.124 1530.62 758.124 1536.03 Q758.124 1541.61 754.652 1544.71 Q751.179 1547.79 744.86 1547.79 Q742.684 1547.79 740.416 1547.42 Q738.17 1547.05 735.763 1546.31 L735.763 1541.61 Q737.846 1542.74 740.068 1543.3 Q742.291 1543.86 744.767 1543.86 Q748.772 1543.86 751.11 1541.75 Q753.448 1539.64 753.448 1536.03 Q753.448 1532.42 751.11 1530.31 Q748.772 1528.21 744.767 1528.21 Q742.892 1528.21 741.017 1528.62 Q739.166 1529.04 737.221 1529.92 L737.221 1512.56 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M1250.3 1515.64 Q1246.69 1515.64 1244.86 1519.2 Q1243.06 1522.75 1243.06 1529.87 Q1243.06 1536.98 1244.86 1540.55 Q1246.69 1544.09 1250.3 1544.09 Q1253.94 1544.09 1255.74 1540.55 Q1257.57 1536.98 1257.57 1529.87 Q1257.57 1522.75 1255.74 1519.2 Q1253.94 1515.64 1250.3 1515.64 M1250.3 1511.93 Q1256.11 1511.93 1259.17 1516.54 Q1262.25 1521.12 1262.25 1529.87 Q1262.25 1538.6 1259.17 1543.21 Q1256.11 1547.79 1250.3 1547.79 Q1244.49 1547.79 1241.41 1543.21 Q1238.36 1538.6 1238.36 1529.87 Q1238.36 1521.12 1241.41 1516.54 Q1244.49 1511.93 1250.3 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M1760.61 1512.56 L1778.96 1512.56 L1778.96 1516.5 L1764.89 1516.5 L1764.89 1524.97 Q1765.91 1524.62 1766.92 1524.46 Q1767.94 1524.27 1768.96 1524.27 Q1774.75 1524.27 1778.13 1527.44 Q1781.51 1530.62 1781.51 1536.03 Q1781.51 1541.61 1778.04 1544.71 Q1774.56 1547.79 1768.24 1547.79 Q1766.07 1547.79 1763.8 1547.42 Q1761.55 1547.05 1759.15 1546.31 L1759.15 1541.61 Q1761.23 1542.74 1763.45 1543.3 Q1765.67 1543.86 1768.15 1543.86 Q1772.16 1543.86 1774.49 1541.75 Q1776.83 1539.64 1776.83 1536.03 Q1776.83 1532.42 1774.49 1530.31 Q1772.16 1528.21 1768.15 1528.21 Q1766.28 1528.21 1764.4 1528.62 Q1762.55 1529.04 1760.61 1529.92 L1760.61 1512.56 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M2267.23 1543.18 L2274.87 1543.18 L2274.87 1516.82 L2266.56 1518.49 L2266.56 1514.23 L2274.82 1512.56 L2279.5 1512.56 L2279.5 1543.18 L2287.14 1543.18 L2287.14 1547.12 L2267.23 1547.12 L2267.23 1543.18 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M2302.2 1515.64 Q2298.59 1515.64 2296.76 1519.2 Q2294.96 1522.75 2294.96 1529.87 Q2294.96 1536.98 2296.76 1540.55 Q2298.59 1544.09 2302.2 1544.09 Q2305.84 1544.09 2307.64 1540.55 Q2309.47 1536.98 2309.47 1529.87 Q2309.47 1522.75 2307.64 1519.2 Q2305.84 1515.64 2302.2 1515.64 M2302.2 1511.93 Q2308.01 1511.93 2311.07 1516.54 Q2314.15 1521.12 2314.15 1529.87 Q2314.15 1538.6 2311.07 1543.21 Q2308.01 1547.79 2302.2 1547.79 Q2296.39 1547.79 2293.32 1543.21 Q2290.26 1538.6 2290.26 1529.87 Q2290.26 1521.12 2293.32 1516.54 Q2296.39 1511.93 2302.2 1511.93 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   147.848,1445.72 2352.76,1445.72 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
-  147.848,1140.06 2352.76,1140.06 
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  147.848,1140.07 2352.76,1140.07 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
-  147.848,834.402 2352.76,834.402 
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  147.848,834.416 2352.76,834.416 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
-  147.848,528.745 2352.76,528.745 
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  147.848,528.766 2352.76,528.766 
   "/>
-<polyline clip-path="url(#clip202)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
-  147.848,223.088 2352.76,223.088 
+<polyline clip-path="url(#clip592)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  147.848,223.116 2352.76,223.116 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   147.848,1486.45 147.848,47.2441 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   147.848,1445.72 174.307,1445.72 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
-  147.848,1140.06 174.307,1140.06 
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+  147.848,1140.07 174.307,1140.07 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
-  147.848,834.402 174.307,834.402 
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+  147.848,834.416 174.307,834.416 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
-  147.848,528.745 174.307,528.745 
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+  147.848,528.766 174.307,528.766 
   "/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
-  147.848,223.088 174.307,223.088 
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+  147.848,223.116 174.307,223.116 
   "/>
-<path clip-path="url(#clip200)" d="M 0 0 M62.9365 1431.51 Q59.3254 1431.51 57.4967 1435.08 Q55.6912 1438.62 55.6912 1445.75 Q55.6912 1452.86 57.4967 1456.42 Q59.3254 1459.96 62.9365 1459.96 Q66.5707 1459.96 68.3763 1456.42 Q70.205 1452.86 70.205 1445.75 Q70.205 1438.62 68.3763 1435.08 Q66.5707 1431.51 62.9365 1431.51 M62.9365 1427.81 Q68.7467 1427.81 71.8022 1432.42 Q74.8809 1437 74.8809 1445.75 Q74.8809 1454.48 71.8022 1459.08 Q68.7467 1463.67 62.9365 1463.67 Q57.1264 1463.67 54.0477 1459.08 Q50.9921 1454.48 50.9921 1445.75 Q50.9921 1437 54.0477 1432.42 Q57.1264 1427.81 62.9365 1427.81 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M79.9503 1457.12 L84.8345 1457.12 L84.8345 1463 L79.9503 1463 L79.9503 1457.12 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M99.9039 1431.51 Q96.2928 1431.51 94.4641 1435.08 Q92.6586 1438.62 92.6586 1445.75 Q92.6586 1452.86 94.4641 1456.42 Q96.2928 1459.96 99.9039 1459.96 Q103.538 1459.96 105.344 1456.42 Q107.172 1452.86 107.172 1445.75 Q107.172 1438.62 105.344 1435.08 Q103.538 1431.51 99.9039 1431.51 M99.9039 1427.81 Q105.714 1427.81 108.77 1432.42 Q111.848 1437 111.848 1445.75 Q111.848 1454.48 108.77 1459.08 Q105.714 1463.67 99.9039 1463.67 Q94.0937 1463.67 91.0151 1459.08 Q87.9595 1454.48 87.9595 1445.75 Q87.9595 1437 91.0151 1432.42 Q94.0937 1427.81 99.9039 1427.81 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M63.9319 1125.86 Q60.3208 1125.86 58.4921 1129.42 Q56.6865 1132.96 56.6865 1140.09 Q56.6865 1147.2 58.4921 1150.76 Q60.3208 1154.31 63.9319 1154.31 Q67.5661 1154.31 69.3717 1150.76 Q71.2004 1147.2 71.2004 1140.09 Q71.2004 1132.96 69.3717 1129.42 Q67.5661 1125.86 63.9319 1125.86 M63.9319 1122.15 Q69.742 1122.15 72.7976 1126.76 Q75.8763 1131.34 75.8763 1140.09 Q75.8763 1148.82 72.7976 1153.43 Q69.742 1158.01 63.9319 1158.01 Q58.1217 1158.01 55.043 1153.43 Q51.9875 1148.82 51.9875 1140.09 Q51.9875 1131.34 55.043 1126.76 Q58.1217 1122.15 63.9319 1122.15 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M80.9457 1151.46 L85.8299 1151.46 L85.8299 1157.34 L80.9457 1157.34 L80.9457 1151.46 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M90.9456 1122.78 L109.302 1122.78 L109.302 1126.71 L95.228 1126.71 L95.228 1135.19 Q96.2465 1134.84 97.265 1134.68 Q98.2835 1134.49 99.3021 1134.49 Q105.089 1134.49 108.469 1137.66 Q111.848 1140.83 111.848 1146.25 Q111.848 1151.83 108.376 1154.93 Q104.904 1158.01 98.5845 1158.01 Q96.4085 1158.01 94.14 1157.64 Q91.8947 1157.27 89.4873 1156.53 L89.4873 1151.83 Q91.5706 1152.96 93.7928 1153.52 Q96.015 1154.07 98.4919 1154.07 Q102.496 1154.07 104.834 1151.97 Q107.172 1149.86 107.172 1146.25 Q107.172 1142.64 104.834 1140.53 Q102.496 1138.43 98.4919 1138.43 Q96.6169 1138.43 94.7419 1138.84 Q92.89 1139.26 90.9456 1140.14 L90.9456 1122.78 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M54.9736 847.747 L62.6124 847.747 L62.6124 821.381 L54.3023 823.048 L54.3023 818.789 L62.5661 817.122 L67.242 817.122 L67.242 847.747 L74.8809 847.747 L74.8809 851.682 L54.9736 851.682 L54.9736 847.747 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M79.9503 845.802 L84.8345 845.802 L84.8345 851.682 L79.9503 851.682 L79.9503 845.802 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M99.9039 820.201 Q96.2928 820.201 94.4641 823.765 Q92.6586 827.307 92.6586 834.437 Q92.6586 841.543 94.4641 845.108 Q96.2928 848.65 99.9039 848.65 Q103.538 848.65 105.344 845.108 Q107.172 841.543 107.172 834.437 Q107.172 827.307 105.344 823.765 Q103.538 820.201 99.9039 820.201 M99.9039 816.497 Q105.714 816.497 108.77 821.103 Q111.848 825.687 111.848 834.437 Q111.848 843.164 108.77 847.77 Q105.714 852.353 99.9039 852.353 Q94.0937 852.353 91.0151 847.77 Q87.9595 843.164 87.9595 834.437 Q87.9595 825.687 91.0151 821.103 Q94.0937 816.497 99.9039 816.497 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M55.969 542.09 L63.6078 542.09 L63.6078 515.724 L55.2977 517.391 L55.2977 513.132 L63.5615 511.465 L68.2374 511.465 L68.2374 542.09 L75.8763 542.09 L75.8763 546.025 L55.969 546.025 L55.969 542.09 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M80.9457 540.146 L85.8299 540.146 L85.8299 546.025 L80.9457 546.025 L80.9457 540.146 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M90.9456 511.465 L109.302 511.465 L109.302 515.4 L95.228 515.4 L95.228 523.872 Q96.2465 523.525 97.265 523.363 Q98.2835 523.178 99.3021 523.178 Q105.089 523.178 108.469 526.349 Q111.848 529.521 111.848 534.937 Q111.848 540.516 108.376 543.618 Q104.904 546.696 98.5845 546.696 Q96.4085 546.696 94.14 546.326 Q91.8947 545.956 89.4873 545.215 L89.4873 540.516 Q91.5706 541.65 93.7928 542.206 Q96.015 542.761 98.4919 542.761 Q102.496 542.761 104.834 540.655 Q107.172 538.548 107.172 534.937 Q107.172 531.326 104.834 529.22 Q102.496 527.113 98.4919 527.113 Q96.6169 527.113 94.7419 527.53 Q92.89 527.947 90.9456 528.826 L90.9456 511.465 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M58.5615 236.433 L74.8809 236.433 L74.8809 240.368 L52.9366 240.368 L52.9366 236.433 Q55.5986 233.679 60.1819 229.049 Q64.7883 224.396 65.9689 223.054 Q68.2143 220.53 69.0939 218.794 Q69.9967 217.035 69.9967 215.345 Q69.9967 212.591 68.0522 210.855 Q66.1309 209.118 63.0291 209.118 Q60.83 209.118 58.3763 209.882 Q55.9458 210.646 53.168 212.197 L53.168 207.475 Q55.9921 206.341 58.4458 205.762 Q60.8995 205.183 62.9365 205.183 Q68.3068 205.183 71.5013 207.868 Q74.6957 210.554 74.6957 215.044 Q74.6957 217.174 73.8855 219.095 Q73.0985 220.993 70.992 223.586 Q70.4133 224.257 67.3115 227.475 Q64.2096 230.669 58.5615 236.433 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M79.9503 234.489 L84.8345 234.489 L84.8345 240.368 L79.9503 240.368 L79.9503 234.489 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M99.9039 208.887 Q96.2928 208.887 94.4641 212.452 Q92.6586 215.993 92.6586 223.123 Q92.6586 230.229 94.4641 233.794 Q96.2928 237.336 99.9039 237.336 Q103.538 237.336 105.344 233.794 Q107.172 230.229 107.172 223.123 Q107.172 215.993 105.344 212.452 Q103.538 208.887 99.9039 208.887 M99.9039 205.183 Q105.714 205.183 108.77 209.79 Q111.848 214.373 111.848 223.123 Q111.848 231.85 108.77 236.456 Q105.714 241.04 99.9039 241.04 Q94.0937 241.04 91.0151 236.456 Q87.9595 231.85 87.9595 223.123 Q87.9595 214.373 91.0151 209.79 Q94.0937 205.183 99.9039 205.183 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip202)" d="
+<path clip-path="url(#clip590)" d="M 0 0 M62.9365 1431.51 Q59.3254 1431.51 57.4967 1435.08 Q55.6912 1438.62 55.6912 1445.75 Q55.6912 1452.86 57.4967 1456.42 Q59.3254 1459.96 62.9365 1459.96 Q66.5707 1459.96 68.3763 1456.42 Q70.205 1452.86 70.205 1445.75 Q70.205 1438.62 68.3763 1435.08 Q66.5707 1431.51 62.9365 1431.51 M62.9365 1427.81 Q68.7467 1427.81 71.8022 1432.42 Q74.8809 1437 74.8809 1445.75 Q74.8809 1454.48 71.8022 1459.08 Q68.7467 1463.67 62.9365 1463.67 Q57.1264 1463.67 54.0477 1459.08 Q50.9921 1454.48 50.9921 1445.75 Q50.9921 1437 54.0477 1432.42 Q57.1264 1427.81 62.9365 1427.81 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M79.9503 1457.12 L84.8345 1457.12 L84.8345 1463 L79.9503 1463 L79.9503 1457.12 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M99.9039 1431.51 Q96.2928 1431.51 94.4641 1435.08 Q92.6586 1438.62 92.6586 1445.75 Q92.6586 1452.86 94.4641 1456.42 Q96.2928 1459.96 99.9039 1459.96 Q103.538 1459.96 105.344 1456.42 Q107.172 1452.86 107.172 1445.75 Q107.172 1438.62 105.344 1435.08 Q103.538 1431.51 99.9039 1431.51 M99.9039 1427.81 Q105.714 1427.81 108.77 1432.42 Q111.848 1437 111.848 1445.75 Q111.848 1454.48 108.77 1459.08 Q105.714 1463.67 99.9039 1463.67 Q94.0937 1463.67 91.0151 1459.08 Q87.9595 1454.48 87.9595 1445.75 Q87.9595 1437 91.0151 1432.42 Q94.0937 1427.81 99.9039 1427.81 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M63.9319 1125.86 Q60.3208 1125.86 58.4921 1129.43 Q56.6865 1132.97 56.6865 1140.1 Q56.6865 1147.21 58.4921 1150.77 Q60.3208 1154.31 63.9319 1154.31 Q67.5661 1154.31 69.3717 1150.77 Q71.2004 1147.21 71.2004 1140.1 Q71.2004 1132.97 69.3717 1129.43 Q67.5661 1125.86 63.9319 1125.86 M63.9319 1122.16 Q69.742 1122.16 72.7976 1126.77 Q75.8763 1131.35 75.8763 1140.1 Q75.8763 1148.83 72.7976 1153.43 Q69.742 1158.02 63.9319 1158.02 Q58.1217 1158.02 55.043 1153.43 Q51.9875 1148.83 51.9875 1140.1 Q51.9875 1131.35 55.043 1126.77 Q58.1217 1122.16 63.9319 1122.16 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M80.9457 1151.47 L85.8299 1151.47 L85.8299 1157.35 L80.9457 1157.35 L80.9457 1151.47 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M90.9456 1122.79 L109.302 1122.79 L109.302 1126.72 L95.228 1126.72 L95.228 1135.19 Q96.2465 1134.85 97.265 1134.68 Q98.2835 1134.5 99.3021 1134.5 Q105.089 1134.5 108.469 1137.67 Q111.848 1140.84 111.848 1146.26 Q111.848 1151.84 108.376 1154.94 Q104.904 1158.02 98.5845 1158.02 Q96.4085 1158.02 94.14 1157.65 Q91.8947 1157.28 89.4873 1156.54 L89.4873 1151.84 Q91.5706 1152.97 93.7928 1153.53 Q96.015 1154.08 98.4919 1154.08 Q102.496 1154.08 104.834 1151.98 Q107.172 1149.87 107.172 1146.26 Q107.172 1142.65 104.834 1140.54 Q102.496 1138.43 98.4919 1138.43 Q96.6169 1138.43 94.7419 1138.85 Q92.89 1139.27 90.9456 1140.15 L90.9456 1122.79 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M54.9736 847.761 L62.6124 847.761 L62.6124 821.395 L54.3023 823.062 L54.3023 818.803 L62.5661 817.136 L67.242 817.136 L67.242 847.761 L74.8809 847.761 L74.8809 851.696 L54.9736 851.696 L54.9736 847.761 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M79.9503 845.816 L84.8345 845.816 L84.8345 851.696 L79.9503 851.696 L79.9503 845.816 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M99.9039 820.215 Q96.2928 820.215 94.4641 823.779 Q92.6586 827.321 92.6586 834.451 Q92.6586 841.557 94.4641 845.122 Q96.2928 848.663 99.9039 848.663 Q103.538 848.663 105.344 845.122 Q107.172 841.557 107.172 834.451 Q107.172 827.321 105.344 823.779 Q103.538 820.215 99.9039 820.215 M99.9039 816.511 Q105.714 816.511 108.77 821.117 Q111.848 825.701 111.848 834.451 Q111.848 843.177 108.77 847.784 Q105.714 852.367 99.9039 852.367 Q94.0937 852.367 91.0151 847.784 Q87.9595 843.177 87.9595 834.451 Q87.9595 825.701 91.0151 821.117 Q94.0937 816.511 99.9039 816.511 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M55.969 542.111 L63.6078 542.111 L63.6078 515.745 L55.2977 517.412 L55.2977 513.153 L63.5615 511.486 L68.2374 511.486 L68.2374 542.111 L75.8763 542.111 L75.8763 546.046 L55.969 546.046 L55.969 542.111 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M80.9457 540.166 L85.8299 540.166 L85.8299 546.046 L80.9457 546.046 L80.9457 540.166 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M90.9456 511.486 L109.302 511.486 L109.302 515.421 L95.228 515.421 L95.228 523.893 Q96.2465 523.546 97.265 523.384 Q98.2835 523.199 99.3021 523.199 Q105.089 523.199 108.469 526.37 Q111.848 529.541 111.848 534.958 Q111.848 540.537 108.376 543.639 Q104.904 546.717 98.5845 546.717 Q96.4085 546.717 94.14 546.347 Q91.8947 545.977 89.4873 545.236 L89.4873 540.537 Q91.5706 541.671 93.7928 542.227 Q96.015 542.782 98.4919 542.782 Q102.496 542.782 104.834 540.676 Q107.172 538.569 107.172 534.958 Q107.172 531.347 104.834 529.241 Q102.496 527.134 98.4919 527.134 Q96.6169 527.134 94.7419 527.551 Q92.89 527.967 90.9456 528.847 L90.9456 511.486 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M58.5615 236.461 L74.8809 236.461 L74.8809 240.396 L52.9366 240.396 L52.9366 236.461 Q55.5986 233.706 60.1819 229.077 Q64.7883 224.424 65.9689 223.081 Q68.2143 220.558 69.0939 218.822 Q69.9967 217.063 69.9967 215.373 Q69.9967 212.618 68.0522 210.882 Q66.1309 209.146 63.0291 209.146 Q60.83 209.146 58.3763 209.91 Q55.9458 210.674 53.168 212.225 L53.168 207.503 Q55.9921 206.368 58.4458 205.79 Q60.8995 205.211 62.9365 205.211 Q68.3068 205.211 71.5013 207.896 Q74.6957 210.581 74.6957 215.072 Q74.6957 217.202 73.8855 219.123 Q73.0985 221.021 70.992 223.614 Q70.4133 224.285 67.3115 227.503 Q64.2096 230.697 58.5615 236.461 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M79.9503 234.516 L84.8345 234.516 L84.8345 240.396 L79.9503 240.396 L79.9503 234.516 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M99.9039 208.915 Q96.2928 208.915 94.4641 212.48 Q92.6586 216.021 92.6586 223.151 Q92.6586 230.257 94.4641 233.822 Q96.2928 237.364 99.9039 237.364 Q103.538 237.364 105.344 233.822 Q107.172 230.257 107.172 223.151 Q107.172 216.021 105.344 212.48 Q103.538 208.915 99.9039 208.915 M99.9039 205.211 Q105.714 205.211 108.77 209.818 Q111.848 214.401 111.848 223.151 Q111.848 231.878 108.77 236.484 Q105.714 241.067 99.9039 241.067 Q94.0937 241.067 91.0151 236.484 Q87.9595 231.878 87.9595 223.151 Q87.9595 214.401 91.0151 209.818 Q94.0937 205.211 99.9039 205.211 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip592)" d="
 M210.251 1445.72 L211.291 1445.72 L212.331 1445.72 L213.371 1445.72 L214.412 1445.72 L215.452 1445.72 L216.492 1445.72 L217.532 1445.72 L218.572 1445.72 L219.612 1445.72 
   L220.652 1445.72 L221.692 1445.72 L222.732 1445.72 L223.772 1445.72 L224.812 1445.72 L225.852 1445.72 L226.892 1445.72 L227.932 1445.72 L228.972 1445.72 L230.012 1445.72 
   L231.052 1445.72 L232.092 1445.72 L233.132 1445.72 L234.172 1445.72 L235.213 1445.72 L236.253 1445.72 L237.293 1445.72 L238.333 1445.72 L239.373 1445.72 L240.413 1445.72 
@@ -1278,28 +1278,28 @@ M210.251 1445.72 L211.291 1445.72 L212.331 1445.72 L213.371 1445.72 L214.412 144
   L1614.32 1445.72 L1615.36 1445.72 L1616.4 1445.72 L1617.44 1445.72 L1618.48 1445.72 L1619.52 1445.72 L1620.56 1445.72 L1621.6 1445.72 L1622.64 1445.72 L1623.68 1445.72 
   L1624.72 1445.72 L1625.76 1445.72 L1626.8 1445.72 L1627.84 1445.72 L1628.88 1445.72 L1629.92 1445.72 L1630.96 1445.72 L1632 1445.72 L1633.04 1445.72 L1634.08 1445.72 
   L1635.12 1445.72 L1636.16 1445.72 L1637.2 1445.72 L1638.24 1445.72 L1639.28 1445.72 L1640.32 1445.72 L1641.36 1445.72 L1642.4 1445.72 L1643.44 1445.72 L1644.48 1445.72 
-  L1645.52 1445.72 L1646.56 1445.72 L1647.6 1445.72 L1648.64 1445.72 L1649.68 1445.72 L1650.72 1445.72 L1651.76 1445.72 L1652.8 1445.72 L1653.84 1445.72 L1654.88 1445.72 
-  L1655.92 1445.72 L1656.96 1445.72 L1658 1445.72 L1659.04 1445.72 L1660.08 1445.72 L1661.12 1445.72 L1662.16 1445.72 L1663.2 1445.72 L1664.24 1445.72 L1665.28 1445.72 
-  L1666.32 1445.71 L1667.36 1445.71 L1668.4 1445.71 L1669.44 1445.71 L1670.48 1445.71 L1671.52 1445.71 L1672.56 1445.71 L1673.6 1445.71 L1674.64 1445.71 L1675.68 1445.7 
-  L1676.72 1445.7 L1677.76 1445.7 L1678.8 1445.69 L1679.84 1445.68 L1680.88 1445.67 L1681.92 1445.66 L1682.96 1445.64 L1684 1445.63 L1685.04 1445.6 L1686.08 1445.57 
-  L1687.12 1445.53 L1688.16 1445.48 L1689.2 1445.42 L1690.24 1445.34 L1691.28 1445.25 L1692.32 1445.14 L1693.36 1445 L1694.4 1444.82 L1695.44 1444.61 L1696.48 1444.36 
-  L1697.52 1444.05 L1698.56 1443.68 L1699.6 1443.23 L1700.64 1442.69 L1701.68 1442.04 L1702.72 1441.27 L1703.76 1440.36 L1704.8 1439.28 L1705.84 1438.01 L1706.88 1436.51 
-  L1707.92 1434.75 L1708.96 1432.71 L1710 1430.32 L1711.04 1427.56 L1712.08 1424.37 L1713.12 1420.69 L1714.16 1416.47 L1715.2 1411.65 L1716.24 1406.15 L1717.28 1399.9 
-  L1718.32 1392.84 L1719.36 1384.88 L1720.41 1375.93 L1721.45 1365.91 L1722.49 1354.74 L1723.53 1342.33 L1724.57 1328.59 L1725.61 1313.43 L1726.65 1296.77 L1727.69 1278.53 
-  L1728.73 1258.64 L1729.77 1237.03 L1730.81 1213.65 L1731.85 1188.45 L1732.89 1161.39 L1733.93 1132.45 L1734.97 1101.64 L1736.01 1068.97 L1737.05 1034.48 L1738.09 998.217 
-  L1739.13 960.263 L1740.17 920.721 L1741.21 879.715 L1742.25 837.394 L1743.29 793.933 L1744.33 749.529 L1745.37 704.4 L1746.41 658.79 L1747.45 612.959 L1748.49 567.187 
-  L1749.53 521.767 L1750.57 477.007 L1751.61 433.222 L1752.65 390.734 L1753.69 349.865 L1754.73 310.936 L1755.77 274.261 L1756.81 240.145 L1757.85 208.874 L1758.89 180.72 
-  L1759.93 155.93 L1760.97 134.724 L1762.01 117.295 L1763.05 103.8 L1764.09 94.363 L1765.13 89.0722 L1766.17 87.9763 L1767.21 91.0853 L1768.25 98.3705 L1769.29 109.764 
-  L1770.33 125.162 L1771.37 144.422 L1772.41 167.371 L1773.45 193.801 L1774.49 223.481 L1775.53 256.149 L1776.57 291.529 L1777.61 329.322 L1778.65 369.22 L1779.69 410.905 
-  L1780.73 454.054 L1781.77 498.346 L1782.81 543.461 L1783.85 589.087 L1784.89 634.924 L1785.93 680.682 L1786.97 726.093 L1788.01 770.904 L1789.05 814.882 L1790.09 857.82 
-  L1791.13 899.531 L1792.17 939.853 L1793.21 978.649 L1794.25 1015.8 L1795.29 1051.23 L1796.33 1084.85 L1797.37 1116.64 L1798.41 1146.55 L1799.45 1174.58 L1800.49 1200.75 
-  L1801.53 1225.08 L1802.57 1247.6 L1803.61 1268.38 L1804.65 1287.47 L1805.69 1304.94 L1806.73 1320.87 L1807.77 1335.34 L1808.81 1348.44 L1809.85 1360.24 L1810.89 1370.85 
-  L1811.93 1380.34 L1812.97 1388.81 L1814.01 1396.33 L1815.05 1402.99 L1816.09 1408.87 L1817.13 1414.04 L1818.17 1418.56 L1819.21 1422.52 L1820.25 1425.95 L1821.29 1428.93 
-  L1822.33 1431.51 L1823.37 1433.73 L1824.41 1435.63 L1825.45 1437.26 L1826.49 1438.64 L1827.53 1439.82 L1828.57 1440.82 L1829.61 1441.66 L1830.65 1442.36 L1831.69 1442.96 
-  L1832.73 1443.45 L1833.77 1443.86 L1834.81 1444.2 L1835.85 1444.49 L1836.89 1444.72 L1837.93 1444.91 L1838.97 1445.07 L1840.01 1445.2 L1841.05 1445.3 L1842.09 1445.38 
-  L1843.13 1445.45 L1844.17 1445.51 L1845.21 1445.55 L1846.25 1445.58 L1847.29 1445.61 L1848.33 1445.64 L1849.37 1445.65 L1850.41 1445.67 L1851.45 1445.68 L1852.49 1445.69 
-  L1853.53 1445.69 L1854.57 1445.7 L1855.61 1445.7 L1856.65 1445.71 L1857.69 1445.71 L1858.73 1445.71 L1859.77 1445.71 L1860.81 1445.71 L1861.85 1445.71 L1862.89 1445.71 
-  L1863.93 1445.71 L1864.97 1445.71 L1866.01 1445.71 L1867.05 1445.72 L1868.09 1445.72 L1869.13 1445.72 L1870.17 1445.72 L1871.21 1445.72 L1872.25 1445.72 L1873.29 1445.72 
+  L1645.52 1445.72 L1646.56 1445.71 L1647.6 1445.71 L1648.64 1445.71 L1649.68 1445.71 L1650.72 1445.71 L1651.76 1445.71 L1652.8 1445.71 L1653.84 1445.71 L1654.88 1445.71 
+  L1655.92 1445.71 L1656.96 1445.7 L1658 1445.7 L1659.04 1445.69 L1660.08 1445.69 L1661.12 1445.68 L1662.16 1445.67 L1663.2 1445.65 L1664.24 1445.63 L1665.28 1445.61 
+  L1666.32 1445.58 L1667.36 1445.55 L1668.4 1445.5 L1669.44 1445.45 L1670.48 1445.38 L1671.52 1445.3 L1672.56 1445.19 L1673.6 1445.06 L1674.64 1444.91 L1675.68 1444.71 
+  L1676.72 1444.48 L1677.76 1444.19 L1678.8 1443.85 L1679.84 1443.44 L1680.88 1442.94 L1681.92 1442.34 L1682.96 1441.63 L1684 1440.79 L1685.04 1439.78 L1686.08 1438.6 
+  L1687.12 1437.21 L1688.16 1435.57 L1689.2 1433.66 L1690.24 1431.43 L1691.28 1428.84 L1692.32 1425.85 L1693.36 1422.39 L1694.4 1418.43 L1695.44 1413.88 L1696.48 1408.69 
+  L1697.52 1402.79 L1698.56 1396.1 L1699.6 1388.55 L1700.64 1380.05 L1701.68 1370.52 L1702.72 1359.88 L1703.76 1348.03 L1704.8 1334.89 L1705.84 1320.37 L1706.88 1304.39 
+  L1707.92 1286.87 L1708.96 1267.73 L1710 1246.89 L1711.04 1224.31 L1712.08 1199.92 L1713.12 1173.7 L1714.16 1145.6 L1715.2 1115.63 L1716.24 1083.79 L1717.28 1050.1 
+  L1718.32 1014.62 L1719.36 977.411 L1720.41 938.564 L1721.45 898.195 L1722.49 856.441 L1723.53 813.467 L1724.57 769.459 L1725.61 724.626 L1726.65 679.201 L1727.69 633.436 
+  L1728.73 587.603 L1729.77 541.99 L1730.81 496.898 L1731.85 452.639 L1732.89 409.534 L1733.93 367.903 L1734.97 328.07 L1736.01 290.353 L1737.05 255.059 L1738.09 222.484 
+  L1739.13 192.909 L1740.17 166.589 L1741.21 143.759 L1742.25 124.624 L1743.29 109.356 L1744.33 98.096 L1745.37 90.9473 L1746.41 87.9763 L1747.45 89.2104 L1748.49 94.6382 
+  L1749.53 104.209 L1750.57 117.836 L1751.61 135.392 L1752.65 156.718 L1753.69 181.622 L1754.73 209.881 L1755.77 241.249 L1756.81 275.454 L1757.85 312.207 L1758.89 351.203 
+  L1759.93 392.13 L1760.97 434.665 L1762.01 478.486 L1763.05 523.272 L1764.09 568.707 L1765.13 614.484 L1766.17 660.311 L1767.21 705.909 L1768.25 751.016 L1769.29 795.392 
+  L1770.33 838.817 L1771.37 881.096 L1772.41 922.056 L1773.45 961.547 L1774.49 999.446 L1775.53 1035.65 L1776.57 1070.09 L1777.61 1102.69 L1778.65 1133.44 L1779.69 1162.31 
+  L1780.73 1189.31 L1781.77 1214.45 L1782.81 1237.78 L1783.85 1259.33 L1784.89 1279.16 L1785.93 1297.34 L1786.97 1313.95 L1788.01 1329.06 L1789.05 1342.76 L1790.09 1355.13 
+  L1791.13 1366.26 L1792.17 1376.24 L1793.21 1385.15 L1794.25 1393.09 L1795.29 1400.12 L1796.33 1406.34 L1797.37 1411.82 L1798.41 1416.62 L1799.45 1420.82 L1800.49 1424.48 
+  L1801.53 1427.66 L1802.57 1430.41 L1803.61 1432.78 L1804.65 1434.82 L1805.69 1436.56 L1806.73 1438.05 L1807.77 1439.32 L1808.81 1440.39 L1809.85 1441.3 L1810.89 1442.06 
+  L1811.93 1442.71 L1812.97 1443.24 L1814.01 1443.69 L1815.05 1444.06 L1816.09 1444.37 L1817.13 1444.62 L1818.17 1444.83 L1819.21 1445 L1820.25 1445.14 L1821.29 1445.26 
+  L1822.33 1445.35 L1823.37 1445.42 L1824.41 1445.48 L1825.45 1445.53 L1826.49 1445.57 L1827.53 1445.6 L1828.57 1445.63 L1829.61 1445.65 L1830.65 1445.66 L1831.69 1445.67 
+  L1832.73 1445.68 L1833.77 1445.69 L1834.81 1445.7 L1835.85 1445.7 L1836.89 1445.7 L1837.93 1445.71 L1838.97 1445.71 L1840.01 1445.71 L1841.05 1445.71 L1842.09 1445.71 
+  L1843.13 1445.71 L1844.17 1445.71 L1845.21 1445.71 L1846.25 1445.71 L1847.29 1445.72 L1848.33 1445.72 L1849.37 1445.72 L1850.41 1445.72 L1851.45 1445.72 L1852.49 1445.72 
+  L1853.53 1445.72 L1854.57 1445.72 L1855.61 1445.72 L1856.65 1445.72 L1857.69 1445.72 L1858.73 1445.72 L1859.77 1445.72 L1860.81 1445.72 L1861.85 1445.72 L1862.89 1445.72 
+  L1863.93 1445.72 L1864.97 1445.72 L1866.01 1445.72 L1867.05 1445.72 L1868.09 1445.72 L1869.13 1445.72 L1870.17 1445.72 L1871.21 1445.72 L1872.25 1445.72 L1873.29 1445.72 
   L1874.33 1445.72 L1875.37 1445.72 L1876.41 1445.72 L1877.45 1445.72 L1878.49 1445.72 L1879.53 1445.72 L1880.57 1445.72 L1881.61 1445.72 L1882.65 1445.72 L1883.69 1445.72 
   L1884.73 1445.72 L1885.77 1445.72 L1886.81 1445.72 L1887.85 1445.72 L1888.89 1445.72 L1889.93 1445.72 L1890.97 1445.72 L1892.01 1445.72 L1893.05 1445.72 L1894.09 1445.72 
   L1895.13 1445.72 L1896.17 1445.72 L1897.21 1445.72 L1898.25 1445.72 L1899.29 1445.72 L1900.33 1445.72 L1901.37 1445.72 L1902.41 1445.72 L1903.45 1445.72 L1904.49 1445.72 
@@ -1542,7 +1542,7 @@ M210.251 1445.72 L211.291 1445.72 L212.331 1445.72 L213.371 1445.72 L214.412 144
   L221.692 1445.72 L220.652 1445.72 L219.612 1445.72 L218.572 1445.72 L217.532 1445.72 L216.492 1445.72 L215.452 1445.72 L214.412 1445.72 L213.371 1445.72 L212.331 1445.72 
   L211.291 1445.72 L210.251 1445.72  Z
   " fill="#009af9" fill-rule="evenodd" fill-opacity="0.3"/>
-<polyline clip-path="url(#clip202)" style="stroke:#009af9; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip592)" style="stroke:#009af9; stroke-width:4; stroke-opacity:1; fill:none" points="
   210.251,1445.72 211.291,1445.72 212.331,1445.72 213.371,1445.72 214.412,1445.72 215.452,1445.72 216.492,1445.72 217.532,1445.72 218.572,1445.72 219.612,1445.72 
   220.652,1445.72 221.692,1445.72 222.732,1445.72 223.772,1445.72 224.812,1445.72 225.852,1445.72 226.892,1445.72 227.932,1445.72 228.972,1445.72 230.012,1445.72 
   231.052,1445.72 232.092,1445.72 233.132,1445.72 234.172,1445.72 235.213,1445.72 236.253,1445.72 237.293,1445.72 238.333,1445.72 239.373,1445.72 240.413,1445.72 
@@ -1681,28 +1681,28 @@ M210.251 1445.72 L211.291 1445.72 L212.331 1445.72 L213.371 1445.72 L214.412 144
   1614.32,1445.72 1615.36,1445.72 1616.4,1445.72 1617.44,1445.72 1618.48,1445.72 1619.52,1445.72 1620.56,1445.72 1621.6,1445.72 1622.64,1445.72 1623.68,1445.72 
   1624.72,1445.72 1625.76,1445.72 1626.8,1445.72 1627.84,1445.72 1628.88,1445.72 1629.92,1445.72 1630.96,1445.72 1632,1445.72 1633.04,1445.72 1634.08,1445.72 
   1635.12,1445.72 1636.16,1445.72 1637.2,1445.72 1638.24,1445.72 1639.28,1445.72 1640.32,1445.72 1641.36,1445.72 1642.4,1445.72 1643.44,1445.72 1644.48,1445.72 
-  1645.52,1445.72 1646.56,1445.72 1647.6,1445.72 1648.64,1445.72 1649.68,1445.72 1650.72,1445.72 1651.76,1445.72 1652.8,1445.72 1653.84,1445.72 1654.88,1445.72 
-  1655.92,1445.72 1656.96,1445.72 1658,1445.72 1659.04,1445.72 1660.08,1445.72 1661.12,1445.72 1662.16,1445.72 1663.2,1445.72 1664.24,1445.72 1665.28,1445.72 
-  1666.32,1445.71 1667.36,1445.71 1668.4,1445.71 1669.44,1445.71 1670.48,1445.71 1671.52,1445.71 1672.56,1445.71 1673.6,1445.71 1674.64,1445.71 1675.68,1445.7 
-  1676.72,1445.7 1677.76,1445.7 1678.8,1445.69 1679.84,1445.68 1680.88,1445.67 1681.92,1445.66 1682.96,1445.64 1684,1445.63 1685.04,1445.6 1686.08,1445.57 
-  1687.12,1445.53 1688.16,1445.48 1689.2,1445.42 1690.24,1445.34 1691.28,1445.25 1692.32,1445.14 1693.36,1445 1694.4,1444.82 1695.44,1444.61 1696.48,1444.36 
-  1697.52,1444.05 1698.56,1443.68 1699.6,1443.23 1700.64,1442.69 1701.68,1442.04 1702.72,1441.27 1703.76,1440.36 1704.8,1439.28 1705.84,1438.01 1706.88,1436.51 
-  1707.92,1434.75 1708.96,1432.71 1710,1430.32 1711.04,1427.56 1712.08,1424.37 1713.12,1420.69 1714.16,1416.47 1715.2,1411.65 1716.24,1406.15 1717.28,1399.9 
-  1718.32,1392.84 1719.36,1384.88 1720.41,1375.93 1721.45,1365.91 1722.49,1354.74 1723.53,1342.33 1724.57,1328.59 1725.61,1313.43 1726.65,1296.77 1727.69,1278.53 
-  1728.73,1258.64 1729.77,1237.03 1730.81,1213.65 1731.85,1188.45 1732.89,1161.39 1733.93,1132.45 1734.97,1101.64 1736.01,1068.97 1737.05,1034.48 1738.09,998.217 
-  1739.13,960.263 1740.17,920.721 1741.21,879.715 1742.25,837.394 1743.29,793.933 1744.33,749.529 1745.37,704.4 1746.41,658.79 1747.45,612.959 1748.49,567.187 
-  1749.53,521.767 1750.57,477.007 1751.61,433.222 1752.65,390.734 1753.69,349.865 1754.73,310.936 1755.77,274.261 1756.81,240.145 1757.85,208.874 1758.89,180.72 
-  1759.93,155.93 1760.97,134.724 1762.01,117.295 1763.05,103.8 1764.09,94.363 1765.13,89.0722 1766.17,87.9763 1767.21,91.0853 1768.25,98.3705 1769.29,109.764 
-  1770.33,125.162 1771.37,144.422 1772.41,167.371 1773.45,193.801 1774.49,223.481 1775.53,256.149 1776.57,291.529 1777.61,329.322 1778.65,369.22 1779.69,410.905 
-  1780.73,454.054 1781.77,498.346 1782.81,543.461 1783.85,589.087 1784.89,634.924 1785.93,680.682 1786.97,726.093 1788.01,770.904 1789.05,814.882 1790.09,857.82 
-  1791.13,899.531 1792.17,939.853 1793.21,978.649 1794.25,1015.8 1795.29,1051.23 1796.33,1084.85 1797.37,1116.64 1798.41,1146.55 1799.45,1174.58 1800.49,1200.75 
-  1801.53,1225.08 1802.57,1247.6 1803.61,1268.38 1804.65,1287.47 1805.69,1304.94 1806.73,1320.87 1807.77,1335.34 1808.81,1348.44 1809.85,1360.24 1810.89,1370.85 
-  1811.93,1380.34 1812.97,1388.81 1814.01,1396.33 1815.05,1402.99 1816.09,1408.87 1817.13,1414.04 1818.17,1418.56 1819.21,1422.52 1820.25,1425.95 1821.29,1428.93 
-  1822.33,1431.51 1823.37,1433.73 1824.41,1435.63 1825.45,1437.26 1826.49,1438.64 1827.53,1439.82 1828.57,1440.82 1829.61,1441.66 1830.65,1442.36 1831.69,1442.96 
-  1832.73,1443.45 1833.77,1443.86 1834.81,1444.2 1835.85,1444.49 1836.89,1444.72 1837.93,1444.91 1838.97,1445.07 1840.01,1445.2 1841.05,1445.3 1842.09,1445.38 
-  1843.13,1445.45 1844.17,1445.51 1845.21,1445.55 1846.25,1445.58 1847.29,1445.61 1848.33,1445.64 1849.37,1445.65 1850.41,1445.67 1851.45,1445.68 1852.49,1445.69 
-  1853.53,1445.69 1854.57,1445.7 1855.61,1445.7 1856.65,1445.71 1857.69,1445.71 1858.73,1445.71 1859.77,1445.71 1860.81,1445.71 1861.85,1445.71 1862.89,1445.71 
-  1863.93,1445.71 1864.97,1445.71 1866.01,1445.71 1867.05,1445.72 1868.09,1445.72 1869.13,1445.72 1870.17,1445.72 1871.21,1445.72 1872.25,1445.72 1873.29,1445.72 
+  1645.52,1445.72 1646.56,1445.71 1647.6,1445.71 1648.64,1445.71 1649.68,1445.71 1650.72,1445.71 1651.76,1445.71 1652.8,1445.71 1653.84,1445.71 1654.88,1445.71 
+  1655.92,1445.71 1656.96,1445.7 1658,1445.7 1659.04,1445.69 1660.08,1445.69 1661.12,1445.68 1662.16,1445.67 1663.2,1445.65 1664.24,1445.63 1665.28,1445.61 
+  1666.32,1445.58 1667.36,1445.55 1668.4,1445.5 1669.44,1445.45 1670.48,1445.38 1671.52,1445.3 1672.56,1445.19 1673.6,1445.06 1674.64,1444.91 1675.68,1444.71 
+  1676.72,1444.48 1677.76,1444.19 1678.8,1443.85 1679.84,1443.44 1680.88,1442.94 1681.92,1442.34 1682.96,1441.63 1684,1440.79 1685.04,1439.78 1686.08,1438.6 
+  1687.12,1437.21 1688.16,1435.57 1689.2,1433.66 1690.24,1431.43 1691.28,1428.84 1692.32,1425.85 1693.36,1422.39 1694.4,1418.43 1695.44,1413.88 1696.48,1408.69 
+  1697.52,1402.79 1698.56,1396.1 1699.6,1388.55 1700.64,1380.05 1701.68,1370.52 1702.72,1359.88 1703.76,1348.03 1704.8,1334.89 1705.84,1320.37 1706.88,1304.39 
+  1707.92,1286.87 1708.96,1267.73 1710,1246.89 1711.04,1224.31 1712.08,1199.92 1713.12,1173.7 1714.16,1145.6 1715.2,1115.63 1716.24,1083.79 1717.28,1050.1 
+  1718.32,1014.62 1719.36,977.411 1720.41,938.564 1721.45,898.195 1722.49,856.441 1723.53,813.467 1724.57,769.459 1725.61,724.626 1726.65,679.201 1727.69,633.436 
+  1728.73,587.603 1729.77,541.99 1730.81,496.898 1731.85,452.639 1732.89,409.534 1733.93,367.903 1734.97,328.07 1736.01,290.353 1737.05,255.059 1738.09,222.484 
+  1739.13,192.909 1740.17,166.589 1741.21,143.759 1742.25,124.624 1743.29,109.356 1744.33,98.096 1745.37,90.9473 1746.41,87.9763 1747.45,89.2104 1748.49,94.6382 
+  1749.53,104.209 1750.57,117.836 1751.61,135.392 1752.65,156.718 1753.69,181.622 1754.73,209.881 1755.77,241.249 1756.81,275.454 1757.85,312.207 1758.89,351.203 
+  1759.93,392.13 1760.97,434.665 1762.01,478.486 1763.05,523.272 1764.09,568.707 1765.13,614.484 1766.17,660.311 1767.21,705.909 1768.25,751.016 1769.29,795.392 
+  1770.33,838.817 1771.37,881.096 1772.41,922.056 1773.45,961.547 1774.49,999.446 1775.53,1035.65 1776.57,1070.09 1777.61,1102.69 1778.65,1133.44 1779.69,1162.31 
+  1780.73,1189.31 1781.77,1214.45 1782.81,1237.78 1783.85,1259.33 1784.89,1279.16 1785.93,1297.34 1786.97,1313.95 1788.01,1329.06 1789.05,1342.76 1790.09,1355.13 
+  1791.13,1366.26 1792.17,1376.24 1793.21,1385.15 1794.25,1393.09 1795.29,1400.12 1796.33,1406.34 1797.37,1411.82 1798.41,1416.62 1799.45,1420.82 1800.49,1424.48 
+  1801.53,1427.66 1802.57,1430.41 1803.61,1432.78 1804.65,1434.82 1805.69,1436.56 1806.73,1438.05 1807.77,1439.32 1808.81,1440.39 1809.85,1441.3 1810.89,1442.06 
+  1811.93,1442.71 1812.97,1443.24 1814.01,1443.69 1815.05,1444.06 1816.09,1444.37 1817.13,1444.62 1818.17,1444.83 1819.21,1445 1820.25,1445.14 1821.29,1445.26 
+  1822.33,1445.35 1823.37,1445.42 1824.41,1445.48 1825.45,1445.53 1826.49,1445.57 1827.53,1445.6 1828.57,1445.63 1829.61,1445.65 1830.65,1445.66 1831.69,1445.67 
+  1832.73,1445.68 1833.77,1445.69 1834.81,1445.7 1835.85,1445.7 1836.89,1445.7 1837.93,1445.71 1838.97,1445.71 1840.01,1445.71 1841.05,1445.71 1842.09,1445.71 
+  1843.13,1445.71 1844.17,1445.71 1845.21,1445.71 1846.25,1445.71 1847.29,1445.72 1848.33,1445.72 1849.37,1445.72 1850.41,1445.72 1851.45,1445.72 1852.49,1445.72 
+  1853.53,1445.72 1854.57,1445.72 1855.61,1445.72 1856.65,1445.72 1857.69,1445.72 1858.73,1445.72 1859.77,1445.72 1860.81,1445.72 1861.85,1445.72 1862.89,1445.72 
+  1863.93,1445.72 1864.97,1445.72 1866.01,1445.72 1867.05,1445.72 1868.09,1445.72 1869.13,1445.72 1870.17,1445.72 1871.21,1445.72 1872.25,1445.72 1873.29,1445.72 
   1874.33,1445.72 1875.37,1445.72 1876.41,1445.72 1877.45,1445.72 1878.49,1445.72 1879.53,1445.72 1880.57,1445.72 1881.61,1445.72 1882.65,1445.72 1883.69,1445.72 
   1884.73,1445.72 1885.77,1445.72 1886.81,1445.72 1887.85,1445.72 1888.89,1445.72 1889.93,1445.72 1890.97,1445.72 1892.01,1445.72 1893.05,1445.72 1894.09,1445.72 
   1895.13,1445.72 1896.17,1445.72 1897.21,1445.72 1898.25,1445.72 1899.29,1445.72 1900.33,1445.72 1901.37,1445.72 1902.41,1445.72 1903.45,1445.72 1904.49,1445.72 
@@ -1745,17 +1745,17 @@ M210.251 1445.72 L211.291 1445.72 L212.331 1445.72 L213.371 1445.72 L214.412 144
   2279.95,1445.72 2280.99,1445.72 2282.03,1445.72 2283.07,1445.72 2284.11,1445.72 2285.15,1445.72 2286.19,1445.72 2287.23,1445.72 2288.27,1445.72 2289.31,1445.72 
   2290.35,1445.72 
   "/>
-<path clip-path="url(#clip200)" d="
+<path clip-path="url(#clip590)" d="
 M1983.25 216.178 L2279.26 216.178 L2279.26 95.2176 L1983.25 95.2176  Z
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
-<polyline clip-path="url(#clip200)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1983.25,216.178 2279.26,216.178 2279.26,95.2176 1983.25,95.2176 1983.25,216.178 
   "/>
-<path clip-path="url(#clip200)" d="
+<path clip-path="url(#clip590)" d="
 M2007.75 179.89 L2154.74 179.89 L2154.74 131.506 L2007.75 131.506 L2007.75 179.89  Z
   " fill="#009af9" fill-rule="evenodd" fill-opacity="0.3"/>
-<polyline clip-path="url(#clip200)" style="stroke:#009af9; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip590)" style="stroke:#009af9; stroke-width:4; stroke-opacity:1; fill:none" points="
   2007.75,131.506 2154.74,131.506 
   "/>
-<path clip-path="url(#clip200)" d="M 0 0 M2193.09 175.385 Q2191.28 180.015 2189.57 181.427 Q2187.85 182.839 2184.98 182.839 L2181.58 182.839 L2181.58 179.274 L2184.08 179.274 Q2185.84 179.274 2186.81 178.44 Q2187.78 177.607 2188.96 174.505 L2189.73 172.561 L2179.24 147.052 L2183.76 147.052 L2191.86 167.329 L2199.96 147.052 L2204.47 147.052 L2193.09 175.385 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip200)" d="M 0 0 M2210.35 169.042 L2217.99 169.042 L2217.99 142.677 L2209.68 144.343 L2209.68 140.084 L2217.95 138.418 L2222.62 138.418 L2222.62 169.042 L2230.26 169.042 L2230.26 172.978 L2210.35 172.978 L2210.35 169.042 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /></svg>
-<div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>ForneyLab is aimed at processing time-series data; batch processing does not perform well with large datasets at the moment. We are working on this issue.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting-started/">« Getting started</a><a class="docs-footer-nextpage" href="../library/user-api/">User API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 13 November 2020 19:10">Friday 13 November 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<path clip-path="url(#clip590)" d="M 0 0 M2193.09 175.385 Q2191.28 180.015 2189.57 181.427 Q2187.85 182.839 2184.98 182.839 L2181.58 182.839 L2181.58 179.274 L2184.08 179.274 Q2185.84 179.274 2186.81 178.44 Q2187.78 177.607 2188.96 174.505 L2189.73 172.561 L2179.24 147.052 L2183.76 147.052 L2191.86 167.329 L2199.96 147.052 L2204.47 147.052 L2193.09 175.385 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /><path clip-path="url(#clip590)" d="M 0 0 M2210.35 169.042 L2217.99 169.042 L2217.99 142.677 L2209.68 144.343 L2209.68 140.084 L2217.95 138.418 L2222.62 138.418 L2222.62 169.042 L2230.26 169.042 L2230.26 172.978 L2210.35 172.978 L2210.35 169.042 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1" /></svg>
+<div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>ForneyLab is aimed at processing time-series data; batch processing does not perform well with large datasets at the moment. We are working on this issue.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting-started/">« Getting started</a><a class="docs-footer-nextpage" href="../library/user-api/">User API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 10 December 2020 14:44">Thursday 10 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
