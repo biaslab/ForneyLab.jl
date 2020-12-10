@@ -5,7 +5,7 @@ using Random
 # using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker, breakerParameters
-using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, gradientOptimization
+using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, SPNonlinearSOutNFactorX, SPNonlinearSInFactorX, MNonlinearSInGX, gradientOptimization
 using ForwardDiff
 
 Random.seed!(1234)
@@ -73,7 +73,7 @@ end
     @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 
-@testset "ruleSPNonlinearSOutNGX" begin
+@testset "SPNonlinearSOutNGX" begin
     @test SPNonlinearSOutNGX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSOutNGX) == Message{SampleList}
     @test !isApplicable(SPNonlinearSOutNGX, [Nothing, Message{Poisson}])
@@ -84,7 +84,7 @@ end
     @test msg.dist.params[:w] == [1.0]
 end
 
-@testset "ruleSPNonlinearSInGX" begin
+@testset "SPNonlinearSInGX" begin
     @test SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSInGX) == Message{GaussianWeightedMeanPrecision}
     @test !isApplicable(SPNonlinearSInGX, [Nothing, Message{Gamma}])
@@ -100,6 +100,30 @@ end
     @test isapprox(var(res.dist), 1.9999999999999982, atol=0.1)
 end
 
+@testset "SPNonlinearSOutNFactorX" begin
+    @test SPNonlinearSOutNFactorX <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSOutNFactorX) == Message{SampleList}
+    @test !isApplicable(SPNonlinearSOutNFactorX, [Nothing, Message{Gamma}])
+    @test !isApplicable(SPNonlinearSOutNFactorX, [Message{Gaussian}, Message{Gaussian}, Nothing])
+    @test !isApplicable(SPNonlinearSOutNFactorX, [Message{Gaussian}, Message{Gamma}, Nothing])
+    @test isApplicable(SPNonlinearSOutNFactorX, [Nothing, Message{Gaussian}, Message{Gamma}])
+end
+
+@testset "SPNonlinearSInFactorX" begin
+    @test SPNonlinearSInFactorX <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSInFactorX) == Message{Function}
+    @test !isApplicable(SPNonlinearSInFactorX, [Message{FactorFunction}, Message{Gamma}])
+    @test !isApplicable(SPNonlinearSInFactorX, [Message{Gaussian}, Message{Gaussian}, Nothing])
+    @test !isApplicable(SPNonlinearSInFactorX, [Nothing, Message{Gaussian}, Message{Gamma}])
+    @test isApplicable(SPNonlinearSInFactorX, [Message{FactorFunction}, Nothing, Message{Gaussian}, Message{Gamma}])
+end
+
+@testset "MNonlinearSInGX" begin
+    @test MNonlinearSInGX <: MarginalRule{Nonlinear{Sampling}}
+    @test isApplicable(MNonlinearSInGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
+    @test !isApplicable(MNonlinearSInGX, [Nothing, Message{Gaussian}])
+    @test !isApplicable(MNonlinearSInGX, [Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution])
+end
 
 #------------
 # Integration
@@ -132,6 +156,22 @@ end
     code = algorithmSourceCode(algo)
 
     @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1])", code)
+end
+
+@testset "Nonlinear integration via sampling with specified variate types" begin
+    fg = FactorGraph()
+
+    @RV x ~ GaussianMeanVariance(2.0, 1.0)
+    @RV y ~ GaussianMeanVariance(2.0, 3.0)
+    @RV z ~ GaussianMeanVariance(2.0, 3.0)
+    n = Nonlinear{Sampling}(z, x, y, g=g, out_variate=Multivariate, in_variates=[Univariate, Univariate])
+
+    # Forward; g_inv should not be present in call
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    
+    @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1], variate=Univariate)", code)
 end
 
 end # module
