@@ -6,7 +6,7 @@ export ruleSPCategoricalConstraintOut
 #-------------
 
 function ruleSPCategoricalConstraintOut(msg_out::Message{Categorical, Univariate}, p::Vector{Float64})
-    p_div = clamp.(p ./ msg_out.dist.params[:p], tiny, huge) # Soften vanishing probabilities
+    p_div = sqrt.(p ./ clamp.(msg_out.dist.params[:p], tiny, huge)) # Soften vanishing probabilities
     norm = sum(p_div)
 
     return Message(Univariate, Categorical, p=p_div./norm)

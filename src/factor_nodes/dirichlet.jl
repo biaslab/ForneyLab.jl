@@ -59,8 +59,14 @@ isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],dims=1) # Normalize columns
 
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
+function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet})
+    a = clamp.(dist.params[:a], tiny, huge)
+    return digamma.(a) .- digamma.(sum(a))
+end
+function unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet})
+    a = clamp.(dist.params[:a], tiny, huge)
+    return digamma.(a) .- digamma.(sum(a,dims=1)) # Normalize columns
+end
 
 logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(loggamma.(dist.params[:a])) + loggamma(sum(dist.params[:a]))
 logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(loggamma.(dist.params[:a]), dims=1) + loggamma.(sum(dist.params[:a],dims=1)))

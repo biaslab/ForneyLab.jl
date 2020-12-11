@@ -1,3 +1,16 @@
+mutable struct SPTransitionMixtureOutNPX <: SumProductRule{TransitionMixture} end
+outboundType(::Type{SPTransitionMixtureOutNPX}) = Message{PointMass}
+function isApplicable(::Type{SPTransitionMixtureOutNPX}, input_types::Vector{<:Type})
+    for (i, input_type) in enumerate(input_types)
+        if (i == 1)
+            (input_type == Nothing) || return false
+        else
+            matches(input_type, Message{PointMass}) || return false
+        end
+    end
+    return true
+end
+
 mutable struct VBTransitionMixtureZ <: NaiveVariationalRule{TransitionMixture} end
 outboundType(::Type{VBTransitionMixtureZ}) = Message{Categorical}
 function isApplicable(::Type{VBTransitionMixtureZ}, input_types::Vector{<:Type})

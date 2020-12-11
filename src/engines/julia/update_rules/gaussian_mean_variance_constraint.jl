@@ -6,14 +6,14 @@ export ruleSPGaussianMeanVarianceConstraintOut
 #-------------
 
 function ruleSPGaussianMeanVarianceConstraintOut(msg_out::Message{<:Gaussian, V}, 
-                                                 m::Union{Float64, AbstractVector}, 
-                                                 v::Union{Float64, AbstractMatrix}) where V<:VariateType
+                                                 m_f::Union{Float64, AbstractVector}, 
+                                                 v_f::Union{Float64, AbstractMatrix}) where V<:VariateType
 
     (xi_out, w_out) = unsafeWeightedMeanPrecision(msg_out.dist)
-    w_q = cholinv(v)
-    xi_q = w_q*m
+    w_f = cholinv(v_f)
+    xi_f = w_f*m_f
 
-    return Message(V, GaussianWeightedMeanPrecision, xi=xi_q-xi_out, w=w_q-w_out)
+    return Message(V, GaussianWeightedMeanPrecision, xi=0.5*(xi_f-xi_out), w=0.5*(w_f-w_out))
 end
 
 
