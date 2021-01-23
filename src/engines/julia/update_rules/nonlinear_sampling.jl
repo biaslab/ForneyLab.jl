@@ -46,14 +46,14 @@ function ruleSPNonlinearSOutNM(g::Function,
     weights = msg_in1.dist.params[:w]
 
     return Message(variate, SampleList, s=samples, w=weights)
-end 
+end
 
 function msgSPNonlinearSOutNGX(g::Function,
     msg_out::Nothing,
     msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
     n_samples=default_n_samples,
     variate)
-    
+
     samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
 
     samples = g.(samples_in...)
@@ -83,7 +83,7 @@ function msgSPNonlinearSInGX(g::Function,
                              msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
                              n_samples=default_n_samples,
                              variate)
-                            
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -94,11 +94,10 @@ function msgSPNonlinearSInGX(g::Function,
 
     # Compute joint belief on in's by gradient ascent
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
-    V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
+    W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
 
     # Marginalize joint belief on in's
-    (m_inx, V_inx) = marginalizeGaussianMV(variate, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
-    W_inx = cholinv(V_inx) # Convert to canonical statistics
+    (m_inx, W_inx) = marginalizeGaussianMV(variate, m_in, W_in, ds, inx) # Marginalization is overloaded on VariateType V
     xi_inx = W_inx*m_inx
 
     # Divide marginal on inx by forward message
@@ -172,7 +171,7 @@ function msgSPNonlinearSInFactorX(g::Function,
                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
             end
         end
-    
+
         return samples_in
     end
 
