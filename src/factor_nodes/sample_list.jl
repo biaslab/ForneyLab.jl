@@ -188,7 +188,7 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     log_samples_y = logPdf.([y], samples)
 
     # Extract the sample weights
-    w_raw = clamp.(exp.(log_samples_x), tiny, huge) # Unnormalized weights
+    w_raw = clamp.(exp.(log_samples_y), tiny, huge) # Unnormalized weights
     w_sum = sum(w_raw)
     weights = w_raw./w_sum # Normalize the raw weights
 
