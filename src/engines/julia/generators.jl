@@ -280,5 +280,19 @@ Remove module prefixes from types and functions
 """
 removePrefix(arg::Any) = arg # Do not remove prefix in general
 removePrefix(num::Number) = string(num)
-removePrefix(type::Type) = split(string(type), '.')[end]
 removePrefix(func::Function) = split(string(func), '.')[end]
+function removePrefix(type::Type)
+    # check whether the type is parameterized
+    if occursin("{", string(type))
+        # separate node type from parameterization and remove prefix
+        types = split(split(string(type), '}')[1], '{')
+        nodetype = split(types[1], '.')[end]
+        paramtype = split(types[2], '.')[end]
+        # join separated types again
+        stripped_type = join([nodetype, "{", paramtype, "}"])
+    else
+        # just remove prefix
+        stripped_type = split(string(type), '.')[end]
+    end
+    return stripped_type
+end
