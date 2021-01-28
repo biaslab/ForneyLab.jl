@@ -94,10 +94,11 @@ function msgSPNonlinearSInGX(g::Function,
 
     # Compute joint belief on in's by gradient ascent
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
-    W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
+    V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
 
     # Marginalize joint belief on in's
-    (m_inx, W_inx) = marginalizeGaussianMV(variate, m_in, W_in, ds, inx) # Marginalization is overloaded on VariateType V
+    (m_inx, V_inx) = marginalizeGaussianMV(variate, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+    W_inx = cholinv(V_inx) # Convert to canonical statistics
     xi_inx = W_inx*m_inx
 
     # Divide marginal on inx by forward message
