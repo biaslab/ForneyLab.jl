@@ -132,6 +132,12 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     y::ProbabilityDistribution{V, SampleList},
     z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
+    if haskey(y.params, :logintegrand)
+        logIntegrand(samples) = y.params[:logintegrand](samples) .+ logPdf.([x], samples)
+    else
+        logIntegrand(samples) = logPdf.([x], samples)
+    end
+
     samples = y.params[:s]
     n_samples = length(samples)
     log_samples_x = logPdf.([x], samples)
@@ -148,9 +154,19 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
         weights = ones(n_samples)./n_samples
     end
 
-    # TODO: no entropy is computed here; include computation?
     z.params[:w] = weights
     z.params[:s] = samples
+    z.params[:logintegrand] = (s) -> logIntegrand(s)
+    if haskey(y.params, :logproposal) && haskey(y.params, :unnormalizedweights)
+        z.params[:unnormalizedweights] = w_raw_x.*y.params[:unnormalizedweights]
+        logProposal(s) = y.params[:logproposal](s)
+        z.params[:logproposal] = (s) -> logProposal(s)
+        # calculate entropy
+        H_y = log(sum(w_raw_x.*y.params[:unnormalizedweights])) - log(n_samples)
+        H_x = -sum( weights.*(logProposal(samples) + log.(y.params[:unnormalizedweights]) + log_samples_x) )
+        entropy = H_x + H_y
+        z.params[:entropy] = entropy
+    end
 
     return z
 end
@@ -197,7 +213,11 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     H_x = -sum( weights.*(log_samples_x + log_samples_y) )
     entropy = H_x + H_y
 
-    return (samples, weights, entropy)
+    # Inform next step about the proposal and integrand to be used in entropy calculation in smoothing
+    logproposal = (samples) -> logPdf.([x], samples)
+    logintegrand = (samples) -> logPdf.([y], samples)
+
+    return (samples, weights, w_raw, logproposal, logintegrand, entropy)
 end
 
 # General product definition that returns a SampleList
@@ -206,10 +226,13 @@ function prod!(
     y::ProbabilityDistribution{V},
     z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType}
 
-    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, unnormalizedweights, logproposal, logintegrand, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
+    z.params[:unnormalizedweights] = unnormalizedweights
+    z.params[:logproposal] = logproposal
+    z.params[:logintegrand] = logintegrand
     z.params[:entropy] = entropy
 
     return z
@@ -221,10 +244,13 @@ end
     y::ProbabilityDistribution{Multivariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, unnormalizedweights, logproposal, logintegrand, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
+    z.params[:unnormalizedweights] = unnormalizedweights
+    z.params[:logproposal] = logproposal
+    z.params[:logintegrand] = logintegrand
     z.params[:entropy] = entropy
 
     return z
