@@ -28,41 +28,45 @@ end
     @test unsafeCov(ProbabilityDistribution(MatrixVariate, SampleList, s=[eye(2), eye(2)], w=[0.5, 0.5])) == zeros(4,4)
 end
 
-@testset "prod!" begin
-    dist1 = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    dist2 = dist1 * ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
-    dist3 = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
-    @test dist2.params[:s] == dist3.params[:s]
-    @test dist2.params[:w] == dist3.params[:w]
-    @test dist2.params[:logintegrand]([-0.7, 1.5]) == logPdf.([dist1],[-0.7, 1.5])
-    #@test ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)) == ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
-    dist1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
-    dist2 = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * dist1
-    dist3 = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
-    @test dist2.params[:s] == dist3.params[:s]
-    @test dist2.params[:w] == dist3.params[:w]
-    @test dist2.params[:logintegrand]([[-0.7], [1.5]]) == logPdf.([dist1],[[-0.7], [1.5]])
+@testset "Univariate SampleList prod!" begin
+    dist_gaussian = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    dist_prod = dist_gaussian * ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist_true_prod = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
+    
+    @test dist_prod.params[:s] == dist_true_prod.params[:s]
+    @test dist_prod.params[:w] == dist_true_prod.params[:w]
+    @test dist_prod.params[:logintegrand]([-0.7, 1.5]) == logPdf.([dist_gaussian],[-0.7, 1.5])
+end
+
+@testset "Multivariate SampleList prod!" begin
+    dist_gaussian = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
+    dist_prod = dist_gaussian * ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) 
+    dist_true_prod = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
+    
+    @test dist_prod.params[:s] == dist_true_prod.params[:s]
+    @test dist_prod.params[:w] == dist_true_prod.params[:w]
+    @test dist_prod.params[:logintegrand]([[-0.7], [1.5]]) == logPdf.([dist_gaussian],[[-0.7], [1.5]])
 end
 
 @testset "Initialization of logproposal, logintegrand, unnormalizedweights" begin
-    dist1 = ProbabilityDistribution(Univariate, Beta, a=2.0, b=1.0)
-    dist2 = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)
-    dist3 = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
-    dist4 = dist1*dist2
-    dist5 = dist2*dist3
-    dist6 = dist4*dist2
+    dist_beta = ProbabilityDistribution(Univariate, Beta, a=2.0, b=1.0)
+    dist_gamma = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)
+    dist_sample = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist_betagamma = dist_beta*dist_gamma
+    dist_gammasample = dist_gamma*dist_sample
+    dist_betagg = dist_betagamma*dist_gamma
 
-    @test haskey(dist4.params, :logproposal)
-    @test haskey(dist4.params, :logintegrand)
-    @test haskey(dist4.params, :unnormalizedweights)
+    @test haskey(dist_betagamma.params, :logproposal)
+    @test haskey(dist_betagamma.params, :logintegrand)
+    @test haskey(dist_betagamma.params, :unnormalizedweights)
 
-    @test !haskey(dist5.params, :logproposal)
-    @test haskey(dist5.params, :logintegrand)
-    @test !haskey(dist5.params, :unnormalizedweights)
+    @test !haskey(dist_gammasample.params, :logproposal)
+    @test haskey(dist_gammasample.params, :logintegrand)
+    @test !haskey(dist_gammasample.params, :unnormalizedweights)
 
-    @test haskey(dist6.params, :logproposal)
-    @test haskey(dist6.params, :logintegrand)
-    @test haskey(dist6.params, :unnormalizedweights)
+    @test haskey(dist_betagg.params, :logproposal)
+    @test haskey(dist_betagg.params, :logintegrand)
+    @test haskey(dist_betagg.params, :unnormalizedweights)
 end
 
 @testset "bootstrap" begin
