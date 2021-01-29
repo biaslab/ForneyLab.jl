@@ -132,9 +132,10 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     y::ProbabilityDistribution{V, SampleList},
     z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    logIntegrand = (samples) -> logPdf.([x], samples)
     if haskey(y.params, :logintegrand)
         logIntegrand = (samples) -> y.params[:logintegrand](samples) .+ logPdf.([x], samples)
+    else
+        logIntegrand = (samples) -> logPdf.([x], samples)
     end
 
     samples = y.params[:s]
