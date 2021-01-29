@@ -29,8 +29,40 @@ end
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5]) * ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0) == ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
-    @test ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)) == ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
+    dist1 = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    dist2 = dist1 * ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist3 = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
+    @test dist2.params[:s] == dist3.params[:s]
+    @test dist2.params[:w] == dist3.params[:w]
+    @test dist2.params[:logintegrand]([-0.7, 1.5]) == logPdf.([dist1],[-0.7, 1.5])
+    #@test ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)) == ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
+    dist1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
+    dist2 = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * dist1
+    dist3 = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
+    @test dist2.params[:s] == dist3.params[:s]
+    @test dist2.params[:w] == dist3.params[:w]
+    @test dist2.params[:logintegrand]([[-0.7], [1.5]]) == logPdf.([dist1],[[-0.7], [1.5]])
+end
+
+@testset "Initialization of logproposal, logintegrand, unnormalizedweights" begin
+    dist1 = ProbabilityDistribution(Univariate, Beta, a=2.0, b=1.0)
+    dist2 = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)
+    dist3 = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist4 = dist1*dist2
+    dist5 = dist2*dist3
+    dist6 = dist4*dist2
+
+    @test haskey(dist4.params, :logproposal)
+    @test haskey(dist4.params, :logintegrand)
+    @test haskey(dist4.params, :unnormalizedweights)
+
+    @test !haskey(dist5.params, :logproposal)
+    @test haskey(dist5.params, :logintegrand)
+    @test !haskey(dist5.params, :unnormalizedweights)
+
+    @test haskey(dist6.params, :logproposal)
+    @test haskey(dist6.params, :logintegrand)
+    @test haskey(dist6.params, :unnormalizedweights)
 end
 
 @testset "bootstrap" begin
@@ -48,7 +80,7 @@ end
 
     p1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
     p2 = ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
-    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)    
+    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
 end
 
 

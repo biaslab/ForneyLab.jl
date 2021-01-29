@@ -132,10 +132,9 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     y::ProbabilityDistribution{V, SampleList},
     z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
+    logIntegrand = (samples) -> logPdf.([x], samples)
     if haskey(y.params, :logintegrand)
-        logIntegrand(samples) = y.params[:logintegrand](samples) .+ logPdf.([x], samples)
-    else
-        logIntegrand(samples) = logPdf.([x], samples)
+        logIntegrand = (samples) -> y.params[:logintegrand](samples) .+ logPdf.([x], samples)
     end
 
     samples = y.params[:s]
@@ -156,11 +155,11 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
 
     z.params[:w] = weights
     z.params[:s] = samples
-    z.params[:logintegrand] = (s) -> logIntegrand(s)
+    z.params[:logintegrand] = logIntegrand
     if haskey(y.params, :logproposal) && haskey(y.params, :unnormalizedweights)
         z.params[:unnormalizedweights] = w_raw_x.*y.params[:unnormalizedweights]
-        logProposal(s) = y.params[:logproposal](s)
-        z.params[:logproposal] = (s) -> logProposal(s)
+        logProposal = y.params[:logproposal]
+        z.params[:logproposal] = logProposal
         # calculate entropy
         H_y = log(sum(w_raw_x.*y.params[:unnormalizedweights])) - log(n_samples)
         H_x = -sum( weights.*(logProposal(samples) + log.(y.params[:unnormalizedweights]) + log_samples_x) )
