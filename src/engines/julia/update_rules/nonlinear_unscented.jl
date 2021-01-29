@@ -421,6 +421,33 @@ function concatenateGaussianMV(ms::Vector{Vector{Float64}}, Vs::Vector{<:Abstrac
     return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)
 end
 
+# Concatenate multiple mixed statistics
+function concatenateGaussianMV(ms::Vector{Any}, Vs::Vector{Any})
+    # Extract dimensions
+    ds = [length(m_k) for m_k in ms]
+    d_in_tot = sum(ds)
+
+    # Initialize concatenated statistics
+    m = zeros(d_in_tot)
+    V = zeros(d_in_tot, d_in_tot)
+
+    # Construct concatenated statistics
+    d_start = 1
+    for k = 1:length(ms) # For each inbound statistic
+        d_end = d_start + ds[k] - 1
+        if ds[k] == 1
+            m[d_start] = ms[k]
+            V[d_start, d_start] = Vs[k]
+        else
+            m[d_start:d_end] = ms[k]
+            V[d_start:d_end, d_start:d_end] = Vs[k]
+        end
+        d_start = d_end + 1
+    end
+
+    return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)
+end
+
 """
 Split a vector in chunks of lengths specified by ds.
 """
