@@ -124,7 +124,7 @@ function ruleSPNonlinearSInGX(g::Function,
                               msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
                               n_samples=default_n_samples,
                               variate)
-    msgSPNonlinearSInGX(g, inx, msg_out, msg_in..., n_samples=n_samples, variate=variate)
+    msgSPNonlinearSInGX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
 function msgSPNonlinearSOutNFactorX(g::Function,
