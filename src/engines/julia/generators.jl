@@ -281,18 +281,19 @@ Remove module prefixes from types and functions
 removePrefix(arg::Any) = arg # Do not remove prefix in general
 removePrefix(num::Number) = string(num)
 removePrefix(func::Function) = split(string(func), '.')[end]
-function removePrefix(type::Type)
-    # check whether the type is parameterized
-    if occursin("{", string(type))
-        # separate node type from parameterization and remove prefix
-        types = split(split(string(type), '}')[1], '{')
-        nodetype = split(types[1], '.')[end]
-        paramtype = split(types[2], '.')[end]
-        # join separated types again
-        stripped_type = join([nodetype, "{", paramtype, "}"])
+function removePrefix(T::DataType)
+    main_type_str = string(nameof(T)) # Strip leading module names and convert T to a string
+    param_types = T.parameters # Find parameterized types of T
+    if isempty(param_types) # If T is not parameterized further
+        return main_type_str # Stop-condition, return main name
     else
-        # just remove prefix
-        stripped_type = split(string(type), '.')[end]
+        # Recursively build a vector of strings for the parameter types 
+        param_type_strs = []
+        for param_type in param_types
+            push!(param_type_strs, removePrefix(param_type)) # Recursive call
+        end
+        param_type_str = join(param_type_strs, ", ") # Join the constructed vector to a comma-separated string
+
+        return "$main_type_str{$param_type_str}" # Construct the parameterized type string
     end
-    return stripped_type
 end
