@@ -38,7 +38,7 @@ f() = 1.0 # Define a function
     var = Variable()
     inbound = Clamp(var, 1.0)
     inbound.dist_or_msg = Message
-    @test inboundSourceCode(inbound) == "Message(Univariate, PointMass, m=1.0)"
+    @test inboundSourceCode(inbound) == "ForneyLab.Message(Univariate, PointMass, m=1.0)"
 
     # buffer inbound
     g = FactorGraph()
@@ -47,7 +47,7 @@ f() = 1.0 # Define a function
     inbound.dist_or_msg = Message
     inbound.buffer_id = :x
     inbound.buffer_index = 1
-    @test inboundSourceCode(inbound) == "Message(Univariate, PointMass, m=data[:x][1])"
+    @test inboundSourceCode(inbound) == "ForneyLab.Message(Univariate, PointMass, m=data[:x][1])"
 
     g = FactorGraph()
     var = Variable()
@@ -55,7 +55,7 @@ f() = 1.0 # Define a function
     inbound.dist_or_msg = Message
     inbound.buffer_id = :x
     inbound.buffer_index = 0
-    @test inboundSourceCode(inbound) == "Message(Univariate, PointMass, m=data[:x])"
+    @test inboundSourceCode(inbound) == "ForneyLab.Message(Univariate, PointMass, m=data[:x])"
 
     # marginal
     inbound = MarginalEntry()

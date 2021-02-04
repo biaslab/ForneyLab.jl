@@ -93,8 +93,8 @@ end
     code = ForneyLab.algorithmSourceCode(algo)
 
     @test occursin("Array{Message}(undef, 2)", code)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", code)
-    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", code)
+    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, ForneyLab.Message(Univariate, PointMass, m=0.0), ForneyLab.Message(Univariate, PointMass, m=1.0))", code)
+    @test occursin("messages[2] = ruleSPStateTransitionX(ForneyLab.Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", code)
     @test occursin("marginals[:x] = messages[2].dist", code)
 end
 
