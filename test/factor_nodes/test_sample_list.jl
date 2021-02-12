@@ -32,7 +32,7 @@ end
     dist_gaussian = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
     dist_prod = dist_gaussian * ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
     dist_true_prod = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
-    
+
     @test dist_prod.params[:s] == dist_true_prod.params[:s]
     @test dist_prod.params[:w] == dist_true_prod.params[:w]
     @test dist_prod.params[:logintegrand]([-0.7, 1.5]) == logPdf.([dist_gaussian],[-0.7, 1.5])
@@ -40,9 +40,9 @@ end
 
 @testset "Multivariate SampleList prod!" begin
     dist_gaussian = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
-    dist_prod = dist_gaussian * ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) 
+    dist_prod = dist_gaussian * ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])
     dist_true_prod = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
-    
+
     @test dist_prod.params[:s] == dist_true_prod.params[:s]
     @test dist_prod.params[:w] == dist_true_prod.params[:w]
     @test dist_prod.params[:logintegrand]([[-0.7], [1.5]]) == logPdf.([dist_gaussian],[[-0.7], [1.5]])
@@ -143,6 +143,44 @@ end
     marginals = step!(Dict())
 
     @test marginals[:y] == ProbabilityDistribution(Univariate, SampleList, s=collect(1.0:4.0), w=ones(4)/4)
+end
+
+@testset "Differential Entropy estimate" begin
+    fg = FactorGraph()
+
+    @RV x ~ Gamma(3.4, 1.2)
+    @RV s1 ~ Nonlinear{Sampling}(x, g=g)
+    @RV y1 ~ Poisson(s1)
+    @RV y2 ~ Poisson(x)
+
+    @RV z ~ Gamma(3.4, 1.2)
+    @RV s2 ~ Nonlinear{Sampling}(z, g=g)
+    @RV y3 ~ Poisson(z)
+    @RV y4 ~ Poisson(s2)
+
+    @RV w ~ Gamma(3.4, 1.2)
+    @RV y5 ~ Poisson(w)
+    @RV y6 ~ Poisson(w)
+
+    placeholder(y1,:y1)
+    placeholder(y2,:y2)
+    placeholder(y3,:y3)
+    placeholder(y4,:y4)
+    placeholder(y5,:y5)
+    placeholder(y6,:y6)
+
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm([x,z,w])
+    source_code = algorithmSourceCode(algo)
+    eval(Meta.parse(source_code));
+
+    v_1, v_2 = 7, 5
+    data = Dict(:y1 => v_1, :y2 => v_2, :y3 => v_1, :y4 => v_2, :y5 => v_1, :y6 => v_2)
+    marginals = step!(data)
+
+    @test isapprox(marginals[:x].params[:entropy], differentialEntropy(marginals[:w]), atol=0.1)
+    @test isapprox(marginals[:z].params[:entropy], differentialEntropy(marginals[:w]), atol=0.1)
+
 end
 
 end
