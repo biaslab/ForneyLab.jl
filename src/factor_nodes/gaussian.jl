@@ -128,7 +128,7 @@ function differentialEntropy(dist::ProbabilityDistribution{Univariate, F}) where
 end
 
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
-    return  0.5*log(det(unsafeCov(dist))) +
+    return  0.5*logdet(unsafeCov(dist)) +
             (dims(dist)/2)*log(2*pi) +
             (dims(dist)/2)
 end

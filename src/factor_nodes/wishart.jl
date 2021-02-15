@@ -56,7 +56,7 @@ function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
-    log(det(dist.params[:v]))
+    logdet(dist.params[:v])
 end
 
 function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsafe variance
