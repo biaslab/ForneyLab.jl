@@ -5,7 +5,11 @@ using Base64: base64encode
 using LinearAlgebra: diag, det, tr, cholesky, pinv, PosDefException
 using SparseArrays: spzeros
 using SpecialFunctions: digamma, erfc, logfactorial, logabsgamma, logabsbeta, gamma, loggamma, erf
+<<<<<<< HEAD
 using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr, logdet
+=======
+using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr, logdet
+>>>>>>> 2bac467dbd6cd8a9d066f22e0cf140529644f37a
 using InteractiveUtils: subtypes
 using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, normcdf

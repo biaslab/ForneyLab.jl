@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init
+export huge, tiny, cholinv, logdet, diageye, eye, format, *, ^, mat, step!, init
 
 # Constants to define smallest/largest supported numbers.
 # Used for clipping quantities to ensure numerical stability.
@@ -27,6 +27,26 @@ Wrapper for `logabsbeta` function that returns first element of its output
 function labsbeta(x::Number, y::Number)
     return logabsbeta(x, y)[1]
 end
+
+""""
+Numerically stable version of the log(det(...)) function which utilizes the eigenvalue decomposition.
+
+This version assumes the matrix to be positive definite.
+
+The numically stable version can be determined as follows:
+log(det(M))
+= log(det(Q*Λ*Q^{-1}))
+= log(det(Q) * det(Λ) * det(Q^{-1}))
+= log(det(Q) * det(Λ) / det(Q))
+= log(det(Λ))   # Λ is diagonal
+= log(prod(λi))
+= sum(log.(λi))
+
+"""
+function logdet(M::AbstractMatrix)
+    return sum(log.(eigvals(M)))
+end
+
 
 cholesky(::Type{Nothing}, M::AbstractMatrix) = cholesky(Hermitian(Matrix(M))) # No strategy for enforcing PD-ness of M
 
