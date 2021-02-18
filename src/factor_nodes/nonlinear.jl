@@ -42,6 +42,8 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Union{Tuple, Vector} # Dimension of breaker message(s) on input interface(s)
     n_samples::Union{Int64, Nothing} # Number of samples for sampling
+    in_variates::Union{Vector{DataType}, Nothing} # Variate types of messages on in interfaces
+    out_variate::Union{DataType, Nothing} # Variate types of message on out interface
 
     function Nonlinear{T}(id::Symbol,
                           g::Function,
@@ -49,6 +51,8 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
                           alpha::Union{Float64, Nothing},
                           dims::Union{Tuple, Vector},
                           n_samples::Union{Int64, Nothing},
+                          in_variates::Union{Vector{DataType}, Nothing},
+                          out_variate::Union{DataType, Nothing},
                           out::Variable,
                           args::Vararg) where T<:ApproximationMethod
         
@@ -56,7 +60,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         for i=1:n_args
             @ensureVariables(args[i])
         end
-        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples)
+        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples, in_variates, out_variate)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -68,15 +72,15 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
 end
 
 function Nonlinear{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Unscented}))
-    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, out, args...)
+    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
 end
 
-function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=(), n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
-    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, out, args...)
+function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=(), n_samples=nothing, in_variates=nothing, out_variate=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
+    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, in_variates, out_variate, out, args...)
 end
 
 function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Extended}))
-    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, out, args...)
+    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, nothing, nothing, out, args...)
 end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds

@@ -198,7 +198,7 @@ end
     pf.marginal_table = []
 
     pf_code = posteriorFactorSourceCode(pf)
-    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", pf_code)
+    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0)", pf_code)
 end
 
 @testset "algorithmSourceCode" begin
@@ -211,7 +211,7 @@ end
     algo = InferenceAlgorithm()
     algo.posterior_factorization.free_energy_flag = true
     free_energy_code = freeEnergySourceCode(algo)
-    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
+    @test occursin("function freeEnergy(data::Dict, marginals::Dict", free_energy_code)
 end
 
 end # module
