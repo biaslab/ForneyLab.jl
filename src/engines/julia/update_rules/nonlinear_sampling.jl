@@ -345,6 +345,7 @@ function gradientOptimization(log_joint::Function, d_log_joint::Function, m_init
     m_old = m_initial
     satisfied = false
     step_count = 0
+    m_latests = if dim_tot == 1 Queue{Float64}() else Queue{Vector}() end
 
     while !satisfied
         m_new = m_old .+ step_size.*d_log_joint(m_old)
@@ -360,12 +361,13 @@ function gradientOptimization(log_joint::Function, d_log_joint::Function, m_init
             m_new = m_old .+ step_size.*d_log_joint(m_old)
         end
         step_count += 1
-        m_total .+= m_old
-        m_average = m_total ./ step_count
+        enqueue!(m_latests, m_old)
         if step_count > 10
+            m_average = sum(x for x in m_latests)./10
             if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
                 satisfied = true
             end
+            dequeue!(m_latests);
         end
         if step_count > dim_tot*250
             satisfied = true

@@ -11,6 +11,7 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf
 using ForwardDiff
 using StatsBase: Weights
+using DataStructures: Queue, enqueue!, dequeue!
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
