@@ -5,7 +5,7 @@ using Base64: base64encode
 using LinearAlgebra: diag, det, tr, cholesky, pinv, PosDefException
 using SparseArrays: spzeros
 using SpecialFunctions: digamma, erfc, logfactorial, logabsgamma, logabsbeta, gamma, loggamma, erf
-using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr
+using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr, logdet
 using InteractiveUtils: subtypes
 using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, normcdf

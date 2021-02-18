@@ -28,6 +28,7 @@ function labsbeta(x::Number, y::Number)
     return logabsbeta(x, y)[1]
 end
 
+
 cholesky(::Type{Nothing}, M::AbstractMatrix) = cholesky(Hermitian(Matrix(M))) # No strategy for enforcing PD-ness of M
 
 """
