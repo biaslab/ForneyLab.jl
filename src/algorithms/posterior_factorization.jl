@@ -163,6 +163,9 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
         # Iterate over small regions
         for edge in pf.internal_edges
             increase!(variable_counting_numbers, edge.variable, -(degree(edge) - 1)) # Discount single variables
+            if edge in pfz.deterministic_edges
+                variable_counting_numbers[edge.variable] = 0 # However, ignore entropies of deterministic beliefs
+            end
         end
 
         # All targets with a non-zero counting number are required for free energy evaluation

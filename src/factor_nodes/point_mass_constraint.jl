@@ -13,7 +13,7 @@ Construction:
 
     PointMassConstraint(out; id=:my_node)
 """
-mutable struct PointMassConstraint <: SoftFactor # TODO: how to handle free energy evaluation for a point-mass constrained variable?
+mutable struct PointMassConstraint <: DeltaFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -34,3 +34,5 @@ slug(::Type{PointMassConstraint}) = "δ"
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = true
 
 breakerParameters(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+
+isPointMassConstraint(::PointMassConstraint) = true

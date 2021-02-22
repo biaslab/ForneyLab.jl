@@ -81,6 +81,9 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
     # Iterate over small regions
     for edge in internal_edges
         increase!(entropy_counting_numbers, edge.variable, -(degree(edge) - 1)) # Discount univariate entropy
+        if edge in pfz.deterministic_edges
+            entropy_counting_numbers[edge.variable] = 0 # However, ignore entropies of deterministic beliefs
+        end
     end
 
     pfz.energy_counting_numbers = energy_counting_numbers
