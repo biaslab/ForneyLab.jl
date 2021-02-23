@@ -46,14 +46,14 @@ function ruleSPNonlinearSOutNM(g::Function,
     weights = msg_in1.dist.params[:w]
 
     return Message(variate, SampleList, s=samples, w=weights)
-end 
+end
 
 function msgSPNonlinearSOutNGX(g::Function,
     msg_out::Nothing,
     msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
     n_samples=default_n_samples,
     variate)
-    
+
     samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
 
     samples = g.(samples_in...)
@@ -83,7 +83,7 @@ function msgSPNonlinearSInGX(g::Function,
                              msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
                              n_samples=default_n_samples,
                              variate)
-                            
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -124,7 +124,7 @@ function ruleSPNonlinearSInGX(g::Function,
                               msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
                               n_samples=default_n_samples,
                               variate)
-    msgSPNonlinearSInGX(g, inx, msg_out, msg_in..., n_samples=n_samples, variate=variate)
+    msgSPNonlinearSInGX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
 function msgSPNonlinearSOutNFactorX(g::Function,
@@ -172,7 +172,7 @@ function msgSPNonlinearSInFactorX(g::Function,
                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
             end
         end
-    
+
         return samples_in
     end
 
@@ -345,6 +345,7 @@ function gradientOptimization(log_joint::Function, d_log_joint::Function, m_init
     m_old = m_initial
     satisfied = false
     step_count = 0
+    m_latests = if dim_tot == 1 Queue{Float64}() else Queue{Vector}() end
 
     while !satisfied
         m_new = m_old .+ step_size.*d_log_joint(m_old)
@@ -360,12 +361,13 @@ function gradientOptimization(log_joint::Function, d_log_joint::Function, m_init
             m_new = m_old .+ step_size.*d_log_joint(m_old)
         end
         step_count += 1
-        m_total .+= m_old
-        m_average = m_total ./ step_count
+        enqueue!(m_latests, m_old)
         if step_count > 10
+            m_average = sum(x for x in m_latests)./10
             if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
                 satisfied = true
             end
+            dequeue!(m_latests);
         end
         if step_count > dim_tot*250
             satisfied = true

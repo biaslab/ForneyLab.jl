@@ -12,6 +12,7 @@ using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, no
 using ForwardDiff
 using StatsBase: Weights
 using PositiveFactorizations
+using DataStructures: Queue, enqueue!, dequeue!
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!

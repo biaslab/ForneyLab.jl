@@ -127,18 +127,36 @@ unsafeMeanVector(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateT
 
 isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = abs(sum(dist.params[:w]) - 1) < 0.001
 
+# prod of a pdf (or distribution) message and a SampleList message
+# this function is capable to calculate entropy with SampleList messages in VMP setting
 @symmetrical function prod!(
     x::ProbabilityDistribution{V}, # Includes function distributions
     y::ProbabilityDistribution{V, SampleList},
     z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    samples = y.params[:s]
-    n_samples = length(samples)
-    log_samples_x = logPdf.([x], samples)
+    # Suppose in the previous time step m1(pdf) and m2(pdf) messages collided.
+    # The resulting collision m3 (sampleList) = m1*m2 is supposed to carry
+    # the proposal (m1) and integrand (m2) distributions. m1 is the message from which
+    # the samples are drawn. m2 is the message on which the samples are evaluated and
+    # weights are calculated. In case Particle Filtering (BP), entropy will not be calculated
+    # and in the first step there won't be any integrand information.
+    if haskey(y.params, :logintegrand)
+        # recall that we are calculating m3*m4. If m3 consists of integrand information
+        # update it: new_integrand = m2*m3. This allows us to collide arbitrary number of beliefs
+        # to approximate posterior and yet estimate the entropy.
+        logIntegrand = (samples) -> y.params[:logintegrand](samples) .+ logPdf.([x], samples)
+    else
+        # If there is no integrand information before, set it to m4
+        logIntegrand = (samples) -> logPdf.([x], samples)
+    end
+
+    samples = y.params[:s] # samples come from proposal (m1)
+    n_samples = length(samples) # number of samples
+    log_samples_x = logPdf.([x], samples) # evaluate samples in logm4, i.e. logm4(s)
 
     # Compute sample weights
-    w_raw_x = clamp.(exp.(log_samples_x), tiny, huge)
-    w_prod = w_raw_x.*y.params[:w]
+    w_raw_x = exp.(log_samples_x) # m4(s)
+    w_prod = w_raw_x.*y.params[:w] # update the weights of posterior w_unnormalized = m4(s)*w_prev
     weights = w_prod./sum(w_prod) # Normalize weights
     
     # Resample if required
@@ -148,9 +166,21 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
         weights = ones(n_samples)./n_samples
     end
 
-    # TODO: no entropy is computed here; include computation?
-    z.params[:w] = weights
-    z.params[:s] = samples
+    # resulting posterior or message
+    z.params[:w] = weights # set adjusted weights
+    z.params[:s] = samples # samples are still coming from the same proposal
+    z.params[:logintegrand] = logIntegrand # set integrand
+    if haskey(y.params, :logproposal) && haskey(y.params, :unnormalizedweights)
+        z.params[:unnormalizedweights] = w_raw_x.*y.params[:unnormalizedweights] # m4(s)*m2(s)
+        logProposal = y.params[:logproposal] # m1
+        z.params[:logproposal] = logProposal # m1
+        # calculate entropy
+        H_y = log(sum(w_raw_x.*y.params[:unnormalizedweights])) - log(n_samples) # log(sum_i(m4(s_i)*m2(s_i))/N)
+        # -sum_i(w_i*log(m1(s_i)*m2(s_i)*m4(s_i)))
+        H_x = -sum( weights.*(logProposal(samples) + log.(y.params[:unnormalizedweights]) + log_samples_x) )
+        entropy = H_x + H_y
+        z.params[:entropy] = entropy
+    end
 
     return z
 end
@@ -188,7 +218,7 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     log_samples_y = logPdf.([y], samples)
 
     # Extract the sample weights
-    w_raw = clamp.(exp.(log_samples_y), tiny, huge) # Unnormalized weights
+    w_raw = exp.(log_samples_y) # Unnormalized weights
     w_sum = sum(w_raw)
     weights = w_raw./w_sum # Normalize the raw weights
 
@@ -197,7 +227,11 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     H_x = -sum( weights.*(log_samples_x + log_samples_y) )
     entropy = H_x + H_y
 
-    return (samples, weights, entropy)
+    # Inform next step about the proposal and integrand to be used in entropy calculation in smoothing
+    logproposal = (samples) -> logPdf.([x], samples)
+    logintegrand = (samples) -> logPdf.([y], samples)
+
+    return (samples, weights, w_raw, logproposal, logintegrand, entropy)
 end
 
 # General product definition that returns a SampleList
@@ -206,10 +240,13 @@ function prod!(
     y::ProbabilityDistribution{V},
     z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType}
 
-    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, unnormalizedweights, logproposal, logintegrand, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
+    z.params[:unnormalizedweights] = unnormalizedweights
+    z.params[:logproposal] = logproposal
+    z.params[:logintegrand] = logintegrand
     z.params[:entropy] = entropy
 
     return z
@@ -221,10 +258,13 @@ end
     y::ProbabilityDistribution{Multivariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, unnormalizedweights, logproposal, logintegrand, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
+    z.params[:unnormalizedweights] = unnormalizedweights
+    z.params[:logproposal] = logproposal
+    z.params[:logintegrand] = logintegrand
     z.params[:entropy] = entropy
 
     return z
