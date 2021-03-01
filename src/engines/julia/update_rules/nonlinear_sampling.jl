@@ -384,14 +384,14 @@ end
 #--------
 
 function logJointPdfs(V::Type{Multivariate}, m_fw_in::Vector, W_fw_in::AbstractMatrix, dist_out::ProbabilityDistribution, g::Function, ds::Vector{Int64})
-    log_joint(x) = -0.5*sum(ds)*log(2pi) + 0.5*log(det(W_fw_in)) - 0.5*(x - m_fw_in)'*W_fw_in*(x - m_fw_in) + logPdf(dist_out, g(split(x, ds)...))
+    log_joint(x) = -0.5*sum(ds)*log(2pi) + 0.5*logdet(W_fw_in) - 0.5*(x - m_fw_in)'*W_fw_in*(x - m_fw_in) + logPdf(dist_out, g(split(x, ds)...))
     d_log_joint(x) = ForwardDiff.gradient(log_joint, x)
 
     return (log_joint, d_log_joint)
 end
 
 function logJointPdfs(V::Type{Univariate}, m_fw_in::Vector, W_fw_in::AbstractMatrix, dist_out::ProbabilityDistribution, g::Function, ds::Vector{Int64})
-    log_joint(x) = -0.5*sum(ds)*log(2pi) + 0.5*log(det(W_fw_in)) - 0.5*(x - m_fw_in)'*W_fw_in*(x - m_fw_in) + logPdf(dist_out, g(x...))
+    log_joint(x) = -0.5*sum(ds)*log(2pi) + 0.5*logdet(W_fw_in) - 0.5*(x - m_fw_in)'*W_fw_in*(x - m_fw_in) + logPdf(dist_out, g(x...))
     d_log_joint(x) = ForwardDiff.gradient(log_joint, x)
 
     return (log_joint, d_log_joint)
