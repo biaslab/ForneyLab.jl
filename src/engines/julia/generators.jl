@@ -281,6 +281,7 @@ Remove module prefixes from types and functions
 removePrefix(arg::Any) = arg # Do not remove prefix in general
 removePrefix(num::Number) = string(num)
 removePrefix(func::Function) = split(string(func), '.')[end]
+removePrefix(T::Type) = split(string(T), '.')[end]
 function removePrefix(T::DataType)
     main_type_str = string(nameof(T)) # Strip leading module names and convert T to a string
     param_types = T.parameters # Find parameterized types of T
