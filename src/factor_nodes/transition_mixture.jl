@@ -54,8 +54,8 @@ function ForneyLab.averageEnergy(::Type{TransitionMixture},
     z_bar = unsafeMeanVector(dist_switch)
     U = 0.0
     for k = 1:n_factors
-        A_k = clamp.(dist_factors.params[:m], tiny, 1-tiny) # Soften given transition functions
-        U += z_bar[k]*averageEnergy(Dirichlet, dist_out, A_k)
+        A_k = clamp.(dist_factors[k].params[:m], tiny, 1-tiny) # Soften given transition functions
+        U += z_bar[k]*averageEnergy(Dirichlet, dist_out, ProbabilityDistribution(MatrixVariate, PointMass, m=A_k))
     end
 
     return U
