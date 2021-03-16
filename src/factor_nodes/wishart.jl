@@ -56,7 +56,7 @@ function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
-    log(det(dist.params[:v]))
+    logdet(dist.params[:v])
 end
 
 function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsafe variance
@@ -72,7 +72,7 @@ end
 
 function logPdf(dist::ProbabilityDistribution{MatrixVariate, Wishart},x)
     d = dims(dist)[1]
-    0.5*((dist.params[:nu]-d-1)*log(det(x)) - tr(inv(dist.params[:v])*x) - dist.params[:nu]*d*log(2) - dist.params[:nu]*log(det(dist.params[:v]))) - logmvgamma(d,0.5*dist.params[:nu])
+    0.5*((dist.params[:nu]-d-1)*logdet(x) - tr(inv(dist.params[:v])*x) - dist.params[:nu]*d*log(2) - dist.params[:nu]*logdet(dist.params[:v])) - logmvgamma(d,0.5*dist.params[:nu])
 end
 
 function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
@@ -106,7 +106,7 @@ end
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    0.5*(d + 1.0)*log(det(dist.params[:v])) +
+    0.5*(d + 1.0)*logdet(dist.params[:v]) +
     0.5*d*(d + 1.0)*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
     sum([labsgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -
