@@ -1,5 +1,6 @@
 export
-ruleSPSampleListOutNPP
+ruleSPSampleListOutNPP,
+ruleVBSampleListOut
 
 function ruleSPSampleListOutNPP(msg_out::Nothing,
 	                            msg_s::Message{PointMass, Multivariate}, # Multivariate, because vectors of samples and weight are passed as parameters
@@ -18,4 +19,23 @@ function ruleSPSampleListOutNPP(msg_out::Nothing,
     end
 
     return Message(V, SampleList, s=deepcopy(msg_s.dist.params[:m]), w=deepcopy(msg_w.dist.params[:m]))
+end
+
+function ruleVBSampleListOut(dist_out::Any,
+                             dist_s::ProbabilityDistribution{Multivariate, PointMass}, # Multivariate, because vectors of samples and weight are passed as parameters
+                             dist_w::ProbabilityDistribution{Multivariate, PointMass})
+    
+    # Extract the variate type from the first sample
+    s = dist_s.params[:m][1]
+    if isa(s, Number)
+        V = Univariate
+    elseif isa(s, AbstractVector)
+        V = Multivariate
+    elseif isa(s, AbstractMatrix)
+        V = MatrixVariate
+    else
+        error("Unexpected sample type: $(typeof(s))")
+    end
+
+    return Message(V, SampleList, s=deepcopy(dist_s.params[:m]), w=deepcopy(dist_w.params[:m]))
 end
