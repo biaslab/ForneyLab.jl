@@ -1,4 +1,4 @@
-export Gaussian, prod!, convert
+export Gaussian, prod!, convert, naturalParams, standardDist
 
 # Convert parameterizations
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
@@ -118,6 +118,21 @@ function sample(dist::ProbabilityDistribution{Multivariate, F}, n_samples::Int64
     d = dims(dist)
 
     return [U' *randn(d) + m for i in 1:n_samples]
+end
+
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian = [unsafeWeightedMean(dist), -0.5*unsafePrecision(dist)]
+
+naturalParams(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian = [vec(unsafeWeightedMean(dist)); vec(-0.5*unsafePrecision(dist))]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, F}, η::Vector) where F<:Gaussian
+    ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision,xi=η[1],w=-2*η[2])
+end
+
+function standardDist(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
+    d = dims(dist)
+    ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
 end
 
 # Entropy functional
