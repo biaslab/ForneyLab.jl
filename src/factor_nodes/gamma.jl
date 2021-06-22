@@ -1,4 +1,4 @@
-export Gamma
+export Gamma, naturalParams, standardDist
 
 """
 Description:
@@ -79,6 +79,14 @@ end
 end
 
 sample(dist::ProbabilityDistribution{Univariate, Gamma}) = gammainvcdf(dist.params[:a], 1/dist.params[:b], rand())
+
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, Gamma}) = [dist.params[:a]-1, -dist.params[:b]]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, Gamma}, η::Vector)
+    ProbabilityDistribution(Univariate, Gamma,a=η[1]+1,b=-η[2])
+end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gamma})
