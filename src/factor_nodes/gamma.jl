@@ -1,4 +1,4 @@
-export Gamma, naturalParams, standardDist
+export Gamma, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -85,7 +85,12 @@ naturalParams(dist::ProbabilityDistribution{Univariate, Gamma}) = [dist.params[:
 
 # Natural parameters to standard dist. type
 function standardDist(dist::ProbabilityDistribution{Univariate, Gamma}, η::Vector)
-    ProbabilityDistribution(Univariate, Gamma,a=η[1]+1,b=-η[2])
+    ProbabilityDistribution(Univariate, Gamma, a=η[1]+1, b=-η[2])
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, Gamma}, η::Vector)
+    Message(Univariate, Gamma, a=η[1]+1, b=-η[2])
 end
 
 # Entropy functional

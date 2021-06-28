@@ -1,4 +1,4 @@
-export Gaussian, prod!, convert, naturalParams, standardDist
+export Gaussian, prod!, convert, naturalParams, standardDist, standardMessage
 
 # Convert parameterizations
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
@@ -133,6 +133,16 @@ end
 function standardDist(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
     d = dims(dist)
     ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, F}, η::Vector) where F<:Gaussian
+    Message(Univariate, GaussianWeightedMeanPrecision,xi=η[1],w=-2*η[2])
+end
+
+function standardMessage(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
+    d = dims(dist)
+    Message(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
 end
 
 # Entropy functional

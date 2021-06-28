@@ -254,6 +254,7 @@ function inboundSourceCode(inbound::Clamp{V}) where V<:VariateType # Buffer or v
 end
 
 inboundSourceCode(inbound::Number) = string(inbound)
+inboundSourceCode(inbound::Symbol) = ":$inbound"
 
 """
 Convert a value to parseable Julia code
