@@ -1,4 +1,4 @@
-export Beta
+export Beta, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -82,6 +82,20 @@ end
 end
 
 sample(dist::ProbabilityDistribution{Univariate, Beta}) = betainvcdf(dist.params[:a], dist.params[:b], rand())
+
+# https://en.wikipedia.org/wiki/Exponential_family we use variant 2 for Beta dist.
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, Beta}) = [dist.params[:a]-1, dist.params[:b]-1]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, Beta}, η::Vector)
+    ProbabilityDistribution(Univariate, Gamma, a=η[1]+1, b=η[2]+1)
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, Beta}, η::Vector)
+    Message(Univariate, Gamma, a=η[1]+1, b=η[2]+1)
+end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})

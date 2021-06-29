@@ -1,4 +1,4 @@
-export Wishart
+export Wishart, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -101,6 +101,28 @@ end
     z.params[:m] = deepcopy(y.params[:m])
 
     return z
+end
+
+# Standard parameters to natural parameters
+function naturalParams(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    d = dims(dist)[1]
+    [-0.5 .* vec(cholinv(dist.params[:v])); 0.5*(dist.params[:nu]-d-1)]
+end
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{MatrixVariate, Wishart}, η::Vector)
+    d = Int(sqrt(length(η)-1))
+    ν = 2*η[end] + d + 1
+    V = cholinv(reshape(-2 .* η[1:end-1], (d,d)))
+    ProbabilityDistribution(MatrixVariate, Wishart, v=V, nu=ν)
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{MatrixVariate, Wishart}, η::Vector)
+    d = Int(sqrt(length(η)-1))
+    ν = 2*η[end] + d + 1
+    V = cholinv(reshape(-2 .* η[1:end-1], (d,d)))
+    Message(MatrixVariate, Wishart, v=V, nu=ν)
 end
 
 # Entropy functional

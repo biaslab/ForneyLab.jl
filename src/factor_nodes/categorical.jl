@@ -1,4 +1,4 @@
-export Categorical
+export Categorical, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -100,6 +100,20 @@ function prod!( x::ProbabilityDistribution{Univariate, Categorical},
     z.params[:p] = z.params[:p]./norm
 
     return z
+end
+
+# https://en.wikipedia.org/wiki/Exponential_family we use variant 1 for categorical
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = log.(dist.params[:p])
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
+    ProbabilityDistribution(Univariate, Categorical, p=exp.(η))
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
+    Message(Univariate, Categorical, p=exp.(η))
 end
 
 # Entropy functional

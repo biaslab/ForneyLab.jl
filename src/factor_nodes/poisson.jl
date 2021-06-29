@@ -1,4 +1,4 @@
-export Poisson
+export Poisson, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -54,6 +54,19 @@ unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.par
 logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, x) = x*log(dist.params[:l]) - dist.params[:l] - logfactorial(x)
 
 sample(dist::ProbabilityDistribution{Univariate, Poisson}) = poisinvcdf(dist.params[:l], rand())
+
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, Poisson}) = [log(dist.params[:l])]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, Poisson}, η::Vector)
+    ProbabilityDistribution(Univariate, Poisson, l=exp(η[1]))
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, Poisson}, η::Vector)
+    Message(Univariate, Poisson, l=exp(η[1]))
+end
 
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy

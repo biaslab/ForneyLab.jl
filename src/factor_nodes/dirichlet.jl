@@ -1,4 +1,4 @@
-export Dirichlet
+export Dirichlet, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -113,6 +113,32 @@ function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     return smpl
 end
 
+# https://en.wikipedia.org/wiki/Exponential_family we use variant 2 for Dirichlet
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a] .- 1
+
+naturalParams(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = vec(dist.params[:a]) .- 1
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector)
+    ProbabilityDistribution(Multivariate, Dirichlet, a = η .+ 1)
+end
+
+function standardDist(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, η::Vector)
+    d = Int(sqrt(length(η)))
+    ProbabilityDistribution(MatrixVariate, Dirichlet, a = reshape(η .+ 1, (d,d)))
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector)
+    Message(Multivariate, Dirichlet, a = η .+ 1)
+end
+
+function standardMessage(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, η::Vector)
+    d = Int(sqrt(length(η)))
+    Message(MatrixVariate, Dirichlet, a = reshape(η .+ 1, (d,d)))
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
@@ -148,7 +174,7 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
     samples, weights = marg_a.params[:s], marg_a.params[:w]
     S = length(weights) #number of samples
     log_gamma_of_sum, sum_of_log_gamma = 0.0, 0.0
-    
+
     for s=1:S
         log_gamma_of_sum += weights[s]*loggamma(sum(samples[s]))
         sum_of_log_gamma += weights[s]*sum(loggamma.(samples[s]))

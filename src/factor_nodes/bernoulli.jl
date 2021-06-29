@@ -1,4 +1,4 @@
-export Bernoulli
+export Bernoulli, naturalParams, standardDist, standardMessage
 
 """
 Description:
@@ -67,6 +67,19 @@ function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
     z.params[:p] = (x.params[:p] * y.params[:p]) / norm
 
     return z
+end
+
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [log(dist.params[:p]/(1-dist.params[:p]))]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, Bernoulli}, η::Vector)
+    ProbabilityDistribution(Univariate, Bernoulli, p=exp(η[1])/(1+exp(η[1])))
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, Bernoulli}, η::Vector)
+    Message(Univariate, Bernoulli, p=exp(η[1])/(1+exp(η[1])))
 end
 
 # Entropy functional
