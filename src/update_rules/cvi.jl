@@ -4,7 +4,7 @@
                       :name          => VBCVIOutVD)
 
 @naiveVariationalRule(:node_type     => CVI,
-                      :outbound_type => Message{FactorNode},
+                      :outbound_type => Message{Union{FactorNode,GaussianWeightedMeanPrecision}},
                       :inbound_types => (ProbabilityDistribution, Nothing),
                       :name          => VBCVIIn1MV)
 

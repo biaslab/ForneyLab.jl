@@ -5,8 +5,60 @@ function ruleVBCVIIn1MV(node_id::Symbol,
                         msg_in::Message{<:FactorNode, <:VariateType})
 
     @show msg_in
+    # @show typeof(msg_in)
     @show msg_out
     msg_in
+end
+
+function ruleVBCVIIn1MV(node_id::Symbol,
+                        msg_out::ProbabilityDistribution,
+                        msg_in::Message{<:Gaussian, Univariate})
+
+    thenode = currentGraph().nodes[node_id]
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+    q = standardDist(msg_in.dist,λ)
+
+    logp_nc(z) = logPdf(thenode.message, thenode.g(z))
+    df_m(z) = ForwardDiff.derivative(logp_nc,z)
+    df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
+    for i=1:thenode.num_iterations
+        z_s = sample(q)
+        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = [df_μ1, df_μ2]
+        ∇ = λ - η - ∇f
+        update!(thenode.opt,λ,∇)
+    end
+
+    return standardMessage(msg_in.dist,λ-η)
+
+end
+
+function ruleVBCVIIn1MV(node_id::Symbol,
+                        msg_out::ProbabilityDistribution,
+                        msg_in::Message{<:Gaussian, Multivariate})
+
+    thenode = currentGraph().nodes[node_id]
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+    q = standardDist(msg_in.dist,λ)
+
+    logp_nc(z) = logPdf(thenode.message, thenode.g(z))
+    df_m(z) = ForwardDiff.gradient(logp_nc,z)
+    df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
+    for i=1:thenode.num_iterations
+        z_s = sample(q)
+        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = [df_μ1, df_μ2]
+        ∇ = λ - η - ∇f
+        update!(thenode.opt,λ,∇)
+    end
+
+    return standardMessage(msg_in.dist,λ-η)
 end
 
 function ruleVBCVIOutVD(node_id::Symbol,
