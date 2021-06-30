@@ -39,3 +39,13 @@ end
                             z::ProbabilityDistribution{Multivariate, F} = ProbabilityDistribution(Univariate,F)) where {F<:Gaussian}
     return deepcopy(x.params[:q])
 end
+
+
+
+
+# @symmetrical function prod!(x::ProbabilityDistribution{Univariate, SetProbDist},
+#                             y::ProbabilityDistribution{Univariate, F1},
+#                             z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList)) where {F1<:Gaussian}
+#     @show x.params[:q]
+#     return deepcopy(x.params[:q])
+# end

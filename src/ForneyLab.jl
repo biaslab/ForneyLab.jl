@@ -63,7 +63,9 @@ include("factor_nodes/dot_product.jl")
 include("factor_nodes/poisson.jl")
 include("factor_nodes/nonlinear.jl")
 include("factor_nodes/svi.jl")
+include("factor_nodes/cvi.jl")
 include("factor_nodes/set_prob_dist.jl")
+include("factor_nodes/set_sample_list.jl")
 
 
 
@@ -124,6 +126,7 @@ include("update_rules/nonlinear_sampling.jl")
 include("update_rules/nonlinear_extended.jl")
 include("update_rules/sample_list.jl")
 include("update_rules/svi.jl")
+include("update_rules/cvi.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
