@@ -47,3 +47,12 @@ end
     thenode.message = y
     return deepcopy(x.params[:q])
 end
+
+@symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetSampleList},
+                            y::ProbabilityDistribution{MatrixVariate, Wishart},
+                            z::ProbabilityDistribution{Multivariate, SampleList} = ProbabilityDistribution(Multivariate, SampleList))
+
+    thenode = currentGraph().nodes[x.params[:node_id]]
+    thenode.message = y
+    return deepcopy(x.params[:q])
+end

@@ -65,6 +65,14 @@ ruleSPEqualityGFactor(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) wh
 ruleSPEqualityGFactor(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Gaussian}= Message(prod!(msg_1.dist, msg_3.dist))
 ruleSPEqualityGFactor(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Gaussian} = Message(prod!(msg_2.dist, msg_3.dist))
 
+# Since CVI sends a FactorNode message the equality calls ruleSPEqualityGFactor.
+# However having two Gaussian types, ForneyLab gets confused for some reason.
+# Therefore we implement the below rules.
+
+ruleSPEqualityGFactor(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:Gaussian, F2<:Gaussian} = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityGFactor(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:Gaussian, F2<:Gaussian}= Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityGFactor(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:Gaussian, F2<:Gaussian} = Message(prod!(msg_2.dist, msg_3.dist))
+
 ruleSPEqualityFactor(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:FactorNode, F2<:FactorNode} = Message(prod!(msg_1.dist, msg_2.dist))
 ruleSPEqualityFactor(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:FactorNode, F2<:FactorNode}= Message(prod!(msg_1.dist, msg_3.dist))
 ruleSPEqualityFactor(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:FactorNode, F2<:FactorNode} = Message(prod!(msg_2.dist, msg_3.dist))

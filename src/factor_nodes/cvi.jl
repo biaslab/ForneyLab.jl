@@ -24,7 +24,7 @@ Construction:
           N: dataset size
 """
 
-mutable struct CVI <: SoftFactor
+mutable struct CVI <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
