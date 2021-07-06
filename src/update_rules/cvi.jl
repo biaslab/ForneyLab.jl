@@ -4,8 +4,8 @@
                       :name          => SPCVIOutVD)
 
 @sumProductRule(:node_type     => CVI,
-                      :outbound_type => Message{Union{GaussianWeightedMeanPrecision,FactorNode}},
-                      #:outbound_type => Message{GaussianWeightedMeanPrecision},
+                      #:outbound_type => Message{Union{GaussianWeightedMeanPrecision,FactorNode}},
+                      :outbound_type => Message{GaussianWeightedMeanPrecision},
                       :inbound_types => (Message{FactorFunction}, Nothing),
                       :name          => SPCVIIn1MV)
 

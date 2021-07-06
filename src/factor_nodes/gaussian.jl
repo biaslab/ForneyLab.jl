@@ -108,13 +108,13 @@ end
 function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    return (cholesky(V)).U' *randn(dims(dist)) + m
+    return (cholesky(Matrix(Hermitian(V)))).U' *randn(dims(dist)) + m
 end
 
 function sample(dist::ProbabilityDistribution{Multivariate, F}, n_samples::Int64) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    U = (cholesky(V)).U
+    U = (cholesky(Matrix(Hermitian(V)))).U
     d = dims(dist)
 
     return [U' *randn(d) + m for i in 1:n_samples]
@@ -132,7 +132,9 @@ end
 
 function standardDist(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
     d = dims(dist)
-    ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
+    XI, W = η[1:d], reshape(-2*η[d+1:end],d,d)
+    W = W + tiny*diageye(d) # Ensure precision is always invertible
+    ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision,xi=XI,w=W)
 end
 
 # Natural parameters to standard message type
@@ -142,7 +144,10 @@ end
 
 function standardMessage(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
     d = dims(dist)
-    Message(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
+    XI, W = η[1:d], reshape(-2*η[d+1:end],d,d)
+    W = W + tiny*diageye(d) # Ensure precision is always invertible
+    #Message(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
+    Message(Multivariate, GaussianWeightedMeanPrecision,xi=XI,w=W)
 end
 
 # Entropy functional

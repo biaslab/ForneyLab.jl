@@ -91,6 +91,28 @@ function ruleSPCVIOutVD(node_id::Symbol,
 
 end
 
+function ruleSPCVIOutVD(node_id::Symbol,
+                        msg_out::Any,
+                        msg_in::Message)
+
+    thenode = currentGraph().nodes[node_id]
+
+    samples = thenode.g.(sample(msg_in.dist, thenode.num_samples))
+    weights = ones(thenode.num_samples)/thenode.num_samples
+
+    if length(samples[1]) == 1
+        variate = Univariate
+    else
+        variate = Multivariate
+    end
+
+    q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
+    q.params[:entropy] = 0
+
+    return Message(variate,SetSampleList,q=q,node_id=node_id)
+
+end
+
 function ruleSPCVIInX(node_id::Symbol,
                       inx::Int64,
                       msg_out::Message{<:FactorFunction, <:VariateType},
@@ -129,53 +151,6 @@ end
 # Custom inbounds collectors
 #---------------------------
 
-# function collectStructuredVariationalNodeInbounds(node::CVI, entry::ScheduleEntry)
-#     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-#     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
-#
-#     inbounds = Any[]
-#     entry_posterior_factor = posteriorFactor(entry.interface.edge)
-#     local_edge_to_region = localEdgeToRegion(entry.interface.node)
-#
-#     push!(inbounds, node.id)
-#
-#     multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
-#     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-#
-#     if (inx > 0) && multi_in # Multi-inbound backward rule
-#         push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
-#                                           :keyword => false))
-#     end
-#
-#     encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
-#     for node_interface in node.interfaces
-#         inbound_interface = ultimatePartner(node_interface)
-#         current_posterior_factor = posteriorFactor(node_interface.edge)
-#
-#         if (node_interface == entry.interface != node.interfaces[1])
-#             # Collect the incoming message
-#             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-#         elseif node_interface === entry.interface
-#             # Ignore marginal of outbound edge
-#             push!(inbounds, nothing)
-#         elseif isClamped(inbound_interface)
-#             # Hard-code marginal of constant node in schedule
-#             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-#         elseif current_posterior_factor === entry_posterior_factor
-#             # Collect message from previous result
-#             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-#         elseif !(current_posterior_factor in encountered_posterior_factors)
-#             # Collect marginal from marginal dictionary (if marginal is not already accepted)
-#             target = local_edge_to_region[node_interface.edge]
-#             push!(inbounds, target_to_marginal_entry[target])
-#         end
-#
-#         push!(encountered_posterior_factors, current_posterior_factor)
-#     end
-#
-#     return inbounds
-# end
-
 function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
@@ -199,12 +174,10 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
             # Collect the incoming message
 
             if typeof(inbound_interface.node) == Equality
-                @show inbound_interface
-                @show interface_to_schedule_entry[inbound_interface]
-                @show entry.interface
-                @show inbound_interface.node.interfaces
+                # If CVI is connected to Equality node, incoming message is often not available
+                # in time series models. The rules here allow us to use the message coming to
+                # interface 1 of equality node.
                 if inbound_interface == inbound_interface.node.interfaces[2]
-                    @show ultimatePartner(inbound_interface.node.interfaces[1])
                     push!(inbounds, interface_to_schedule_entry[ultimatePartner(inbound_interface.node.interfaces[1])])
                 else
                     push!(inbounds, interface_to_schedule_entry[inbound_interface])
@@ -224,7 +197,12 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
         else
             # Collect entry from marginal schedule
-            push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
+            try
+                push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
+            catch
+                # This rule is useful for the last time step in a time series model with Structured VMP
+                push!(inbounds, interface_to_schedule_entry[inbound_interface])
+            end
         end
     end
 
