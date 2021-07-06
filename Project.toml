@@ -1,6 +1,6 @@
 name = "ForneyLab"
 uuid = "9fc3f58a-c2cc-5bff-9419-6a294fefdca9"
-version = "0.11.4"
+version = "0.11.3"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -20,6 +20,7 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+DataStructures = "0.17, 0.18"
 Documenter = "0.25.2"
 ForwardDiff = "0.10.12"
 PositiveFactorizations = "0.2"
