@@ -33,14 +33,37 @@
                       :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
                       :name          => VBGaussianMeanPrecisionW)
 
+# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+#                            :outbound_type => Message{GaussianMeanVariance},
+#                            :inbound_types => (Nothing, Message{Gaussian}, ProbabilityDistribution),
+#                            :name          => SVBGaussianMeanPrecisionOutVGD)
+#
+# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+#                            :outbound_type => Message{GaussianMeanVariance},
+#                            :inbound_types => (Message{Gaussian}, Nothing, ProbabilityDistribution),
+#                            :name          => SVBGaussianMeanPrecisionMGVD)
+#
+# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+#                            :outbound_type => Message{Union{Gamma, Wishart}},
+#                            :inbound_types => (ProbabilityDistribution, Nothing),
+#                            :name          => SVBGaussianMeanPrecisionW)
+#
+# @marginalRule(:node_type => GaussianMeanPrecision,
+#               :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
+#               :name => MGaussianMeanPrecisionGGD)
+#
+# @marginalRule(:node_type => GaussianMeanPrecision,
+#               :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing), # Precision is marginalized out
+#               :name => MGaussianMeanPrecisionGGN)
+
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{GaussianMeanVariance},
-                           :inbound_types => (Nothing, Message{Gaussian}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{FactorNode}, ProbabilityDistribution),
                            :name          => SVBGaussianMeanPrecisionOutVGD)
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{GaussianMeanVariance},
-                           :inbound_types => (Message{Gaussian}, Nothing, ProbabilityDistribution),
+                           :inbound_types => (Message{FactorNode}, Nothing, ProbabilityDistribution),
                            :name          => SVBGaussianMeanPrecisionMGVD)
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
@@ -49,9 +72,9 @@
                            :name          => SVBGaussianMeanPrecisionW)
 
 @marginalRule(:node_type => GaussianMeanPrecision,
-              :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
+              :inbound_types => (Message{FactorNode}, Message{FactorNode}, ProbabilityDistribution),
               :name => MGaussianMeanPrecisionGGD)
 
 @marginalRule(:node_type => GaussianMeanPrecision,
-              :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing), # Precision is marginalized out
+              :inbound_types => (Message{FactorNode}, Message{FactorNode}, Nothing), # Precision is marginalized out
               :name => MGaussianMeanPrecisionGGN)

@@ -118,7 +118,9 @@ function ruleSPCVIInX(node_id::Symbol,
                       msg_out::Message{<:FactorFunction, <:VariateType},
                       msgs_in::Vararg{Union{Message,ProbabilityDistribution}})
 
-    @show msgs_in
+    thenode = currentGraph().nodes[node_id]
+    @show thenode.message
+    thenode.message = ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1)
     msgs_in[inx]
 end
 
@@ -186,9 +188,9 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
                 push!(inbounds, interface_to_schedule_entry[inbound_interface])
             end
             #push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif (node_interface == node.interfaces[1] != entry.interface)
-            # Collect the BP message from out interface
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        # elseif (node_interface == node.interfaces[1] != entry.interface)
+        #     # Collect the BP message from out interface
+        #     push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface === entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, nothing)
@@ -197,12 +199,13 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
         else
             # Collect entry from marginal schedule
-            try
-                push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
-            catch
-                # This rule is useful for the last time step in a time series model with Structured VMP
-                push!(inbounds, interface_to_schedule_entry[inbound_interface])
-            end
+            # try
+            #     push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
+            # catch
+            #     # This rule is useful for the last time step in a time series model with Structured VMP
+            #     push!(inbounds, interface_to_schedule_entry[inbound_interface])
+            # end
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
         end
     end
 

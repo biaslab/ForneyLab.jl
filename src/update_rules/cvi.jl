@@ -4,8 +4,7 @@
                       :name          => SPCVIOutVD)
 
 @sumProductRule(:node_type     => CVI,
-                      #:outbound_type => Message{Union{GaussianWeightedMeanPrecision,FactorNode}},
-                      :outbound_type => Message{GaussianWeightedMeanPrecision},
+                      :outbound_type => Message{FactorNode},
                       :inbound_types => (Message{FactorFunction}, Nothing),
                       :name          => SPCVIIn1MV)
 
@@ -24,7 +23,7 @@ function isApplicable(::Type{SPCVIOutVDX}, input_types::Vector{<:Type})
 end
 
 mutable struct SPCVIInX <: SumProductRule{CVI} end
-outboundType(::Type{SPCVIInX}) = Message{Union{FactorNode,GaussianWeightedMeanPrecision}}
+outboundType(::Type{SPCVIInX}) = Message{FactorNode}
 function isApplicable(::Type{SPCVIInX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
