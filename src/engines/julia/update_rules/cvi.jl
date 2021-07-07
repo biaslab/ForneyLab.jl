@@ -33,12 +33,11 @@ function ruleSPCVIIn1MV(node_id::Symbol,
         update!(thenode.opt,λ,∇)
     end
 
+    thenode.q = [standardDist(msg_in.dist,λ)]
     return standardMessage(msg_in.dist,λ-η)
-
 end
 
 function ruleSPCVIIn1MV(node_id::Symbol,
-                        #msg_out::Message{GaussianWeightedMeanPrecision, Multivariate},
                         msg_out::Message{<:FactorFunction, <:VariateType},
                         msg_in::Message{<:Gaussian, Multivariate})
 
@@ -66,29 +65,8 @@ function ruleSPCVIIn1MV(node_id::Symbol,
         end
     end
 
+    thenode.q = [standardDist(msg_in.dist,λ)]
     return standardMessage(msg_in.dist,λ-η)
-end
-
-function ruleSPCVIOutVD(node_id::Symbol,
-                        msg_out::Any,
-                        msg_in::ProbabilityDistribution)
-
-    thenode = currentGraph().nodes[node_id]
-
-    samples = thenode.g.(sample(msg_in, thenode.num_samples))
-    weights = ones(thenode.num_samples)/thenode.num_samples
-
-    if length(samples[1]) == 1
-        variate = Univariate
-    else
-        variate = Multivariate
-    end
-
-    q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
-    q.params[:entropy] = 0
-
-    return Message(variate,SetSampleList,q=q,node_id=node_id)
-
 end
 
 function ruleSPCVIOutVD(node_id::Symbol,
@@ -96,20 +74,44 @@ function ruleSPCVIOutVD(node_id::Symbol,
                         msg_in::Message)
 
     thenode = currentGraph().nodes[node_id]
+    # @show thenode.q
+    # @show thenode.infer_flag
+    # if thenode.infer_flag == true
+    #     samples = thenode.g.(sample(thenode.q, thenode.num_samples))
+    #     weights = ones(thenode.num_samples)/thenode.num_samples
+    #
+    #     if length(samples[1]) == 1
+    #         variate = Univariate
+    #     else
+    #         variate = Multivariate
+    #     end
+    #
+    #     q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
+    #     q.params[:entropy] = 0
+    #
+    #     thenode.infer_flag = false
+    #
+    #     return Message(variate,SetSampleList,q=q,node_id=node_id)
+    # else
+    #     messages = [deepcopy(msg_in)]
+    #     samp = thenode.g(sample(thenode.q))
+    #     if length(samp) == 1
+    #         variate = Univariate
+    #     else
+    #         variate = Multivariate
+    #     end
+    #     thenode.infer_flag = true
+    #     @show thenode.infer_flag
+    #     return Message(variate,SetSampleList,messages=messages,node_id=node_id)
+    # end
 
-    samples = thenode.g.(sample(msg_in.dist, thenode.num_samples))
-    weights = ones(thenode.num_samples)/thenode.num_samples
-
-    if length(samples[1]) == 1
+    sampl = thenode.g(sample(msg_in.dist))
+    if length(sampl) == 1
         variate = Univariate
     else
         variate = Multivariate
     end
-
-    q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
-    q.params[:entropy] = 0
-
-    return Message(variate,SetSampleList,q=q,node_id=node_id)
+    return Message(variate,SetSampleList,node_id=node_id)
 
 end
 

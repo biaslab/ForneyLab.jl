@@ -21,13 +21,21 @@ ProbabilityDistribution(::Type{V}, ::Type{SetSampleList}; kwargs...) where V<:Va
 ProbabilityDistribution(::Type{SetSampleList}; kwargs...) = ProbabilityDistribution{Univariate, SetSampleList}(Dict{Symbol,Any}(kwargs))
 
 
+# isUnivariateGaussian(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian = true
+# isUnivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
+# isMultivariateGaussian(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian = true
+# isMultivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
+
 @symmetrical function prod!(x::ProbabilityDistribution{V, SetSampleList},
                             y::ProbabilityDistribution{V, F},
                             z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList)) where {V<:VariateType, F<:FactorNode}
 
     thenode = currentGraph().nodes[x.params[:node_id]]
-    #thenode.message = y
-    return deepcopy(x.params[:q])
+
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples = thenode.g.(samples_...)
+    weights = ones(thenode.num_samples)/thenode.num_samples
+    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
 end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Univariate, SetSampleList},
@@ -35,8 +43,11 @@ end
                             z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList)) where {F<:Gaussian}
 
     thenode = currentGraph().nodes[x.params[:node_id]]
-    #thenode.message = y
-    return deepcopy(x.params[:q])
+
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples = thenode.g.(samples_...)
+    weights = ones(thenode.num_samples)/thenode.num_samples
+    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
 end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetSampleList},
@@ -44,8 +55,11 @@ end
                             z::ProbabilityDistribution{Multivariate, SampleList} = ProbabilityDistribution(Multivariate, SampleList)) where {F<:Gaussian}
 
     thenode = currentGraph().nodes[x.params[:node_id]]
-    #thenode.message = y
-    return deepcopy(x.params[:q])
+
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples = thenode.g.(samples_...)
+    weights = ones(thenode.num_samples)/thenode.num_samples
+    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
 end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetSampleList},
@@ -53,6 +67,9 @@ end
                             z::ProbabilityDistribution{Multivariate, SampleList} = ProbabilityDistribution(Multivariate, SampleList))
 
     thenode = currentGraph().nodes[x.params[:node_id]]
-    #thenode.message = y
-    return deepcopy(x.params[:q])
+
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples = thenode.g.(samples_...)
+    weights = ones(thenode.num_samples)/thenode.num_samples
+    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
 end
