@@ -1,10 +1,10 @@
 export
 ruleSPGaussianMeanPrecisionOutNPP,
 ruleSPGaussianMeanPrecisionMPNP,
-ruleSPGaussianMeanPrecisionOutNGP, 
-ruleSPGaussianMeanPrecisionMGNP, 
-ruleVBGaussianMeanPrecisionM, 
-ruleVBGaussianMeanPrecisionW, 
+ruleSPGaussianMeanPrecisionOutNGP,
+ruleSPGaussianMeanPrecisionMGNP,
+ruleVBGaussianMeanPrecisionM,
+ruleVBGaussianMeanPrecisionW,
 ruleVBGaussianMeanPrecisionOut,
 ruleSVBGaussianMeanPrecisionOutVGD,
 ruleSVBGaussianMeanPrecisionW,
@@ -17,7 +17,7 @@ ruleSPGaussianMeanPrecisionOutNPP(  msg_out::Nothing,
                                     msg_prec::Message{PointMass}) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=deepcopy(msg_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))
 
-ruleSPGaussianMeanPrecisionMPNP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
+ruleSPGaussianMeanPrecisionMPNP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) =
     ruleSPGaussianMeanPrecisionOutNPP(msg_mean, msg_out, msg_prec)
 
 function ruleSPGaussianMeanPrecisionOutNGP( msg_out::Nothing,
@@ -29,7 +29,7 @@ function ruleSPGaussianMeanPrecisionOutNGP( msg_out::Nothing,
     Message(V, GaussianMeanVariance, m=d_mean.params[:m], v=d_mean.params[:v] + cholinv(msg_prec.dist.params[:m]))
 end
 
-ruleSPGaussianMeanPrecisionMGNP(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) where F<:Gaussian = 
+ruleSPGaussianMeanPrecisionMGNP(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) where F<:Gaussian =
     ruleSPGaussianMeanPrecisionOutNGP(msg_mean, msg_out, msg_prec)
 
 ruleVBGaussianMeanPrecisionM(   dist_out::ProbabilityDistribution{V},
@@ -54,7 +54,7 @@ function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Multiv
     (m_mean, v_mean) = unsafeMeanCov(dist_mean)
     (m_out, v_out) = unsafeMeanCov(dist_out)
 
-    Message(MatrixVariate, Wishart, v=cholinv( v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)' ), nu=dims(dist_out) + 2.0) 
+    Message(MatrixVariate, Wishart, v=cholinv( v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)' ), nu=dims(dist_out) + 2.0)
 end
 
 ruleVBGaussianMeanPrecisionOut( dist_out::Any,
@@ -64,7 +64,7 @@ ruleVBGaussianMeanPrecisionOut( dist_out::Any,
 
 ruleSVBGaussianMeanPrecisionOutVGD(dist_out::Any,
                                    msg_mean::Message{F, V},
-                                   dist_prec::ProbabilityDistribution) where{F<:Gaussian, V<:VariateType} = 
+                                   dist_prec::ProbabilityDistribution) where{F<:Gaussian, V<:VariateType} =
     Message(V, GaussianMeanVariance, m=unsafeMean(msg_mean.dist), v=unsafeCov(msg_mean.dist) + cholinv(unsafeMean(dist_prec)))
 
 function ruleSVBGaussianMeanPrecisionW(
@@ -78,7 +78,7 @@ function ruleSVBGaussianMeanPrecisionW(
         return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2))
     else
         d = Int64(joint_dims/2)
-        return Message(MatrixVariate, Wishart, v=cholinv( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end, 1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ), nu=d + 2.0) 
+        return Message(MatrixVariate, Wishart, v=cholinv( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end, 1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ), nu=d + 2.0)
     end
 end
 
@@ -98,7 +98,7 @@ function ruleMGaussianMeanPrecisionGGD(
 
     d_mean = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_mean.dist)
     d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
-    
+
     xi_y = d_out.params[:xi]
     W_y = d_out.params[:w]
     xi_m = d_mean.params[:xi]
@@ -115,7 +115,7 @@ function ruleMGaussianMeanPrecisionGGN(
 
     d_mean = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_mean.dist)
     d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
-    
+
     xi_y = d_out.params[:xi]
     W_y = d_out.params[:w]
     xi_m = d_mean.params[:xi]

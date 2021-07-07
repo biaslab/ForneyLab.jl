@@ -133,7 +133,7 @@ end
 function standardDist(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
     d = dims(dist)
     XI, W = η[1:d], reshape(-2*η[d+1:end],d,d)
-    W = W + tiny*diageye(d) # Ensure precision is always invertible
+    W = Matrix(Hermitian(W + tiny*diageye(d))) # Ensure precision is always invertible
     ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision,xi=XI,w=W)
 end
 
@@ -145,7 +145,7 @@ end
 function standardMessage(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
     d = dims(dist)
     XI, W = η[1:d], reshape(-2*η[d+1:end],d,d)
-    W = W + tiny*diageye(d) # Ensure precision is always invertible
+    W = Matrix(Hermitian(W + tiny*diageye(d))) # Ensure precision is always invertible
     #Message(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
     Message(Multivariate, GaussianWeightedMeanPrecision,xi=XI,w=W)
 end

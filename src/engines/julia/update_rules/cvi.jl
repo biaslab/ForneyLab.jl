@@ -29,12 +29,23 @@ function ruleSPCVIIn1MV(node_id::Symbol,
         df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
         df_μ2 = df_v(z_s)
         ∇f = [df_μ1, df_μ2]
-        ∇ = λ - η - ∇f
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
         update!(thenode.opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
     end
 
+    λ_message = λ.-η
+    # Ensure proper message if required
+    if thenode.proper_message
+        w_message = -2*λ_message[2]
+        if w_message<0 w_message = tiny end
+        λ_message[2] = -0.5*w_message
+    end
     thenode.q = [standardDist(msg_in.dist,λ)]
-    return standardMessage(msg_in.dist,λ-η)
+    return standardMessage(msg_in.dist,λ_message)
 end
 
 function ruleSPCVIIn1MV(node_id::Symbol,
@@ -56,17 +67,24 @@ function ruleSPCVIIn1MV(node_id::Symbol,
         df_μ2 = df_v(z_s)
         ∇f = [df_μ1; vec(df_μ2)]
         λ_old = deepcopy(λ)
-        ∇ = λ - η - ∇f
+        ∇ = λ .- η .- ∇f
         update!(thenode.opt,λ,∇)
         if isProper(standardDist(msg_in.dist,λ)) == false
-            @show node_id
-            @show i
             λ = λ_old
         end
     end
 
+    λ_message = λ.-η
+    # Ensure proper message if required
+    if thenode.proper_message
+        d = dims(msg_in.dist)
+        W_message = -2*reshape(λ_message[d+1:end],(d,d))
+        e_vals = eigvals(W_message)
+        if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
+        λ_message[d+1:end] = vec(-0.5*W_message)
+    end
     thenode.q = [standardDist(msg_in.dist,λ)]
-    return standardMessage(msg_in.dist,λ-η)
+    return standardMessage(msg_in.dist,λ_message)
 end
 
 function ruleSPCVIOutVD(node_id::Symbol,

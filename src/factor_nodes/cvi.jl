@@ -36,17 +36,18 @@ mutable struct CVI <: DeltaFactor
     #q::Union{ProbabilityDistribution,Vector{ProbabilityDistribution}}
     q::Vector{<:ProbabilityDistribution}
     infer_memory::Int
+    proper_message::Bool
 
     function CVI(id::Symbol, g::Function,
                     opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}}},
                     num_iterations::Union{Int,Vector{Int}}, num_samples::Union{Int,Vector{Int}}, q::Vector{<:ProbabilityDistribution},
-                    infer_memory::Int, out::Variable, args::Vararg)
+                    infer_memory::Int, proper_message::Bool, out::Variable, args::Vararg)
         @ensureVariables(out)
         n_args = length(args)
         for i=1:n_args
             @ensureVariables(args[i])
         end
-        self = new(id, Array{Interface}(undef, n_args+1), Dict{Int,Interface}(), g, opt, num_iterations, num_samples, q, infer_memory)
+        self = new(id, Array{Interface}(undef, n_args+1), Dict{Int,Interface}(), g, opt, num_iterations, num_samples, q, infer_memory, proper_message)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -62,6 +63,7 @@ slug(::Type{CVI}) = "cvi"
 
 function Cvi(out::Variable, args::Vararg; g::Function, opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}}},
                 num_samples::Union{Int,Vector{Int}}, num_iterations::Union{Int,Vector{Int}},
-                q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0, id=ForneyLab.generateId(CVI))
-    CVI(id, g, opt, num_iterations, num_samples, q, infer_memory, out, args...)
+                q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0,
+                proper_message=false, id=ForneyLab.generateId(CVI))
+    CVI(id, g, opt, num_iterations, num_samples, q, infer_memory, proper_message, out, args...)
 end
