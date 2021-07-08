@@ -93,6 +93,19 @@ function standardMessage(dist::ProbabilityDistribution{Univariate, Gamma}, η::V
     Message(Univariate, Gamma, a=η[1]+1, b=-η[2])
 end
 
+function logNormalizer(dist::ProbabilityDistribution{Univariate, Gamma}, η::Vector)
+    return loggamma(η[1]+1) - (η[1]+1)*log(-η[2])
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Univariate, Gamma}, η::Vector, x)
+    h(x) = 1
+    ϕ(x) = [log(x),x]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gamma})
     labsgamma(dist.params[:a]) -

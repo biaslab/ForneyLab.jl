@@ -146,8 +146,32 @@ function standardMessage(dist::ProbabilityDistribution{Multivariate, F}, η::Vec
     d = dims(dist)
     XI, W = η[1:d], reshape(-2*η[d+1:end],d,d)
     W = Matrix(Hermitian(W + tiny*diageye(d))) # Ensure precision is always invertible
-    #Message(Multivariate, GaussianWeightedMeanPrecision,xi=η[1:d],w=reshape(-2*η[d+1:end],d,d))
     Message(Multivariate, GaussianWeightedMeanPrecision,xi=XI,w=W)
+end
+
+function logNormalizer(dist::ProbabilityDistribution{Univariate, F}, η::Vector) where F<:Gaussian
+    return - η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+end
+
+function logNormalizer(dist::ProbabilityDistribution{Multivariate, F}, η::Vector) where F<:Gaussian
+    d = dims(dist)
+    return - 0.25*η[1:d]'*(reshape(η[d+1:end],(d,d))\η[1:d]) -0.5*logdet(-2*reshape(η[d+1:end],(d,d)))
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Univariate, F}, η::Vector, x) where F<:Gaussian
+    h(x) = 1/sqrt(2*pi)
+    ϕ(x) = [x,x^2]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
+function logPdf(dist::ProbabilityDistribution{Multivariate, F}, η::Vector, x) where F<:Gaussian
+    d = dims(dist)
+    h(x) = (2*pi)^(-0.5*d)
+    ϕ(x) = [x;vec(x*transpose(x))]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
 end
 
 # Entropy functional

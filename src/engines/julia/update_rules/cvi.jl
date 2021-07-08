@@ -80,6 +80,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
         d = dims(msg_in.dist)
         W_message = -2*reshape(λ_message[d+1:end],(d,d))
         e_vals = eigvals(W_message)
+        # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
         if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
         λ_message[d+1:end] = vec(-0.5*W_message)
     end
@@ -88,40 +89,10 @@ function ruleSPCVIIn1MV(node_id::Symbol,
 end
 
 function ruleSPCVIOutVD(node_id::Symbol,
-                        msg_out::Any,
+                        msg_out::Nothing,
                         msg_in::Message)
 
     thenode = currentGraph().nodes[node_id]
-    # @show thenode.q
-    # @show thenode.infer_flag
-    # if thenode.infer_flag == true
-    #     samples = thenode.g.(sample(thenode.q, thenode.num_samples))
-    #     weights = ones(thenode.num_samples)/thenode.num_samples
-    #
-    #     if length(samples[1]) == 1
-    #         variate = Univariate
-    #     else
-    #         variate = Multivariate
-    #     end
-    #
-    #     q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
-    #     q.params[:entropy] = 0
-    #
-    #     thenode.infer_flag = false
-    #
-    #     return Message(variate,SetSampleList,q=q,node_id=node_id)
-    # else
-    #     messages = [deepcopy(msg_in)]
-    #     samp = thenode.g(sample(thenode.q))
-    #     if length(samp) == 1
-    #         variate = Univariate
-    #     else
-    #         variate = Multivariate
-    #     end
-    #     thenode.infer_flag = true
-    #     @show thenode.infer_flag
-    #     return Message(variate,SetSampleList,messages=messages,node_id=node_id)
-    # end
 
     sampl = thenode.g(sample(msg_in.dist))
     if length(sampl) == 1
@@ -136,35 +107,28 @@ end
 function ruleSPCVIInX(node_id::Symbol,
                       inx::Int64,
                       msg_out::Message{<:FactorFunction, <:VariateType},
-                      msgs_in::Vararg{Union{Message,ProbabilityDistribution}})
+                      msgs_in::Vararg{Message})
 
     thenode = currentGraph().nodes[node_id]
-    @show thenode.message
-    thenode.message = ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1)
+    @show thenode.q
+    thenode.q = [ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1), ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1)]
     msgs_in[inx]
 end
 
 function ruleSPCVIOutVDX(node_id::Symbol,
-                         msg_out::Any,
-                         msgs_in::Vararg{ProbabilityDistribution})
+                         msg_out::Nothing,
+                         msgs_in::Vararg{Message})
 
     thenode = currentGraph().nodes[node_id]
 
-    samples_in = [sample(msg_in, thenode.num_samples) for msg_in in msgs_in]
-
-    samples = thenode.g.(samples_in...)
-    weights = ones(thenode.num_samples)/thenode.num_samples
-
-    if length(samples[1]) == 1
+    sampl_in = [sample(msg_in.dist) for msg_in in msgs_in]
+    sampl = thenode.g(sampl_in...)
+    if length(sampl) == 1
         variate = Univariate
     else
         variate = Multivariate
     end
-
-    q=ProbabilityDistribution(variate, SampleList, s=samples, w=weights)
-    q.params[:entropy] = 0
-
-    return Message(variate,SetSampleList,q=q,node_id=node_id)
+    return Message(variate,SetSampleList,node_id=node_id)
 
 end
 
