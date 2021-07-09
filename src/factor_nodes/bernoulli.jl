@@ -82,6 +82,19 @@ function standardMessage(dist::ProbabilityDistribution{Univariate, Bernoulli}, �
     Message(Univariate, Bernoulli, p=exp(η[1])/(1+exp(η[1])))
 end
 
+function logNormalizer(dist::ProbabilityDistribution{Univariate, Bernoulli}, η::Vector)
+    return log(1+exp(η[1]))
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Univariate, Bernoulli}, η::Vector, x)
+    h(x) = 1
+    ϕ(x) = [x]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli})
     p = clamp(dist.params[:p], tiny, 1.0 - tiny)

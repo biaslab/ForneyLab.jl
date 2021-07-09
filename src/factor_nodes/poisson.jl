@@ -68,6 +68,19 @@ function standardMessage(dist::ProbabilityDistribution{Univariate, Poisson}, η:
     Message(Univariate, Poisson, l=exp(η[1]))
 end
 
+function logNormalizer(dist::ProbabilityDistribution{Univariate, Poisson}, η::Vector)
+    return exp(η[1])
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, η::Vector, x)
+    h(x) = 1/factorial(x)
+    ϕ(x) = [x]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
 # @ref https://arxiv.org/pdf/1708.06394.pdf

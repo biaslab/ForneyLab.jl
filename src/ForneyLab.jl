@@ -13,6 +13,7 @@ using ForwardDiff
 using StatsBase: Weights
 using DataStructures: Queue, enqueue!, dequeue!
 using Flux.Optimise
+using Zygote
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!

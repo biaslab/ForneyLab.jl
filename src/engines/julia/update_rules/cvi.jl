@@ -4,11 +4,35 @@ function ruleSPCVIIn1MV(node_id::Symbol,
                         msg_out::Message{<:FactorFunction, <:VariateType},
                         msg_in::Message{<:FactorNode, <:VariateType})
 
-    @show msg_in
-    @show typeof(msg_in)
-    @show msg_out
-    @show node_id
-    msg_in
+    thenode = currentGraph().nodes[node_id]
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+
+    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    A(η) = logNormalizer(msg_in.dist,η)
+    gradA(η) = A'(η) # Zygote
+    Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
+    for i=1:thenode.num_iterations
+        q = standardDist(msg_in.dist,λ)
+        z_s = sample(q)
+        logq(λ) = logPdf(q,λ,z_s)
+        ∇logq = logq'(λ)
+        @show Fisher(λ)
+        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
+        @show ∇
+        update!(thenode.opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
+    end
+
+    λ_message = λ.-η
+    # Implement proper message check for all the distributions later on.
+    thenode.q = [standardDist(msg_in.dist,λ)]
+    return standardMessage(msg_in.dist,λ_message)
 end
 
 function ruleSPCVIIn1MV(node_id::Symbol,
