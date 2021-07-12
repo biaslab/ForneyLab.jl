@@ -30,16 +30,19 @@ mutable struct CVI <: DeltaFactor
     i::Dict{Symbol,Interface}
 
     g::Function # Vector function that expresses the output as a function of the inputs
-    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}}}
+    #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}}
+    opt::Any
     num_iterations::Union{Int,Vector{Int}}
-    num_samples::Union{Int,Vector{Int}}
+    #num_samples::Union{Int,Vector{Int}}
+    num_samples::Int
     #q::Union{ProbabilityDistribution,Vector{ProbabilityDistribution}}
     q::Vector{<:ProbabilityDistribution}
     infer_memory::Int
     proper_message::Bool
 
     function CVI(id::Symbol, g::Function,
-                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}}},
+                    #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}},
+                    opt::Any,
                     num_iterations::Union{Int,Vector{Int}}, num_samples::Union{Int,Vector{Int}}, q::Vector{<:ProbabilityDistribution},
                     infer_memory::Int, proper_message::Bool, out::Variable, args::Vararg)
         @ensureVariables(out)
@@ -61,7 +64,9 @@ end
 
 slug(::Type{CVI}) = "cvi"
 
-function Cvi(out::Variable, args::Vararg; g::Function, opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}}},
+function Cvi(out::Variable, args::Vararg; g::Function,
+    #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}},
+             opt::Any,
                 num_samples::Union{Int,Vector{Int}}, num_iterations::Union{Int,Vector{Int}},
                 q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0,
                 proper_message=false, id=ForneyLab.generateId(CVI))

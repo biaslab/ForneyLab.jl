@@ -7,27 +7,28 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    # λ = deepcopy(η)
+    #
+    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    # A(η) = logNormalizer(msg_in.dist,η)
+    # gradA(η) = A'(η) # Zygote
+    # Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
+    # for i=1:thenode.num_iterations
+    #     q = standardDist(msg_in.dist,λ)
+    #     z_s = sample(q)
+    #     logq(λ) = logPdf(q,λ,z_s)
+    #     ∇logq = logq'(λ)
+    #     ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
+    #     λ_old = deepcopy(λ)
+    #     ∇ = λ .- η .- ∇f
+    #     update!(thenode.opt,λ,∇)
+    #     if isProper(standardDist(msg_in.dist,λ)) == false
+    #         λ = λ_old
+    #     end
+    # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    A(η) = logNormalizer(msg_in.dist,η)
-    gradA(η) = A'(η) # Zygote
-    Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
-    for i=1:thenode.num_iterations
-        q = standardDist(msg_in.dist,λ)
-        z_s = sample(q)
-        logq(λ) = logPdf(q,λ,z_s)
-        ∇logq = logq'(λ)
-        @show Fisher(λ)
-        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        @show ∇
-        update!(thenode.opt,λ,∇)
-        if isProper(standardDist(msg_in.dist,λ)) == false
-            λ = λ_old
-        end
-    end
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
 
     λ_message = λ.-η
     # Implement proper message check for all the distributions later on.
@@ -42,24 +43,27 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    # λ = deepcopy(η)
+    #
+    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    # df_m(z) = ForwardDiff.derivative(logp_nc,z)
+    # df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
+    # for i=1:thenode.num_iterations
+    #     q = standardDist(msg_in.dist,λ)
+    #     z_s = sample(q)
+    #     df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+    #     df_μ2 = df_v(z_s)
+    #     ∇f = [df_μ1, df_μ2]
+    #     λ_old = deepcopy(λ)
+    #     ∇ = λ .- η .- ∇f
+    #     update!(thenode.opt,λ,∇)
+    #     if isProper(standardDist(msg_in.dist,λ)) == false
+    #         λ = λ_old
+    #     end
+    # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    df_m(z) = ForwardDiff.derivative(logp_nc,z)
-    df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
-    for i=1:thenode.num_iterations
-        q = standardDist(msg_in.dist,λ)
-        z_s = sample(q)
-        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = [df_μ1, df_μ2]
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(thenode.opt,λ,∇)
-        if isProper(standardDist(msg_in.dist,λ)) == false
-            λ = λ_old
-        end
-    end
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
 
     λ_message = λ.-η
     # Ensure proper message if required
@@ -79,24 +83,27 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    # λ = deepcopy(η)
+    #
+    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    # df_m(z) = ForwardDiff.gradient(logp_nc,z)
+    # df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
+    # for i=1:thenode.num_iterations
+    #     q = standardDist(msg_in.dist,λ)
+    #     z_s = sample(q)
+    #     df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+    #     df_μ2 = df_v(z_s)
+    #     ∇f = [df_μ1; vec(df_μ2)]
+    #     λ_old = deepcopy(λ)
+    #     ∇ = λ .- η .- ∇f
+    #     update!(thenode.opt,λ,∇)
+    #     if isProper(standardDist(msg_in.dist,λ)) == false
+    #         λ = λ_old
+    #     end
+    # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    df_m(z) = ForwardDiff.gradient(logp_nc,z)
-    df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
-    for i=1:thenode.num_iterations
-        q = standardDist(msg_in.dist,λ)
-        z_s = sample(q)
-        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = [df_μ1; vec(df_μ2)]
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(thenode.opt,λ,∇)
-        if isProper(standardDist(msg_in.dist,λ)) == false
-            λ = λ_old
-        end
-    end
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
 
     λ_message = λ.-η
     # Ensure proper message if required
@@ -134,9 +141,61 @@ function ruleSPCVIInX(node_id::Symbol,
                       msgs_in::Vararg{Message})
 
     thenode = currentGraph().nodes[node_id]
-    @show thenode.q
-    thenode.q = [ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1), ProbabilityDistribution(Univariate,GaussianMeanVariance,m=inx,v=1)]
-    msgs_in[inx]
+
+    arg_sample = (z,j) -> begin
+        samples_in = []
+        for k=1:length(msgs_in)
+            if k==j
+                push!(samples_in,collect(Iterators.repeat([ z ], thenode.num_samples)))
+            else
+                push!(samples_in,sample(thenode.q[k], thenode.num_samples))
+            end
+        end
+
+        return samples_in
+    end
+
+    λ_list = []
+
+    if thenode.infer_memory == 0
+        for j=1:length(msgs_in)
+            msg_in = msgs_in[j]
+            logp_nc(z) = sum(logPdf.([msg_out.dist],thenode.g.(arg_sample(z,j)...)))/thenode.num_samples
+            λ = renderCVI(logp_nc,thenode.num_iterations[j],thenode.opt[j],msg_in)
+            thenode.q[j] = standardDist(msg_in.dist,λ)
+            push!(λ_list, λ)
+        end
+        thenode.infer_memory = length(msgs_in) - 1
+    else
+        @show thenode.infer_memory
+        thenode.infer_memory -= 1
+    end
+
+    # Send the message
+    λ = naturalParams(thenode.q[inx])
+    η = naturalParams(msgs_in[inx].dist)
+    λ_message = λ.-η
+
+    if isUnivariateGaussian(thenode.q[inx])
+        # Ensure proper message if required
+        if thenode.proper_message
+            w_message = -2*λ_message[2]
+            if w_message<0 w_message = tiny end
+            λ_message[2] = -0.5*w_message
+        end
+    elseif isMultivariateGaussian(thenode.q[inx])
+        # Ensure proper message if required
+        if thenode.proper_message
+            d = dims(msgs_in[inx].dist)
+            W_message = -2*reshape(λ_message[d+1:end],(d,d))
+            e_vals = eigvals(W_message)
+            # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
+            if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
+            λ_message[d+1:end] = vec(-0.5*W_message)
+        end
+    end
+    return standardMessage(msgs_in[inx].dist,λ_message)
+
 end
 
 function ruleSPCVIOutVDX(node_id::Symbol,
@@ -155,6 +214,106 @@ function ruleSPCVIOutVDX(node_id::Symbol,
     return Message(variate,SetSampleList,node_id=node_id)
 
 end
+
+#---------------------------
+# CVI implementations
+#---------------------------
+
+function renderCVI(logp_nc::Function,
+                   num_iterations::Int,
+                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   msg_in::Message{<:Gaussian, Univariate})
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+
+    df_m(z) = ForwardDiff.derivative(logp_nc,z)
+    df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
+
+    for i=1:num_iterations
+        q = standardDist(msg_in.dist,λ)
+        z_s = sample(q)
+        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = [df_μ1, df_μ2]
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
+        update!(opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
+    end
+
+    return λ
+
+end
+
+function renderCVI(logp_nc::Function,
+                   num_iterations::Int,
+                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   msg_in::Message{<:Gaussian, Multivariate})
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+
+    df_m(z) = ForwardDiff.gradient(logp_nc,z)
+    df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
+
+    for i=1:num_iterations
+        q = standardDist(msg_in.dist,λ)
+        z_s = sample(q)
+        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = [df_μ1, df_μ2]
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
+        update!(opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
+    end
+
+    return λ
+
+end
+
+function renderCVI(logp_nc::Function,
+                   num_iterations::Int,
+                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   msg_in::Message{<:FactorNode, <:VariateType})
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(η)
+
+    A(η) = logNormalizer(msg_in.dist,η)
+    gradA(η) = A'(η) # Zygote
+    Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
+    for i=1:thenode.num_iterations
+        q = standardDist(msg_in.dist,λ)
+        z_s = sample(q)
+        logq(λ) = logPdf(q,λ,z_s)
+        ∇logq = logq'(λ)
+        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
+        update!(thenode.opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
+    end
+
+    return λ
+
+end
+
+#---------------------------
+# Some helpers
+#---------------------------
+
+isUnivariateGaussian(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian = true
+isUnivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
+isMultivariateGaussian(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian = true
+isMultivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
 
 
 #---------------------------
