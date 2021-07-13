@@ -67,11 +67,12 @@ function ruleSPCVIIn1MV(node_id::Symbol,
 
     λ_message = λ.-η
     # Ensure proper message if required
-    if thenode.proper_message
-        w_message = -2*λ_message[2]
-        if w_message<0 w_message = tiny end
-        λ_message[2] = -0.5*w_message
-    end
+    # if thenode.proper_message
+    #     w_message = -2*λ_message[2]
+    #     if w_message<0 w_message = tiny end
+    #     λ_message[2] = -0.5*w_message
+    # end
+    if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
     return standardMessage(msg_in.dist,λ_message)
 end
@@ -107,14 +108,15 @@ function ruleSPCVIIn1MV(node_id::Symbol,
 
     λ_message = λ.-η
     # Ensure proper message if required
-    if thenode.proper_message
-        d = dims(msg_in.dist)
-        W_message = -2*reshape(λ_message[d+1:end],(d,d))
-        e_vals = eigvals(W_message)
-        # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
-        if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
-        λ_message[d+1:end] = vec(-0.5*W_message)
-    end
+    # if thenode.proper_message
+    #     d = dims(msg_in.dist)
+    #     W_message = -2*reshape(λ_message[d+1:end],(d,d))
+    #     e_vals = eigvals(W_message)
+    #     # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
+    #     if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
+    #     λ_message[d+1:end] = vec(-0.5*W_message)
+    # end
+    if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
     return standardMessage(msg_in.dist,λ_message)
 end
@@ -167,7 +169,6 @@ function ruleSPCVIInX(node_id::Symbol,
         end
         thenode.infer_memory = length(msgs_in) - 1
     else
-        @show thenode.infer_memory
         thenode.infer_memory -= 1
     end
 
@@ -176,23 +177,24 @@ function ruleSPCVIInX(node_id::Symbol,
     η = naturalParams(msgs_in[inx].dist)
     λ_message = λ.-η
 
-    if isUnivariateGaussian(thenode.q[inx])
+    if isUnivariateGaussian(thenode.q[inx]) || isMultivariateGaussian(thenode.q[inx])
         # Ensure proper message if required
-        if thenode.proper_message
-            w_message = -2*λ_message[2]
-            if w_message<0 w_message = tiny end
-            λ_message[2] = -0.5*w_message
-        end
-    elseif isMultivariateGaussian(thenode.q[inx])
-        # Ensure proper message if required
-        if thenode.proper_message
-            d = dims(msgs_in[inx].dist)
-            W_message = -2*reshape(λ_message[d+1:end],(d,d))
-            e_vals = eigvals(W_message)
-            # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
-            if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
-            λ_message[d+1:end] = vec(-0.5*W_message)
-        end
+        # if thenode.proper_message
+        #     w_message = -2*λ_message[2]
+        #     if w_message<0 w_message = tiny end
+        #     λ_message[2] = -0.5*w_message
+        # end
+        if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
+    # elseif isMultivariateGaussian(thenode.q[inx])
+    #     # Ensure proper message if required
+    #     if thenode.proper_message
+    #         d = dims(msgs_in[inx].dist)
+    #         W_message = -2*reshape(λ_message[d+1:end],(d,d))
+    #         e_vals = eigvals(W_message)
+    #         # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
+    #         if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
+    #         λ_message[d+1:end] = vec(-0.5*W_message)
+    #     end
     end
     return standardMessage(msgs_in[inx].dist,λ_message)
 
@@ -314,6 +316,25 @@ isUnivariateGaussian(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaus
 isUnivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
 isMultivariateGaussian(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian = true
 isMultivariateGaussian(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = false
+
+function convertToProperMessage(msg_in::Message{<:Gaussian, Univariate}, λ_message_org::Vector)
+    λ_message = deepcopy(λ_message_org)
+    w_message = -2*λ_message[2]
+    if w_message<0 w_message = tiny end
+    λ_message[2] = -0.5*w_message
+    return λ_message
+end
+
+function convertToProperMessage(msg_in::Message{<:Gaussian, Multivariate}, λ_message_org::Vector)
+    λ_message = deepcopy(λ_message_org)
+    d = dims(msg_in.dist)
+    W_message = -2*reshape(λ_message[d+1:end],(d,d))
+    e_vals = eigvals(W_message)
+    # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
+    if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
+    λ_message[d+1:end] = vec(-0.5*W_message)
+    return λ_message
+end
 
 
 #---------------------------
