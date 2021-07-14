@@ -7,7 +7,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    # λ = deepcopy(η)
+    λ_init = deepcopy(η)
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # A(η) = logNormalizer(msg_in.dist,η)
@@ -28,7 +28,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
     # Implement proper message check for all the distributions later on.
@@ -43,7 +43,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    # λ = deepcopy(η)
+    λ_init = deepcopy(η)
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # df_m(z) = ForwardDiff.derivative(logp_nc,z)
@@ -63,7 +63,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
     # Ensure proper message if required
@@ -84,7 +84,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    # λ = deepcopy(η)
+    λ_init = deepcopy(η)
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # df_m(z) = ForwardDiff.gradient(logp_nc,z)
@@ -104,7 +104,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     # end
 
     logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,msg_in)
+    λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
     # Ensure proper message if required
@@ -162,8 +162,9 @@ function ruleSPCVIInX(node_id::Symbol,
     if thenode.infer_memory == 0
         for j=1:length(msgs_in)
             msg_in = msgs_in[j]
+            λ_init = deepcopy(naturalParams(msg_in.dist))
             logp_nc(z) = sum(logPdf.([msg_out.dist],thenode.g.(arg_sample(z,j)...)))/thenode.num_samples
-            λ = renderCVI(logp_nc,thenode.num_iterations[j],thenode.opt[j],msg_in)
+            λ = renderCVI(logp_nc,thenode.num_iterations[j],thenode.opt[j],λ_init,msg_in)
             thenode.q[j] = standardDist(msg_in.dist,λ)
             push!(λ_list, λ)
         end
@@ -224,10 +225,11 @@ end
 function renderCVI(logp_nc::Function,
                    num_iterations::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   λ_init::Vector,
                    msg_in::Message{<:Gaussian, Univariate})
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    λ = deepcopy(λ_init)
 
     df_m(z) = ForwardDiff.derivative(logp_nc,z)
     df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
@@ -253,10 +255,11 @@ end
 function renderCVI(logp_nc::Function,
                    num_iterations::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   λ_init::Vector,
                    msg_in::Message{<:Gaussian, Multivariate})
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    λ = deepcopy(λ_init)
 
     df_m(z) = ForwardDiff.gradient(logp_nc,z)
     df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
@@ -282,10 +285,11 @@ end
 function renderCVI(logp_nc::Function,
                    num_iterations::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   λ_init::Vector,
                    msg_in::Message{<:FactorNode, <:VariateType})
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(η)
+    λ = deepcopy(λ_init)
 
     A(η) = logNormalizer(msg_in.dist,η)
     gradA(η) = A'(η) # Zygote
