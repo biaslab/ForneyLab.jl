@@ -266,7 +266,7 @@ function renderCVI(logp_nc::Function,
         z_s = sample(q)
         df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = [df_μ1, df_μ2]
+        ∇f = [df_μ1; vec(df_μ2)]
         λ_old = deepcopy(λ)
         ∇ = λ .- η .- ∇f
         update!(opt,λ,∇)

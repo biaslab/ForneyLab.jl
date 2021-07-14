@@ -146,3 +146,26 @@ function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
 
     return (nothing_inputs == 1) && !matches(first_type, second_type) && !matches(second_type, first_type)
 end
+
+# mutable struct SPEqualityFNFN <: SumProductRule{Equality} end
+# outboundType(::Type{SPEqualityFNFN}) = Message{FactorNode}
+# function isApplicable(::Type{SPEqualityFNFN}, input_types::Vector{Type})
+#     nothing_inputs = 0
+#     first_type, second_type = nothing, nothing
+#
+#     for input_type in input_types
+#         if input_type == Nothing
+#             nothing_inputs += 1
+#         elseif input_type == Message{FactorNode}
+#             if first_type === nothing
+#                 first_type = input_type
+#             else
+#                 second_type = input_type
+#             end
+#         else
+#             return false
+#         end
+#     end
+#
+#     return (nothing_inputs == 1) && (first_type == second_type)
+# end
