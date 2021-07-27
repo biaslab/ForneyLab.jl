@@ -36,7 +36,7 @@ end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetProbDist},
                             y::ProbabilityDistribution{Multivariate, F},
-                            z::ProbabilityDistribution{Multivariate, F} = ProbabilityDistribution(Univariate,F)) where {F<:Gaussian}
+                            z::ProbabilityDistribution{Multivariate, F} = ProbabilityDistribution(Multivariate,F)) where {F<:Gaussian}
     return deepcopy(x.params[:q])
 end
 

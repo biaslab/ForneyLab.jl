@@ -7,7 +7,11 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ_init = deepcopy(η)
+    if thenode.online_inference == false
+        λ_init = deepcopy(η)
+    else
+        λ_init = deepcopy(naturalParams(thenode.q[1]))
+    end
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # A(η) = logNormalizer(msg_in.dist,η)
@@ -27,12 +31,13 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     #     end
     # end
 
-    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
     # Implement proper message check for all the distributions later on.
     thenode.q = [standardDist(msg_in.dist,λ)]
+    if thenode.online_inference == false thenode.q_memory = deepcopy(thenode.q) end
     return standardMessage(msg_in.dist,λ_message)
 end
 
@@ -43,7 +48,11 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ_init = deepcopy(η)
+    if thenode.online_inference == false
+        λ_init = deepcopy(η)
+    else
+        λ_init = deepcopy(naturalParams(thenode.q[1]))
+    end
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # df_m(z) = ForwardDiff.derivative(logp_nc,z)
@@ -62,7 +71,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     #     end
     # end
 
-    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
@@ -74,6 +83,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     # end
     if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
+    if thenode.online_inference == false thenode.q_memory = deepcopy(thenode.q) end
     return standardMessage(msg_in.dist,λ_message)
 end
 
@@ -84,7 +94,11 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     η = deepcopy(naturalParams(msg_in.dist))
-    λ_init = deepcopy(η)
+    if thenode.online_inference == false
+        λ_init = deepcopy(η)
+    else
+        λ_init = deepcopy(naturalParams(thenode.q[1]))
+    end
     #
     # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
     # df_m(z) = ForwardDiff.gradient(logp_nc,z)
@@ -103,7 +117,7 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     #     end
     # end
 
-    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
@@ -118,7 +132,28 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     # end
     if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
+    if thenode.online_inference == false thenode.q_memory = deepcopy(thenode.q) end
     return standardMessage(msg_in.dist,λ_message)
+end
+
+function ruleSPCVIIn1MV(node_id::Symbol,
+                        msg_out::Message{<:FactorFunction, <:VariateType},
+                        msg_in::Message{<:SetProbDist, <:VariateType})
+
+    thenode = currentGraph().nodes[node_id]
+
+    q_current = msg_in.dist.params[:q]
+    prior_message = msg_in.dist.params[:message]
+    thenode.q = q_current # equalizing local posterior to global posterior
+
+    η = deepcopy(naturalParams(prior_message.dist))
+    λ_init = deepcopy(naturalParams(q_current))
+
+    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
+    λ = renderCVI(logp_nc,1,Descent(1.0),λ_init,prior_message)
+
+    λ_message = λ.-η
+    return standardMessage(prior_message,λ_message)
 end
 
 function ruleSPCVIOutVD(node_id::Symbol,
@@ -137,6 +172,22 @@ function ruleSPCVIOutVD(node_id::Symbol,
 
 end
 
+function ruleSPCVIOutVD(node_id::Symbol,
+                        msg_out::Nothing,
+                        msg_in::Message{<:SetProbDist, <:VariateType})
+
+    thenode = currentGraph().nodes[node_id]
+
+    sampl = thenode.g(sample(msg_in.dist.params[:message].dist))
+    if length(sampl) == 1
+        variate = Univariate
+    else
+        variate = Multivariate
+    end
+    return Message(variate,SetSampleList,node_id=node_id)
+
+end
+
 function ruleSPCVIInX(node_id::Symbol,
                       inx::Int64,
                       msg_out::Message{<:FactorFunction, <:VariateType},
@@ -144,13 +195,27 @@ function ruleSPCVIInX(node_id::Symbol,
 
     thenode = currentGraph().nodes[node_id]
 
+    local_messages, global_messages = [], []
+    local_inx, global_inx = [], []
+    for i=1:length(thenode.online_inference)
+        if thenode.online_inference[i]
+            push!(global_messages, msgs_in[i])
+            push!(global_inx, i)
+        else
+            push!(local_messages, msgs_in[i])
+            push!(local_inx, i)
+        end
+    end
+    msgs_list = [local_messages;global_messages]
+    inx_list = [local_inx;global_inx]
+
     arg_sample = (z,j) -> begin
         samples_in = []
         for k=1:length(msgs_in)
             if k==j
                 push!(samples_in,collect(Iterators.repeat([ z ], thenode.num_samples)))
             else
-                push!(samples_in,sample(thenode.q[k], thenode.num_samples))
+                push!(samples_in,sample(thenode.q_memory[k], thenode.num_samples))
             end
         end
 
@@ -160,12 +225,18 @@ function ruleSPCVIInX(node_id::Symbol,
     λ_list = []
 
     if thenode.infer_memory == 0
-        for j=1:length(msgs_in)
-            msg_in = msgs_in[j]
-            λ_init = deepcopy(naturalParams(msg_in.dist))
-            logp_nc(z) = sum(logPdf.([msg_out.dist],thenode.g.(arg_sample(z,j)...)))/thenode.num_samples
-            λ = renderCVI(logp_nc,thenode.num_iterations[j],thenode.opt[j],λ_init,msg_in)
-            thenode.q[j] = standardDist(msg_in.dist,λ)
+        for j=1:length(msgs_list)
+            msg_in = msgs_list[j]
+            logp_nc(z) = sum(logPdf.([msg_out.dist],thenode.g.(arg_sample(z,inx_list[j])...)))/thenode.num_samples
+            if thenode.online_inference[inx_list[j]]
+                λ_init = deepcopy(naturalParams(thenode.q[inx_list[j]]))
+                logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*sum(logPdf.([msg_out.dist],thenode.g.(arg_sample(z,inx_list[j])...)))/thenode.num_samples
+            else
+                λ_init = deepcopy(naturalParams(msg_in.dist))
+            end
+            λ = renderCVI(logp_nc,thenode.num_iterations[inx_list[j]],thenode.opt[inx_list[j]],λ_init,msg_in)
+            thenode.q[inx_list[j]] = standardDist(msg_in.dist,λ)
+            if thenode.online_inference[inx_list[j]] == false thenode.q_memory[inx_list[j]] = deepcopy(thenode.q[inx_list[j]]) end
             push!(λ_list, λ)
         end
         thenode.infer_memory = length(msgs_in) - 1
@@ -177,6 +248,10 @@ function ruleSPCVIInX(node_id::Symbol,
     λ = naturalParams(thenode.q[inx])
     η = naturalParams(msgs_in[inx].dist)
     λ_message = λ.-η
+
+    @show inx
+    @show λ
+    @show λ_message
 
     if isUnivariateGaussian(thenode.q[inx]) || isMultivariateGaussian(thenode.q[inx])
         # Ensure proper message if required
@@ -277,7 +352,7 @@ function renderCVI(logp_nc::Function,
             λ = λ_old
         end
     end
-
+    
     return λ
 
 end
@@ -294,7 +369,7 @@ function renderCVI(logp_nc::Function,
     A(η) = logNormalizer(msg_in.dist,η)
     gradA(η) = A'(η) # Zygote
     Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
-    for i=1:thenode.num_iterations
+    for i=1:num_iterations
         q = standardDist(msg_in.dist,λ)
         z_s = sample(q)
         logq(λ) = logPdf(q,λ,z_s)
@@ -302,7 +377,7 @@ function renderCVI(logp_nc::Function,
         ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
         λ_old = deepcopy(λ)
         ∇ = λ .- η .- ∇f
-        update!(thenode.opt,λ,∇)
+        update!(opt,λ,∇)
         if isProper(standardDist(msg_in.dist,λ)) == false
             λ = λ_old
         end

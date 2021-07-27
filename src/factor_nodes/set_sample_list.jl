@@ -28,15 +28,29 @@ ProbabilityDistribution(::Type{SetSampleList}; kwargs...) = ProbabilityDistribut
 
 @symmetrical function prod!(x::ProbabilityDistribution{V, SetSampleList},
                             y::ProbabilityDistribution{V, F},
-                            z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList)) where {V<:VariateType, F<:FactorNode}
+                            z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList)) where {V<:VariateType, F<:FactorFunction}
 
     thenode = currentGraph().nodes[x.params[:node_id]]
 
-    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q_memory]
     samples = thenode.g.(samples_...)
     weights = ones(thenode.num_samples)/thenode.num_samples
-    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
+    thenode.q_memory = thenode.q
+    return ProbabilityDistribution(V, SampleList, s=samples, w=weights)
 end
+
+# @symmetrical function prod!(x::ProbabilityDistribution{V, SetSampleList},
+#                             y::ProbabilityDistribution{V, F},
+#                             z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList)) where {V<:VariateType, F<:FactorNode}
+#
+#     thenode = currentGraph().nodes[x.params[:node_id]]
+#
+#     samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q_memory]
+#     samples = thenode.g.(samples_...)
+#     weights = ones(thenode.num_samples)/thenode.num_samples
+#     thenode.q_memory = thenode.q
+#     return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
+# end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Univariate, SetSampleList},
                             y::ProbabilityDistribution{Univariate, F},
@@ -44,9 +58,10 @@ end
 
     thenode = currentGraph().nodes[x.params[:node_id]]
 
-    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q_memory]
     samples = thenode.g.(samples_...)
     weights = ones(thenode.num_samples)/thenode.num_samples
+    thenode.q_memory = thenode.q
     return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
 end
 
@@ -56,10 +71,11 @@ end
 
     thenode = currentGraph().nodes[x.params[:node_id]]
 
-    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q_memory]
     samples = thenode.g.(samples_...)
     weights = ones(thenode.num_samples)/thenode.num_samples
-    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
+    thenode.q_memory = thenode.q
+    return ProbabilityDistribution(Multivariate, SampleList, s=samples, w=weights)
 end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetSampleList},
@@ -68,8 +84,9 @@ end
 
     thenode = currentGraph().nodes[x.params[:node_id]]
 
-    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q]
+    samples_ = [sample(prob, thenode.num_samples) for prob in thenode.q_memory]
     samples = thenode.g.(samples_...)
     weights = ones(thenode.num_samples)/thenode.num_samples
-    return ProbabilityDistribution(Univariate, SampleList, s=samples, w=weights)
+    thenode.q_memory = thenode.q
+    return ProbabilityDistribution(Multivariate, SampleList, s=samples, w=weights)
 end

@@ -40,7 +40,7 @@ function ruleSPSVIOutNM(node_id::Symbol,
 
     # The out variable (the mirror variable) is not updated yet! It will be used in calculation of other variational distributions.
     # Set the variational distribution of out variable to q that is not updated yet!
-    m_out = Message(V,SetProbDist,q=deepcopy(thenode.q))
+    m_out = Message(V,SetProbDist,q=deepcopy(thenode.q),message=msg_in)
 
     return m_out
 

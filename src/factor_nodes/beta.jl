@@ -89,12 +89,12 @@ naturalParams(dist::ProbabilityDistribution{Univariate, Beta}) = [dist.params[:a
 
 # Natural parameters to standard dist. type
 function standardDist(dist::ProbabilityDistribution{Univariate, Beta}, η::Vector)
-    ProbabilityDistribution(Univariate, Gamma, a=η[1]+1, b=η[2]+1)
+    ProbabilityDistribution(Univariate, Beta, a=η[1]+1, b=η[2]+1)
 end
 
 # Natural parameters to standard message type
 function standardMessage(dist::ProbabilityDistribution{Univariate, Beta}, η::Vector)
-    Message(Univariate, Gamma, a=η[1]+1, b=η[2]+1)
+    Message(Univariate, Beta, a=η[1]+1, b=η[2]+1)
 end
 
 # Entropy functional

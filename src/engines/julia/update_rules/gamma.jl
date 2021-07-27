@@ -17,7 +17,8 @@ ruleVBGammaOut( dist_out::Any,
 ruleVBGammaA( dist_out::ProbabilityDistribution{Univariate},
                 dist_a::Any,
                 dist_b::ProbabilityDistribution{Univariate}) =
-    Message(Univariate, Function, log_pdf = (a)->a*unsafeLogMean(dist_b) + (a-1)*unsafeLogMean(dist_out) - logabsgamma(a)[1])
+    #Message(Univariate, Function, log_pdf = (a)->a*unsafeLogMean(dist_b) + (a-1)*unsafeLogMean(dist_out) - logabsgamma(a)[1])
+    Message(Univariate, Function, log_pdf = (a)->a*unsafeLogMean(dist_b) + (a-1)*unsafeLogMean(dist_out) - loggamma(a))
 
 ruleVBGammaB( dist_out::ProbabilityDistribution{Univariate},
               dist_a::ProbabilityDistribution{Univariate},
