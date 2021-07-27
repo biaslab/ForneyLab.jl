@@ -87,6 +87,36 @@ end
     return z
 end
 
+# Standard parameters to natural parameters
+naturalParams(dist::ProbabilityDistribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
+
+# Natural parameters to standard dist. type
+function standardDist(dist::ProbabilityDistribution{Univariate, LogNormal}, η::Vector)
+    s = -0.5/η[2]
+    m = s*η[1]
+    ProbabilityDistribution(Univariate, LogNormal, m=m, s=s)
+end
+
+# Natural parameters to standard message type
+function standardMessage(dist::ProbabilityDistribution{Univariate, LogNormal}, η::Vector)
+    s = -0.5/η[2]
+    m = s*η[1]
+    Message(Univariate, LogNormal, m=m, s=s)
+end
+
+function logNormalizer(dist::ProbabilityDistribution{Univariate, LogNormal}, η::Vector)
+    return - η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Univariate, LogNormal}, η::Vector, x)
+    h(x) = 1/(sqrt(2pi)*x)
+    ϕ(x) = [log(x),log(x)^2]
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, LogNormal})
     0.5*log(dist.params[:s]) +

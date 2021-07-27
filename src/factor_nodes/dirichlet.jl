@@ -139,6 +139,19 @@ function standardMessage(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}
     Message(MatrixVariate, Dirichlet, a = reshape(η .+ 1, (d,d)))
 end
 
+function logNormalizer(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector)
+    return sum(loggamma.(η .+ 1.)) - loggamma(sum(η .+ 1.))
+end
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector, x)
+    h(x) = 1
+    ϕ(x) = log.(x)
+    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
