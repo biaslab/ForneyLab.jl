@@ -24,20 +24,32 @@ ProbabilityDistribution(::Type{SetProbDist}; kwargs...) = ProbabilityDistributio
 @symmetrical function prod!(x::ProbabilityDistribution{V, SetProbDist},
                             y::ProbabilityDistribution{V, F},
                             z::ProbabilityDistribution{V, F} = ProbabilityDistribution(V,F)) where {V<:VariateType, F<:FactorNode}
-    return deepcopy(x.params[:q])
+    thenode = currentGraph().nodes[x.params[:node_id]]
+    marg = deepcopy(thenode.q_memory)
+    thenode.q_memory = thenode.q
+    return marg
+    #return deepcopy(x.params[:q])
 end
 
 # For some reason Gaussian messages do not enter in F<:FactorNode
 @symmetrical function prod!(x::ProbabilityDistribution{Univariate, SetProbDist},
                             y::ProbabilityDistribution{Univariate, F},
                             z::ProbabilityDistribution{Univariate, F} = ProbabilityDistribution(Univariate,F)) where {F<:Gaussian}
-    return deepcopy(x.params[:q])
+    thenode = currentGraph().nodes[x.params[:node_id]]
+    marg = deepcopy(thenode.q_memory)
+    thenode.q_memory = thenode.q
+    return marg
+    #return deepcopy(x.params[:q])
 end
 
 @symmetrical function prod!(x::ProbabilityDistribution{Multivariate, SetProbDist},
                             y::ProbabilityDistribution{Multivariate, F},
                             z::ProbabilityDistribution{Multivariate, F} = ProbabilityDistribution(Multivariate,F)) where {F<:Gaussian}
-    return deepcopy(x.params[:q])
+    thenode = currentGraph().nodes[x.params[:node_id]]
+    marg = deepcopy(thenode.q_memory)
+    thenode.q_memory = thenode.q
+    return marg
+    #return deepcopy(x.params[:q])
 end
 
 
