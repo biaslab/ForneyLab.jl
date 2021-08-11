@@ -117,7 +117,7 @@ function standardMessage(dist::ProbabilityDistribution{Univariate, Categorical},
 end
 
 function logNormalizer(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
-    return 0
+    return sum(0. * η)
 end
 
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which

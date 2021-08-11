@@ -249,9 +249,9 @@ function ruleSPCVIInX(node_id::Symbol,
     η = naturalParams(msgs_in[inx].dist)
     λ_message = λ.-η
 
-    @show inx
-    @show λ
-    @show λ_message
+    # @show inx
+    # @show λ
+    # @show λ_message
 
     if isUnivariateGaussian(thenode.q[inx]) || isMultivariateGaussian(thenode.q[inx])
         # Ensure proper message if required
@@ -352,7 +352,7 @@ function renderCVI(logp_nc::Function,
             λ = λ_old
         end
     end
-    
+
     return λ
 
 end
