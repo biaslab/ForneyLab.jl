@@ -4,9 +4,6 @@ export ruleSPSVIIn1MN, ruleSPSVIOutNM
 # SPSVIIn1MN must be called before SPSVIOutNM in the message passing schedular.
 #----------------------------------
 
-# Once the variational updates are carried out for all global variables
-# the end user must update the variational distribution of out variable (the mirror variable inside the plate) manually!
-
 function ruleSPSVIIn1MN(node_id::Symbol,
                         msg_out::Message{<:FactorFunction, <:VariateType},
                         msg_in::Message{<:FactorFunction, <:VariateType})

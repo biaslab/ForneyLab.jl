@@ -108,16 +108,23 @@ naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = log.(dis
 
 # Natural parameters to standard dist. type
 function standardDist(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
-    ProbabilityDistribution(Univariate, Categorical, p=exp.(η))
+    #ProbabilityDistribution(Univariate, Categorical, p=exp.(η))
+    ProbabilityDistribution(Univariate, Categorical, p=exp.(η)./sum(exp.(η)))
 end
 
 # Natural parameters to standard message type
 function standardMessage(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
-    Message(Univariate, Categorical, p=exp.(η))
+    #Message(Univariate, Categorical, p=exp.(η))
+    Message(Univariate, Categorical, p=exp.(η)./sum(exp.(η)))
 end
 
 function logNormalizer(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
     return sum(0. * η)
+end
+
+# Fisher Information Matrix https://www.ii.pwr.edu.pl/~tomczak/PDF/[JMT]Fisher_inf.pdf
+function FIM(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
+    return Diagonal(1. ./ exp.(η))
 end
 
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which

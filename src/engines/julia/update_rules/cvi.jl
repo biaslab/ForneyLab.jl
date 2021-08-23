@@ -12,24 +12,6 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     else
         λ_init = deepcopy(naturalParams(thenode.q[1]))
     end
-    #
-    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    # A(η) = logNormalizer(msg_in.dist,η)
-    # gradA(η) = A'(η) # Zygote
-    # Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
-    # for i=1:thenode.num_iterations
-    #     q = standardDist(msg_in.dist,λ)
-    #     z_s = sample(q)
-    #     logq(λ) = logPdf(q,λ,z_s)
-    #     ∇logq = logq'(λ)
-    #     ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
-    #     λ_old = deepcopy(λ)
-    #     ∇ = λ .- η .- ∇f
-    #     update!(thenode.opt,λ,∇)
-    #     if isProper(standardDist(msg_in.dist,λ)) == false
-    #         λ = λ_old
-    #     end
-    # end
 
     logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
@@ -53,34 +35,12 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     else
         λ_init = deepcopy(naturalParams(thenode.q[1]))
     end
-    #
-    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    # df_m(z) = ForwardDiff.derivative(logp_nc,z)
-    # df_v(z) = 0.5*ForwardDiff.derivative(df_m,z)
-    # for i=1:thenode.num_iterations
-    #     q = standardDist(msg_in.dist,λ)
-    #     z_s = sample(q)
-    #     df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-    #     df_μ2 = df_v(z_s)
-    #     ∇f = [df_μ1, df_μ2]
-    #     λ_old = deepcopy(λ)
-    #     ∇ = λ .- η .- ∇f
-    #     update!(thenode.opt,λ,∇)
-    #     if isProper(standardDist(msg_in.dist,λ)) == false
-    #         λ = λ_old
-    #     end
-    # end
 
     logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
-    # Ensure proper message if required
-    # if thenode.proper_message
-    #     w_message = -2*λ_message[2]
-    #     if w_message<0 w_message = tiny end
-    #     λ_message[2] = -0.5*w_message
-    # end
+
     if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
     if thenode.online_inference == false thenode.q_memory = deepcopy(thenode.q) end
@@ -99,61 +59,16 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     else
         λ_init = deepcopy(naturalParams(thenode.q[1]))
     end
-    #
-    # logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    # df_m(z) = ForwardDiff.gradient(logp_nc,z)
-    # df_v(z) = 0.5*ForwardDiff.jacobian(df_m,z)
-    # for i=1:thenode.num_iterations
-    #     q = standardDist(msg_in.dist,λ)
-    #     z_s = sample(q)
-    #     df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-    #     df_μ2 = df_v(z_s)
-    #     ∇f = [df_μ1; vec(df_μ2)]
-    #     λ_old = deepcopy(λ)
-    #     ∇ = λ .- η .- ∇f
-    #     update!(thenode.opt,λ,∇)
-    #     if isProper(standardDist(msg_in.dist,λ)) == false
-    #         λ = λ_old
-    #     end
-    # end
 
     logp_nc(z) = (thenode.dataset_size/thenode.batch_size)*logPdf(msg_out.dist, thenode.g(z))
     λ = renderCVI(logp_nc,thenode.num_iterations,thenode.opt,λ_init,msg_in)
 
     λ_message = λ.-η
-    # Ensure proper message if required
-    # if thenode.proper_message
-    #     d = dims(msg_in.dist)
-    #     W_message = -2*reshape(λ_message[d+1:end],(d,d))
-    #     e_vals = eigvals(W_message)
-    #     # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
-    #     if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
-    #     λ_message[d+1:end] = vec(-0.5*W_message)
-    # end
+
     if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
     thenode.q = [standardDist(msg_in.dist,λ)]
     if thenode.online_inference == false thenode.q_memory = deepcopy(thenode.q) end
     return standardMessage(msg_in.dist,λ_message)
-end
-
-function ruleSPCVIIn1MV(node_id::Symbol,
-                        msg_out::Message{<:FactorFunction, <:VariateType},
-                        msg_in::Message{<:SetProbDist, <:VariateType})
-
-    thenode = currentGraph().nodes[node_id]
-
-    q_current = msg_in.dist.params[:q]
-    prior_message = msg_in.dist.params[:message]
-    thenode.q = q_current # equalizing local posterior to global posterior
-
-    η = deepcopy(naturalParams(prior_message.dist))
-    λ_init = deepcopy(naturalParams(q_current))
-
-    logp_nc(z) = logPdf(msg_out.dist, thenode.g(z))
-    λ = renderCVI(logp_nc,1,Descent(1.0),λ_init,prior_message)
-
-    λ_message = λ.-η
-    return standardMessage(prior_message,λ_message)
 end
 
 function ruleSPCVIOutVD(node_id::Symbol,
@@ -163,22 +78,6 @@ function ruleSPCVIOutVD(node_id::Symbol,
     thenode = currentGraph().nodes[node_id]
 
     sampl = thenode.g(sample(msg_in.dist))
-    if length(sampl) == 1
-        variate = Univariate
-    else
-        variate = Multivariate
-    end
-    return Message(variate,SetSampleList,node_id=node_id)
-
-end
-
-function ruleSPCVIOutVD(node_id::Symbol,
-                        msg_out::Nothing,
-                        msg_in::Message{<:SetProbDist, <:VariateType})
-
-    thenode = currentGraph().nodes[node_id]
-
-    sampl = thenode.g(sample(msg_in.dist.params[:message].dist))
     if length(sampl) == 1
         variate = Univariate
     else
@@ -249,28 +148,8 @@ function ruleSPCVIInX(node_id::Symbol,
     η = naturalParams(msgs_in[inx].dist)
     λ_message = λ.-η
 
-    # @show inx
-    # @show λ
-    # @show λ_message
-
     if isUnivariateGaussian(thenode.q[inx]) || isMultivariateGaussian(thenode.q[inx])
-        # Ensure proper message if required
-        # if thenode.proper_message
-        #     w_message = -2*λ_message[2]
-        #     if w_message<0 w_message = tiny end
-        #     λ_message[2] = -0.5*w_message
-        # end
         if thenode.proper_message λ_message = convertToProperMessage(msg_in, λ_message) end
-    # elseif isMultivariateGaussian(thenode.q[inx])
-    #     # Ensure proper message if required
-    #     if thenode.proper_message
-    #         d = dims(msgs_in[inx].dist)
-    #         W_message = -2*reshape(λ_message[d+1:end],(d,d))
-    #         e_vals = eigvals(W_message)
-    #         # below makes min eigen value zero. Later on in standardMessage(), we add tiny to ensure posdef
-    #         if minimum(e_vals)<0 W_message -= minimum(e_vals)*diageye(d) end
-    #         λ_message[d+1:end] = vec(-0.5*W_message)
-    #     end
     end
     return standardMessage(msgs_in[inx].dist,λ_message)
 
@@ -369,6 +248,36 @@ function renderCVI(logp_nc::Function,
     A(η) = logNormalizer(msg_in.dist,η)
     gradA(η) = A'(η) # Zygote
     Fisher(η) = ForwardDiff.jacobian(gradA,η) # Zygote throws mutating array error
+    for i=1:num_iterations
+        q = standardDist(msg_in.dist,λ)
+        z_s = sample(q)
+        logq(λ) = logPdf(q,λ,z_s)
+        ∇logq = logq'(λ)
+        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
+        λ_old = deepcopy(λ)
+        ∇ = λ .- η .- ∇f
+        update!(opt,λ,∇)
+        if isProper(standardDist(msg_in.dist,λ)) == false
+            λ = λ_old
+        end
+    end
+
+    return λ
+
+end
+
+function renderCVI(logp_nc::Function,
+                   num_iterations::Int,
+                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   λ_init::Vector,
+                   msg_in::Message{<:Categorical, <:VariateType})
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    λ = deepcopy(λ_init)
+
+    A(η) = logNormalizer(msg_in.dist,η)
+    gradA(η) = A'(η) # Zygote
+    Fisher(η) = FIM(msg_in.dist,η) # To avoid Zygote's mutating array error
     for i=1:num_iterations
         q = standardDist(msg_in.dist,λ)
         z_s = sample(q)

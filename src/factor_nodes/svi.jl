@@ -3,11 +3,13 @@ export SVI, Svi
 """
 Description:
 
+    Paper: https://www.jmlr.org/papers/volume14/hoffman13a/hoffman13a.pdf
+
     Stochastic Variational Inference node allows VMP to be scaled to large datasets
     by generating mirror of global parameters inside plates which is not often used
     in FFGs.
 
-    Maps a location to a scale parameter by exponentiation
+    Maps a global variable to a local mirror variable by
 
     f(out,in1) = δ(out - in1)
 
@@ -18,12 +20,12 @@ Interfaces:
 
 Construction:
 
-    Svi(out, in1, q, opt, M, N, id=:some_id)
+    Svi(out, in1, opt=opt, q=q, batch_size=M, dataset_size=N, id=:some_id)
 
     where q: initial variational factor for global variable,
           opt: an optimizer from Flux.Optimise family together with ForgetDelayDescent defined in helpers.jl
-          M: batch size
-          N: dataset size
+          batch_size: batch size
+          dataset_size: dataset size
 """
 
 mutable struct SVI <: DeltaFactor
@@ -36,7 +38,7 @@ mutable struct SVI <: DeltaFactor
     batch_size::Int
     dataset_size::Int
 
-    function SVI(out, in1, q, opt, batch_size, dataset_size; id=generateId(SVI))
+    function SVI(out, in1, opt, q, batch_size, dataset_size; id=generateId(SVI))
         @ensureVariables(out, in1)
         self = new(id, Array{Interface}(undef, 2), Dict{Int,Interface}(), q, deepcopy(q), opt, batch_size, dataset_size)
         addNode!(currentGraph(), self)
@@ -49,6 +51,9 @@ end
 
 slug(::Type{SVI}) = "svi"
 
-function Svi(out::Variable, in1::Variable, q::ProbabilityDistribution, opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent}, batch_size::Int, dataset_size::Int)
-    SVI(out, in1, q, opt, batch_size, dataset_size)
+function Svi(out::Variable, in1::Variable;
+             opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+             q::ProbabilityDistribution,
+             batch_size::Int, dataset_size::Int)
+    SVI(out, in1, opt, q, batch_size, dataset_size)
 end

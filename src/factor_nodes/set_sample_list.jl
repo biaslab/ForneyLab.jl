@@ -3,9 +3,9 @@ export SetSampleList
 """
 Description:
 
-    SetProbDist is defined for messages that carry the posterior marginal
-    information stored in a node to an edge and set its posterior marginal equal to
-    the carried one. Required in SVI node.
+    SetSampleList is defined for messages that carry the posterior marginal
+    information stored in a node to an edge. Later on we use these informations
+    to draw samples. Required for CVI.
 
 """
 mutable struct SetSampleList <: SoftFactor

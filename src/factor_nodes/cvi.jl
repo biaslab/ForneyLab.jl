@@ -3,23 +3,32 @@ export CVI, Cvi
 """
 Description:
 
+    Paper: https://arxiv.org/pdf/1703.04265.pdf
+
     Conjugate Computation Variational Inference node allows VMP to be applied to nonconjugate factor pairs.
 
     Maps a variable through
 
-    f(out,in1) = δ(out - g(in1))
+    f(out,in1,in2,in3,...) = δ(out - g(in1,in2,in3,...))
 
 Interfaces:
 
     1. out
-    2. in1
+    2. in1,in2,in3,...
 
 Construction:
 
-    Svi(out, in1, q, opt, M, N, id=:some_id)
+    Cvi(out, in1,in2,in3,..., g=g, opt=opt,
+        num_iterations=[I1,I2,I3,...], num_samples=I,
+        q=[q1,q2,q3,...], proper_message=B, online_inference=[B1,B2,B3,...]
+        batch_size=M, dataset_size=N, id=:some_id)
 
-    where q: initial variational factor for global variable,
+    where q: initial variational factors vector,
           opt: an optimizer from Flux.Optimise family together with ForgetDelayDescent defined in helpers.jl
+          num_iterations: Vector of integers, num iterations in optimization per variable
+          num_samples: # of samples to be employed in estimations
+          proper_message: flag to indicate if the message is needed to be a proper dist.
+          online_inference: vector of bools show if online inference rules are applied per variable
           M: batch size
           N: dataset size
 """
@@ -33,7 +42,6 @@ mutable struct CVI <: DeltaFactor
     #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}}
     opt::Any
     num_iterations::Union{Int,Vector{Int}}
-    #num_samples::Union{Int,Vector{Int}}
     num_samples::Int
     #q::Union{ProbabilityDistribution,Vector{ProbabilityDistribution}}
     q::Vector{<:ProbabilityDistribution}
@@ -70,13 +78,11 @@ end
 
 slug(::Type{CVI}) = "cvi"
 
-function Cvi(out::Variable, args::Vararg; g::Function,
-    #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}},
-             opt::Any,
-                num_samples::Union{Int,Vector{Int}}, num_iterations::Union{Int,Vector{Int}},
-                q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0,
-                proper_message=false, online_inference=false,
-                batch_size=1, dataset_size=1, id=ForneyLab.generateId(CVI))
+function Cvi(out::Variable, args::Vararg; g::Function, opt::Any,
+             num_samples::Union{Int,Vector{Int}}, num_iterations::Union{Int,Vector{Int}},
+             q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0,
+             proper_message=false, online_inference=false,
+             batch_size=1, dataset_size=1, id=ForneyLab.generateId(CVI))
     CVI(id, g, opt, num_iterations, num_samples, q, infer_memory, proper_message,
         online_inference, batch_size, dataset_size, out, args...)
 end
