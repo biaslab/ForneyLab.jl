@@ -107,7 +107,7 @@ end
 function logPdf(dist::ProbabilityDistribution{Univariate, Beta}, η::Vector, x)
     h(x) = 1
     ϕ(x) = [log(x),log(1-x)]
-    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 
 # Entropy functional

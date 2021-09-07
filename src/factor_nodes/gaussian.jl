@@ -1,4 +1,4 @@
-export Gaussian, prod!, convert, naturalParams, standardDist, standardMessage
+export Gaussian, prod!, convert
 
 # Convert parameterizations
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
@@ -164,14 +164,14 @@ end
 function logPdf(dist::ProbabilityDistribution{Univariate, F}, η::Vector, x) where F<:Gaussian
     h(x) = 1/sqrt(2*pi)
     ϕ(x) = [x,x^2]
-    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 
 function logPdf(dist::ProbabilityDistribution{Multivariate, F}, η::Vector, x) where F<:Gaussian
     d = dims(dist)
     h(x) = (2*pi)^(-0.5*d)
     ϕ(x) = [x;vec(x*transpose(x))]
-    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 
 # Entropy functional

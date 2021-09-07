@@ -78,7 +78,7 @@ end
 function logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, η::Vector, x)
     h(x) = 1/factorial(x)
     ϕ(x) = [x]
-    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf

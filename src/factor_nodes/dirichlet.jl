@@ -149,7 +149,7 @@ end
 function logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector, x)
     h(x) = 1
     ϕ(x) = log.(x)
-    return h(x)*exp(transpose(ϕ(x))*η - logNormalizer(dist,η))
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 
 # Entropy functional
