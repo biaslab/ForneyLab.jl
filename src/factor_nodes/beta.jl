@@ -1,4 +1,4 @@
-export Beta, naturalParams, standardDist, standardMessage
+export Beta
 
 """
 Description:

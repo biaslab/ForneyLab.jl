@@ -86,4 +86,19 @@ end
     @test averageEnergy(Categorical, ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.9])) == averageEnergy(Bernoulli, ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Univariate, PointMass, m=0.1))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    @test length(naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]))) == 3
+    @test naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]))[end] == 0
+    @test isapprox(sum(standardDist(vague(Categorical,4),[1.5,2.,2.5,3.]).params[:p]),1.)
+    @test isapprox(sum(standardDist(vague(Categorical,4),[-1.5,-2.,-2.5,0.]).params[:p]),1.)
+    @test ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]) == standardDist(vague(Categorical,3),naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2])))
+    @test ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]) == standardMessage(vague(Categorical,3),naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]), [1.,0.,0.]), logPdf(vague(Categorical), naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2])), [1.,0.,0.]))
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2]), [0.,0.,1.]), logPdf(vague(Categorical), naturalParams(ProbabilityDistribution(Univariate, Categorical, p=[0.3,0.5,0.2])), [0.,0.,1.]))
+end
+
 end # module

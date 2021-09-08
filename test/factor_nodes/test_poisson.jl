@@ -91,4 +91,16 @@ end
     @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=100.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=100.0), ProbabilityDistribution(Univariate, PointMass, m=100.0)))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    @test length(naturalParams(ProbabilityDistribution(Univariate, Poisson, l=3.7))) == 1
+    @test ProbabilityDistribution(Univariate, Poisson, l=3.7) == standardDist(vague(Poisson), naturalParams(ProbabilityDistribution(Univariate, Poisson, l=3.7)))
+    @test ProbabilityDistribution(Univariate, Poisson, l=3.7) != standardDist(vague(Poisson), naturalParams(ProbabilityDistribution(Univariate, Poisson, l=3.4)))
+    @test ProbabilityDistribution(Univariate, Poisson, l=3.7) == standardMessage(vague(Poisson), naturalParams(ProbabilityDistribution(Univariate, Poisson, l=3.7))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, Poisson, l=3.7), 2), logPdf(vague(Poisson), naturalParams(ProbabilityDistribution(Univariate, Poisson, l=3.7)), 2))
+end
+
 end # module

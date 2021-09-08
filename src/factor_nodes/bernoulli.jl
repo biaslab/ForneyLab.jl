@@ -1,4 +1,4 @@
-export Bernoulli, naturalParams, standardDist, standardMessage
+export Bernoulli
 
 """
 Description:

@@ -69,4 +69,15 @@ end
     @test differentialEntropy(ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0)) == differentialEntropy(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=0.5))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    @test length(naturalParams(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3))) == 5
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3) == standardDist(vague(Wishart,(2,2)),naturalParams(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3)))
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3) == standardMessage(vague(Wishart,(2,2)),naturalParams(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3), [1.4 .3; .3 .7]), logPdf(vague(Wishart,(2,2)), naturalParams(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.2 .5; .5 1.], nu=2.3)), [1.4 .3; .3 .7]))
+end
+
 end #module

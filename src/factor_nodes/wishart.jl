@@ -1,4 +1,4 @@
-export Wishart, naturalParams, standardDist, standardMessage
+export Wishart
 
 """
 Description:

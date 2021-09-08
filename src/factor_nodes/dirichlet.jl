@@ -1,4 +1,4 @@
-export Dirichlet, naturalParams, standardDist, standardMessage
+export Dirichlet
 
 """
 Description:
@@ -143,12 +143,24 @@ function logNormalizer(dist::ProbabilityDistribution{Multivariate, Dirichlet}, �
     return sum(loggamma.(η .+ 1.)) - loggamma(sum(η .+ 1.))
 end
 
+function logNormalizer(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, η::Vector)
+    d = Int(sqrt(length(η)))
+    η_ = reshape(η,(d,d))
+    return sum(loggamma.(η .+ 1)) - sum(loggamma.(sum(η_ .+ 1 ,dims=1)))
+end
+
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, η::Vector, x)
-    h(x) = 1
+    h(x) = 1.
     ϕ(x) = log.(x)
+    return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
+end
+
+function logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, η::Vector, x)
+    h(x) = 1.
+    ϕ(x) = log.(vec(x))
     return log(h(x)) + transpose(ϕ(x))*η - logNormalizer(dist,η)
 end
 

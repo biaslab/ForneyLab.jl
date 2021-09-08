@@ -1,4 +1,4 @@
-export Poisson, naturalParams, standardDist, standardMessage
+export Poisson
 
 """
 Description:

@@ -67,4 +67,16 @@ end
     @test differentialEntropy(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, PointMass, m=1.0), ProbabilityDistribution(Univariate, PointMass, m=2.0))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    @test length(naturalParams(ProbabilityDistribution(Univariate, Gamma, a=2.5, b=1.2))) == 2
+    @test ProbabilityDistribution(Univariate, Gamma, a=2.5, b=1.2) == standardDist(vague(Gamma), naturalParams(ProbabilityDistribution(Univariate, Gamma, a=2.5, b=1.2)))
+    @test ProbabilityDistribution(Univariate, Gamma, a=2.5, b=1.2) != standardDist(vague(Gamma), naturalParams(ProbabilityDistribution(Univariate, Gamma, a=5., b=2.4)))
+    @test ProbabilityDistribution(Univariate, Gamma, a=1.5, b=4.5) == standardMessage(vague(Gamma), naturalParams(ProbabilityDistribution(Univariate, Gamma, a=1.5, b=4.5))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, Gamma, a=1.5, b=4.5), 1.0), logPdf(vague(Gamma), naturalParams(ProbabilityDistribution(Univariate, Gamma, a=1.5, b=4.5)), 1.0))
+end
+
 end #module

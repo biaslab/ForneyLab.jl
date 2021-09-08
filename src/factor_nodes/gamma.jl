@@ -1,4 +1,4 @@
-export Gamma, naturalParams, standardDist, standardMessage
+export Gamma
 
 """
 Description:

@@ -27,4 +27,28 @@ end
     @test ProbabilityDistribution(Multivariate, PointMass, m=ones(2)) * ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)) == ProbabilityDistribution(Multivariate, PointMass, m=ones(2))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    # Univariate
+    @test naturalParams(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5)) == naturalParams(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=5., w=2.))
+    @test ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=5., w=2.) == standardDist(vague(GaussianMeanVariance), naturalParams(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5)))
+    @test ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=5., w=2.) == standardMessage(vague(GaussianMeanVariance), naturalParams(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5), 1.0), logPdf(vague(GaussianMeanVariance), naturalParams(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5)), 1.0))
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=5., w=2.), 1.0), logPdf(vague(GaussianMeanVariance), naturalParams(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.5, v=.5)), 1.0))
+
+    # Multivariate
+    m_use, v_use = [-1.2, 2.3], [1.5 0.6;0.6 1.2]
+    w_use = cholinv(v_use)
+    xi_use = w_use*m_use
+    @test naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use)) == naturalParams(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=xi_use, w=w_use))
+    @test isapprox(xi_use, standardDist(vague(GaussianMeanVariance,2),naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use))).params[:xi])
+    @test isapprox(w_use, standardDist(vague(GaussianMeanVariance,2),naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use))).params[:w])
+    @test isapprox(xi_use, standardMessage(vague(GaussianMeanVariance,2),naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use))).dist.params[:xi])
+    @test isapprox(w_use, standardMessage(vague(GaussianMeanVariance,2),naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use))).dist.params[:w])
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use),[0.,1.]), logPdf(vague(GaussianMeanVariance,2),naturalParams(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_use, v=v_use)),[0.,1.]))
+end
+
 end #module

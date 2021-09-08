@@ -95,4 +95,22 @@ end
     @test averageEnergy(Dirichlet, ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=[6.0 7.0; 8.0 9.0])) == averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0]), ProbabilityDistribution(Multivariate, PointMass, m=[6.0, 8.0])) + averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[7.0, 9.0]))
 end
 
+#-------------
+# Canonical Parameterization
+#-------------
+
+@testset "Exponential Family" begin
+    # Multivariate
+    @test length(naturalParams(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5]))) == 3
+    @test ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5]) == standardDist(vague(Dirichlet,3),naturalParams(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5])))
+    @test ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5]) == standardMessage(vague(Dirichlet,3),naturalParams(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5]))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5]), [.1,.2,.7]), logPdf(vague(Dirichlet,3), naturalParams(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.2,5.,2.5])), [.1,.2,.7]))
+
+    # MatrixVariate
+    @test length(naturalParams(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.]))) == 4
+    @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.]) == standardDist(vague(Dirichlet,(2,2)),naturalParams(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.])))
+    @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.]) == standardMessage(vague(Dirichlet,(2,2)),naturalParams(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.]))).dist
+    @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.]), [.4 .3; .6 .7]), logPdf(vague(Dirichlet,(2,2)), naturalParams(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.2 5.; 2.5 4.])), [.4 .3; .6 .7]))
+end
+
 end # module
