@@ -1,4 +1,4 @@
-export Categorical, naturalParams, standardDist, standardMessage
+export Categorical
 
 """
 Description:
@@ -102,9 +102,9 @@ function prod!( x::ProbabilityDistribution{Univariate, Categorical},
     return z
 end
 
-# https://en.wikipedia.org/wiki/Exponential_family we use variant 1 for categorical
+# https://en.wikipedia.org/wiki/Exponential_family we use variant 3 for categorical
 # Standard parameters to natural parameters
-naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = log.(dist.params[:p])
+naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = [log.(dist.params[:p][1:end-1]./dist.params[:p][end]);0]
 
 # Natural parameters to standard dist. type
 function standardDist(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
@@ -119,12 +119,7 @@ function standardMessage(dist::ProbabilityDistribution{Univariate, Categorical},
 end
 
 function logNormalizer(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
-    return sum(0. * η)
-end
-
-# Fisher Information Matrix https://www.ii.pwr.edu.pl/~tomczak/PDF/[JMT]Fisher_inf.pdf
-function FIM(dist::ProbabilityDistribution{Univariate, Categorical}, η::Vector)
-    return Diagonal(1. ./ exp.(η))
+    return log(sum(exp.(η)))
 end
 
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which

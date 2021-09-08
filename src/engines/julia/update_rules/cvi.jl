@@ -266,36 +266,6 @@ function renderCVI(logp_nc::Function,
 
 end
 
-function renderCVI(logp_nc::Function,
-                   num_iterations::Int,
-                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
-                   λ_init::Vector,
-                   msg_in::Message{<:Categorical, <:VariateType})
-
-    η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(λ_init)
-
-    A(η) = logNormalizer(msg_in.dist,η)
-    gradA(η) = A'(η) # Zygote
-    Fisher(η) = FIM(msg_in.dist,η) # To avoid Zygote's mutating array error
-    for i=1:num_iterations
-        q = standardDist(msg_in.dist,λ)
-        z_s = sample(q)
-        logq(λ) = logPdf(q,λ,z_s)
-        ∇logq = logq'(λ)
-        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(opt,λ,∇)
-        if isProper(standardDist(msg_in.dist,λ)) == false
-            λ = λ_old
-        end
-    end
-
-    return λ
-
-end
-
 #---------------------------
 # Some helpers
 #---------------------------
