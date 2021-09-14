@@ -76,10 +76,10 @@ function ruleVBTransitionMixtureIn1(dist_out::ProbabilityDistribution,
     return Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBTransitionMixtureIn1(dist_out::ProbabilityDistribution,
-                                    dist_in1::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution,
-                                    dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{MatrixVariate}}})
+function ruleVBTransitionMixtureA(dist_out::ProbabilityDistribution,
+                                  dist_in1::ProbabilityDistribution,
+                                  dist_switch::ProbabilityDistribution,
+                                  dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{MatrixVariate}}})
     
     k = findfirst(dist_factors .== nothing) # Find factor
     z_bar = unsafeMeanVector(dist_switch)
