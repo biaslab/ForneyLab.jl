@@ -38,6 +38,10 @@ end
     @test ruleSPMomentConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), f, 2.0, 0.0) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0000018622402607, w=9.31120130553964e-7)
 end
 
+@testset "averageEnergy" begin
+    @test averageEnergy(MomentConstraint, ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+end
+
 
 #------------
 # Integration

@@ -28,10 +28,10 @@ Edge(var::AbstractVariable, a::Interface, b::Interface) = connect!(Edge(var, a),
 
 function degree(edge::Edge)
     deg = 2
-    if (edge.a == nothing) || isPointMassConstrained(edge.a)
+    if (edge.a == nothing) || isDeltaConstrained(edge.a)
         deg -= 1
     end
-    if (edge.b == nothing) || isPointMassConstrained(edge.b)
+    if (edge.b == nothing) || isDeltaConstrained(edge.b)
         deg -= 1
     end
 

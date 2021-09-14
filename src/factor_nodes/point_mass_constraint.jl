@@ -4,7 +4,9 @@ export PointMassConstraint
 Description:
 
     Constraints the marginal of the connected variable to a point-mass.
-    
+    Implementation according to (Senoz et al. "Variational Message Passing
+    and Local Constraint Manipulation in Factor Graphs", Entropy, 2021).
+
 Interfaces:
 
     1. out
@@ -35,4 +37,4 @@ requiresBreaker(interface::Interface, partner_interface::Interface, partner_node
 
 breakerParameters(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
 
-isPointMassConstraint(::PointMassConstraint) = true
+isDeltaConstraint(::PointMassConstraint) = true

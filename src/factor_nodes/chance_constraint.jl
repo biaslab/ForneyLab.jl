@@ -6,7 +6,8 @@ Description:
     Chance constraint on the marginal q of the connected variable x, as
     ϵ ⩽ 1 - ∫_G q(x) dx, where G indicates a region. In other words,
     the probability mass of q is not allowed to overflow the region G
-    by more than ϵ.
+    by more than ϵ. Implementation according to (van de Laar et al.
+    "Chance-Constrained Active Inference", MIT Neural Computation, 2021).
     
 Interfaces:
 
@@ -16,7 +17,7 @@ Construction:
 
     ChanceConstraint(out; G=(min,max), epsilon=epsilon, id=:my_node)
 """
-mutable struct ChanceConstraint <: SoftFactor # TODO: how to handle free energy evaluation for a chance-constrained variable?
+mutable struct ChanceConstraint <: SoftFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -41,3 +42,6 @@ slug(::Type{ChanceConstraint}) = "P"
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::ChanceConstraint) = true
 
 breakerParameters(interface::Interface, partner_interface::Interface, partner_node::ChanceConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+
+# Constraints do not contribute to average energy
+averageEnergy(::Type{ChanceConstraint}, marg_out::ProbabilityDistribution) = 0.0

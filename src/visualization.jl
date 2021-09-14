@@ -69,7 +69,7 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
 
     # Draw nodes
     for node in nodeset
-        if isPointMassConstraint(node)
+        if isDeltaConstraint(node)
             dot *= "\t$(objectid(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         elseif isa(node, Terminal)
             dot *= "\t$(objectid(node)) [label=\"Terminal $(node.id)\", style=filled, width=0.75, height=0.75]\n"

@@ -31,6 +31,10 @@ end
     @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (-Inf, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
 end
 
+@testset "averageEnergy" begin
+    @test averageEnergy(ChanceConstraint, ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+end
+
 
 #------------
 # Integration

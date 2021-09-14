@@ -89,7 +89,7 @@ include("algorithms/joint_marginals.jl")
 include("algorithms/sum_product.jl")
 include("algorithms/naive_variational_bayes.jl")
 include("algorithms/structured_variational_bayes.jl")
-include("algorithms/moment_propagation.jl")
+include("algorithms/expectation_propagation.jl")
 
 # Assemblers
 include("engines/message_passing_assemblers.jl")
