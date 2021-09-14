@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Test
-using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Unscented, Sampling, Extended, ExpectationConstraint, ChanceConstraint
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Unscented, Sampling, Extended, MomentConstraint, ChanceConstraint
 using InteractiveUtils: subtypes
 
 @testset "FactorNode" begin
@@ -32,8 +32,8 @@ using InteractiveUtils: subtypes
             test_node = GaussianMixture(Variable(), Variable(), Variable(), Variable(), Variable(), Variable())
         elseif node_type <: Nonlinear
             test_node = node_type(Variable(), Variable(), g=()->())
-        elseif node_type == ExpectationConstraint
-            test_node = ExpectationConstraint(Variable(), g=()->(), G=0.0, eta_init=0.0)
+        elseif node_type == MomentConstraint
+            test_node = MomentConstraint(Variable(), g=()->(), G=0.0, eta_init=0.0)
         elseif node_type == ChanceConstraint
             test_node = ChanceConstraint(Variable(), G=(), epsilon=0.05)
         else

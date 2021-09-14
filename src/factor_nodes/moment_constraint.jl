@@ -1,4 +1,4 @@
-export ExpectationConstraint
+export MomentConstraint
 
 """
 Description:
@@ -15,9 +15,9 @@ Interfaces:
 
 Construction:
 
-    ExpectationConstraint(out; g=g, G=G, id=:my_node)
+    MomentConstraint(out; g=g, G=G, id=:my_node)
 """
-mutable struct ExpectationConstraint <: SoftFactor # TODO: how to handle free energy evaluation for an expectation constrained variable?
+mutable struct MomentConstraint <: SoftFactor # TODO: how to handle free energy evaluation for a moment-constrained variable?
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -26,7 +26,7 @@ mutable struct ExpectationConstraint <: SoftFactor # TODO: how to handle free en
     G::Float64 # Constraint value
     eta_init::Float64 # Initial value for eta optimization
 
-    function ExpectationConstraint(out; g::Function, G::Float64, eta_init::Float64, id=ForneyLab.generateId(ExpectationConstraint))
+    function MomentConstraint(out; g::Function, G::Float64, eta_init::Float64, id=ForneyLab.generateId(MomentConstraint))
         @ensureVariables(out)
         self = new(id, Vector{Interface}(undef, 1), Dict{Symbol,Interface}(), g, G, eta_init)
         ForneyLab.addNode!(currentGraph(), self)
@@ -36,9 +36,9 @@ mutable struct ExpectationConstraint <: SoftFactor # TODO: how to handle free en
     end
 end    
 
-slug(::Type{ExpectationConstraint}) = "E"
+slug(::Type{MomentConstraint}) = "E"
 
-# A breaker message is required if interface is partnered with an expectation constraint
-requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::ExpectationConstraint) = true
+# A breaker message is required if interface is partnered with a moment constraint
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = true
 
-breakerParameters(interface::Interface, partner_interface::Interface, partner_node::ExpectationConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+breakerParameters(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only

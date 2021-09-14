@@ -1,4 +1,4 @@
-export ruleSPExpectationConstraintOutG
+export ruleSPMomentConstraintOutG
 
 """
 Evaluate the expectation ∫q(x; η)g(x)dx for a given eta
@@ -27,8 +27,7 @@ end
 # Update rules
 #-------------
 
-# TODO: implement multivariate update using cubature
-function ruleSPExpectationConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, g::Function, G::Float64, eta_init::Float64)
+function ruleSPMomentConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, g::Function, G::Float64, eta_init::Float64)
     (m_bw, V_bw) = unsafeMeanCov(msg_out.dist)
     (xi_bw, W_bw) = unsafeWeightedMeanPrecision(msg_out.dist)
 
@@ -47,7 +46,7 @@ end
 # Custom inbounds collectors
 #---------------------------
 
-function collectSumProductNodeInbounds(node::ExpectationConstraint, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::MomentConstraint, entry::ScheduleEntry)
     inbounds = Any[]
 
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
