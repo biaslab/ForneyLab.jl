@@ -136,15 +136,4 @@ include("update_rules/sample_list.jl")
 # Engines
 include("engines/julia/julia.jl")
 
-# Debug
-include("debug/marginal_data.jl")
-include("debug/message_data.jl")
-include("debug/score_data.jl")
-include("debug/edge_data.jl")
-include("debug/node_data.jl")
-include("debug/algorithm_step.jl")
-include("debug/graph_data.jl")
-include("debug/graph_dump.jl")
-include("debug/save.jl")
-
 end # module ForneyLab
