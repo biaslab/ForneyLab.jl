@@ -5,8 +5,34 @@ using ForneyLab
 using LinearAlgebra: Diagonal
 using ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, algorithmSourceCode, valueSourceCode, posteriorFactorSourceCode
 
+
+# create custom module
+module Foo
+    struct Baz
+        f::Int64
+    end
+    struct Bar{T}
+        f::T
+    end
+    struct Bak{T, K}
+        f::T
+        g::K
+    end
+end
+
 @testset "removePrefix" begin
+    # initial check
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
+
+    # initialize structures
+    baz = Foo.Baz(1)
+    bar = Foo.Bar(baz)
+    bak = Foo.Bak(bar, bar)
+
+    # check whether the removePrefix functions works as desired
+    @test removePrefix(typeof(baz)) == "Baz"
+    @test removePrefix(typeof(bar)) == "Bar{Baz}"
+    @test removePrefix(typeof(bak)) == "Bak{Bar{Baz}, Bar{Baz}}"
 end
 
 @testset "valueSourceCode" begin

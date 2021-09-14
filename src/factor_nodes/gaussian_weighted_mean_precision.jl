@@ -75,7 +75,7 @@ end
 
 function logPdf(dist::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, x) 
     m = cholinv(dist.params[:w])*dist.params[:xi]
-    return -0.5*(dims(dist)*log(2pi) - log(det(dist.params[:w])) + transpose(x-m)*dist.params[:w]*(x-m))
+    return -0.5*(dims(dist)*log(2pi) - logdet(dist.params[:w]) + transpose(x-m)*dist.params[:w]*(x-m))
 end
 
 isProper(dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))

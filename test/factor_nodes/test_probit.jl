@@ -77,8 +77,8 @@ end
 end
 
 @testset "averageEnergy" begin
-    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, Bernoulli, p=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == -1.291942516803335
-    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, PointMass, m=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == -1.291942516803335
+    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, Bernoulli, p=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1.0000000289419368
+    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, PointMass, m=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1.0000000289419368
 end
 
 end # module

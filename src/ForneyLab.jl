@@ -14,6 +14,7 @@ using Roots: find_zero
 using StatsBase: Weights
 using JSON
 using PositiveFactorizations
+using DataStructures: Queue, enqueue!, dequeue!
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!

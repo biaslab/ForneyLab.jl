@@ -1,5 +1,7 @@
 export Probit
 
+using StatsFuns: normcdf
+
 """
 Description:
 
@@ -42,11 +44,13 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate, Bernoulli}, marg_in1::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
-    (marg_in1_m, marg_in1_v) = unsafeMeanCov(marg_in1)
-    h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability
 
-    (1 - marg_out.params[:p])*gaussianQuadrature(h, m=-marg_in1_m, v=marg_in1_v) +
-    marg_out.params[:p]*gaussianQuadrature(h, m=marg_in1_m, v=marg_in1_v)
+    # extract parameters
+    (m, v) = unsafeMeanCov(marg_in1)
+    p = unsafeMean(marg_out)
+    h(x)  = -p*log(normcdf(x)) - (1-p)*log(normcdf(-x))
+
+    gaussianQuadrature(h, m=m, v=v)
 end
 
 function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate, PointMass}, marg_in1::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
