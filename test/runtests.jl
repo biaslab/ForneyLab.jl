@@ -33,6 +33,7 @@ using Test
     include("factor_nodes/test_beta.jl")
     include("factor_nodes/test_dirichlet.jl")
     include("factor_nodes/test_gaussian_mixture.jl")
+    include("factor_nodes/test_transition_mixture.jl")
     include("factor_nodes/test_probit.jl")
     include("factor_nodes/test_logit.jl")
     include("factor_nodes/test_softmax.jl")
