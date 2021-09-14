@@ -12,7 +12,6 @@ using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, no
 using ForwardDiff
 using Roots: find_zero
 using StatsBase: Weights
-using JSON
 using PositiveFactorizations
 using DataStructures: Queue, enqueue!, dequeue!
 
@@ -58,7 +57,6 @@ include("factor_nodes/transition.jl")
 include("factor_nodes/beta.jl")
 include("factor_nodes/dirichlet.jl")
 include("factor_nodes/gaussian_mixture.jl")
-include("factor_nodes/transition_mixture.jl")
 include("factor_nodes/probit.jl")
 include("factor_nodes/logit.jl")
 include("factor_nodes/softmax.jl")
@@ -115,7 +113,6 @@ include("update_rules/transition.jl")
 include("update_rules/beta.jl")
 include("update_rules/dirichlet.jl")
 include("update_rules/gaussian_mixture.jl")
-include("update_rules/transition_mixture.jl")
 include("update_rules/probit.jl")
 include("update_rules/logit.jl")
 include("update_rules/softmax.jl")
