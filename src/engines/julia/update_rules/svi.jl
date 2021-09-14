@@ -5,8 +5,8 @@ export ruleSPSVIIn1MN, ruleSPSVIOutNM
 #----------------------------------
 
 function ruleSPSVIIn1MN(node_id::Symbol,
-                        msg_out::Message{<:FactorFunction, <:VariateType},
-                        msg_in::Message{<:FactorFunction, <:VariateType})
+                        msg_out::Message{F, V},
+                        msg_in::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
     thenode = currentGraph().nodes[node_id]
     mod(thenode.dataset_size/thenode.batch_size,1) == 0 || error("Data size must be integer multiple of the batch size.") # must be in isApplicable
@@ -14,12 +14,27 @@ function ruleSPSVIIn1MN(node_id::Symbol,
 
     # Calculate the message in such a way that the variational distribution of the global variable
     # will match the stochastic update of variational distribution.
-    η = deepcopy(naturalParams(thenode.q))
-    q_ = deepcopy(msg_in.dist)
-    m_out_dist = deepcopy(msg_out.dist)
-    for _=1:scale q_ = prod!(q_,m_out_dist) end
-    ∇ = η .- naturalParams(q_) # natural gradient
-    update!(thenode.opt,η,∇) # η is updated
+    η = renderSVI(scale, thenode.opt, thenode.q, msg_in, msg_out)
+    λ = η .- naturalParams(msg_in.dist) # natural parameters for the message
+
+    # Update q stored in the SVI node
+    thenode.q = standardDist(thenode.q,η)
+
+    return standardMessage(thenode.q,λ)
+
+end
+
+function ruleSPSVIIn1MN(node_id::Symbol,
+                        msg_out::Message{<:Gaussian, V},
+                        msg_in::Message{<:Gaussian, V}) where V<:VariateType
+
+    thenode = currentGraph().nodes[node_id]
+    mod(thenode.dataset_size/thenode.batch_size,1) == 0 || error("Data size must be integer multiple of the batch size.") # must be in isApplicable
+    scale = Int(thenode.dataset_size/thenode.batch_size)
+
+    # Calculate the message in such a way that the variational distribution of the global variable
+    # will match the stochastic update of variational distribution.
+    η = renderSVI(scale, thenode.opt, thenode.q, msg_in, msg_out)
     λ = η .- naturalParams(msg_in.dist) # natural parameters for the message
 
     # Update q stored in the SVI node
@@ -31,7 +46,7 @@ end
 
 function ruleSPSVIOutNM(node_id::Symbol,
                         msg_out::Nothing,
-                        msg_in::Message{<:FactorFunction, V}) where V<:VariateType
+                        msg_in::Message{<:FactorNode, V}) where V<:VariateType
 
     thenode = currentGraph().nodes[node_id]
 
@@ -41,6 +56,22 @@ function ruleSPSVIOutNM(node_id::Symbol,
 
     return m_out
 
+end
+
+#---------------------------
+# SVI implementation
+#---------------------------
+
+function renderSVI(scale::Int, opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   q::ProbabilityDistribution, msg_in::Message, msg_out::Message)
+
+    η = deepcopy(naturalParams(q))
+    q_ = deepcopy(msg_in.dist)
+    m_out_dist = deepcopy(msg_out.dist)
+    for _=1:scale q_ = prod!(q_,m_out_dist) end
+    ∇ = η .- naturalParams(q_) # natural gradient
+    update!(opt,η,∇) # η is updated
+    return η
 end
 
 #---------------------------
