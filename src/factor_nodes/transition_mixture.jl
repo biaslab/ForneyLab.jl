@@ -46,18 +46,33 @@ end
 
 slug(::Type{TransitionMixture}) = "TM"
 
-# Average energy functional
-function ForneyLab.averageEnergy(::Type{TransitionMixture},
-                                 dist_out::ProbabilityDistribution,
-                                 dist_in1::ProbabilityDistribution,
-                                 dist_switch::ProbabilityDistribution,
-                                 dist_factors::Vararg{ProbabilityDistribution})
+# Average energy functionals
+function averageEnergy(::Type{TransitionMixture},
+                       dist_out::ProbabilityDistribution,
+                       dist_in1::ProbabilityDistribution,
+                       dist_switch::ProbabilityDistribution,
+                       dist_factors::Vararg{ProbabilityDistribution})
 
     n_factors = length(dist_factors)
     z_bar = unsafeMeanVector(dist_switch)
     U = 0.0
     for k = 1:n_factors
         U += z_bar[k]*averageEnergy(Transition, dist_out, dist_in1, dist_factors[k])
+    end
+
+    return U
+end
+
+function averageEnergy(::Type{TransitionMixture},
+                       dist_out_in1::ProbabilityDistribution,
+                       dist_switch::ProbabilityDistribution,
+                       dist_factors::Vararg{ProbabilityDistribution})
+
+    n_factors = length(dist_factors)
+    z_bar = unsafeMeanVector(dist_switch)
+    U = 0.0
+    for k = 1:n_factors
+        U += z_bar[k]*averageEnergy(Transition, dist_out_in1, dist_factors[k])
     end
 
     return U

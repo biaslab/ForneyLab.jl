@@ -4,7 +4,12 @@ ruleSPTransitionMixtureIn1CNPX,
 ruleVBTransitionMixtureZ, 
 ruleVBTransitionMixtureOut,
 ruleVBTransitionMixtureIn1,
-ruleVBTransitionMixtureA
+ruleVBTransitionMixtureA,
+ruleSVBTransitionMixtureZ, 
+ruleSVBTransitionMixtureOutNCDX,
+ruleSVBTransitionMixtureIn1CNDX,
+ruleSVBTransitionMixtureA,
+ruleMTransitionMixtureCCDX
 
 function ruleSPTransitionMixtureOutNCPX(msg_out::Nothing,
                                         msg_in1::Message{Categorical},
@@ -87,5 +92,76 @@ function ruleVBTransitionMixtureA(dist_out::ProbabilityDistribution,
     return Message(MatrixVariate, Dirichlet, a=z_bar[k]*unsafeMeanVector(dist_out)*unsafeMeanVector(dist_in1)' .+ 1)
 end
 
+function ruleSVBTransitionMixtureZ(dist_out_in1::ProbabilityDistribution,
+                                   dist_switch::Any,
+                                   dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
 
-# TODO: Structured updates
+    n_factors = length(dist_factors)
+    U = Vector{Float64}(undef, n_factors)
+    for k = 1:n_factors
+        U[k] = averageEnergy(Transition, dist_out_in1, dist_factors[k])
+    end
+
+    return Message(Univariate, Categorical, p=softmax(-U))
+end
+
+function ruleSVBTransitionMixtureOutNCDX(dist_out::Any,
+                                         msg_in1::Message{Categorical},
+                                         dist_switch::ProbabilityDistribution,
+                                         dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+
+    z_bar = unsafeMeanVector(dist_switch)
+    d = dims(dist_factors[1])
+    log_A = zeros(d)
+    for k = 1:length(z_bar)
+        log_A += z_bar[k]*unsafeLogMean(dist_factors[k])
+    end
+    
+    a = clamp.(exp.(log_A)*msg_in1.dist.params[:p], tiny, Inf)
+    
+    return Message(Univariate, Categorical, p=a./sum(a))
+end
+
+function ruleSVBTransitionMixtureIn1CNDX(msg_out::Message{Categorical},
+                                         dist_in1::Any,
+                                         dist_switch::ProbabilityDistribution,
+                                         dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+
+    z_bar = unsafeMeanVector(dist_switch)
+    d = dims(dist_factors[1])
+    log_A = zeros(d)
+    for k = 1:length(z_bar)
+        log_A += z_bar[k]*unsafeLogMean(dist_factors[k])
+    end
+
+    a = clamp.(exp.(log_A)'*msg_out.dist.params[:p], tiny, Inf)
+    
+    return Message(Univariate, Categorical, p=a./sum(a))
+end
+
+function ruleSVBTransitionMixtureA(dist_out_in1::ProbabilityDistribution,
+                                   dist_switch::ProbabilityDistribution,
+                                   dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{MatrixVariate}}})
+    
+    k = findfirst(dist_factors .== nothing) # Find factor
+    z_bar = unsafeMeanVector(dist_switch)
+    
+    return Message(MatrixVariate, Dirichlet, a=z_bar[k]*dist_out_in1.params[:p] .+ 1)
+end
+
+function ruleMTransitionMixtureCCDX(msg_out::Message{Categorical, Univariate},
+                                    msg_in1::Message{Categorical, Univariate},
+                                    dist_switch::ProbabilityDistribution,
+                                    dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+
+    z_bar = unsafeMeanVector(dist_switch)
+    d = dims(dist_factors[1])
+    log_A = zeros(d)
+    for k = 1:length(z_bar)
+        log_A += z_bar[k]*unsafeLogMean(dist_factors[k])
+    end
+
+    B = Diagonal(msg_out.dist.params[:p])*exp.(log_A)*Diagonal(msg_in1.dist.params[:p])
+
+    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
+end
