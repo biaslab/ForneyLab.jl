@@ -3,7 +3,7 @@ module CviTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar
-using ForneyLab: SPCVIOutNFactorNode, SPCVIIn1Factor, SPCVIOutNFactorNodeX, SPCVIInFactorX
+using ForneyLab: SPCVIOutNFactorNode, SPCVIIn1Factor, SPCVIOutNFactorNodeX, SPCVIInFactorX, MCVIFactorX
 using Flux.Optimise
 
 f1(x) = x
@@ -231,8 +231,23 @@ end
     @test isUnivariateSampleList(prod!(msgout.dist, msg_out.dist))
 end
 
-#-------------
-# Integration
-#-------------
+@testset "MCVIFactorX and JointIndependentProbDist" begin
+    fg = FactorGraph()
+    x = Variable()
+    z = Variable()
+    w = Variable()
+    y = Variable()
+    q1 = ProbabilityDistribution(Univariate,GaussianMeanVariance,m=1.5,v=2.)
+    q2 = ProbabilityDistribution(Univariate,Gamma,a=2.5,b=5.)
+    q3 = ProbabilityDistribution(Univariate,Bernoulli,p=.45)
+    q_list = [q1, q2, q3]
+    node =  Cvi(y, x, z, w, g=f4, opt=[opt,opt,opt], num_samples=1000, num_iterations=[1,1,1], q=q_list, online_inference=[false,true,false])
+    msg_out = Message(Univariate, GaussianMeanPrecision, m=1.5, w=0.2)
+    msg_in1 = Message(Univariate, GaussianMeanVariance, m=2.0, v=tiny)
+    msg_in2 = Message(Univariate, Gamma, a=1., b=1.)
+    msg_in3 = Message(Univariate, Bernoulli, p=.9)
+    joint = ruleMCVIFactorX(node.id, msg_out, msg_in1, msg_in2, msg_in3)
+    @test differentialEntropy(joint) == differentialEntropy(q1) + differentialEntropy(q2) + differentialEntropy(q3)
+end
 
 end

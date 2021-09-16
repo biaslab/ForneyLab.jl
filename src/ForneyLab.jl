@@ -67,6 +67,7 @@ include("factor_nodes/svi.jl")
 include("factor_nodes/cvi.jl")
 include("factor_nodes/set_prob_dist.jl")
 include("factor_nodes/set_sample_list.jl")
+include("factor_nodes/joint_indep_prob_dist.jl")
 
 
 

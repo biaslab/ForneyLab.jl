@@ -1,4 +1,4 @@
-export ruleSPCVIOutNFactorNode, ruleSPCVIIn1Factor, ruleSPCVIOutNFactorNodeX, ruleSPCVIInFactorX
+export ruleSPCVIOutNFactorNode, ruleSPCVIIn1Factor, ruleSPCVIOutNFactorNodeX, ruleSPCVIInFactorX, ruleMCVIFactorX
 
 function ruleSPCVIIn1Factor(node_id::Symbol,
                             msg_out::Message{<:FactorFunction, <:VariateType},
@@ -172,6 +172,14 @@ function ruleSPCVIOutNFactorNodeX(node_id::Symbol,
 
 end
 
+function ruleMCVIFactorX(node_id::Symbol,
+                           msg_out::Message{<:FactorFunction, <:VariateType},
+                           msgs_in::Vararg{Message})
+
+    thenode = currentGraph().nodes[node_id]
+    return ProbabilityDistribution(JointIndependentProbDist,marginals=thenode.q)
+end
+
 #---------------------------
 # CVI implementations
 #---------------------------
@@ -307,7 +315,7 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
 
     push!(inbounds, node.id)
 
-    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound node
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
 
     if (inx > 0) && multi_in # Multi-inbound backward rule
@@ -333,10 +341,6 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
             else
                 push!(inbounds, interface_to_schedule_entry[inbound_interface])
             end
-            #push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        # elseif (node_interface == node.interfaces[1] != entry.interface)
-        #     # Collect the BP message from out interface
-        #     push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface === entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, nothing)
@@ -344,13 +348,6 @@ function collectSumProductNodeInbounds(node::CVI, entry::ScheduleEntry)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
         else
-            # Collect entry from marginal schedule
-            # try
-            #     push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
-            # catch
-            #     # This rule is useful for the last time step in a time series model with Structured VMP
-            #     push!(inbounds, interface_to_schedule_entry[inbound_interface])
-            # end
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         end
     end

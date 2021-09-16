@@ -35,10 +35,23 @@ function isApplicable(::Type{SPCVIInFactorX}, input_types::Vector{<:Type})
     for input_type in input_types[1:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{FactorFunction})
+        elseif matches(input_type, Message{FactorNode})
             factor_inputs += 1
         end
     end
 
     return (nothing_inputs == 1) && (factor_inputs == total_inputs-1)
+end
+
+mutable struct MCVIFactorX <: MarginalRule{CVI} end
+function isApplicable(::Type{MCVIFactorX}, input_types::Vector{<:Type})
+    total_inputs = length(input_types)
+    (total_inputs > 2) || return false
+    (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable
+
+    for input_type in input_types[2:end]
+        matches(input_type, Message{FactorNode}) || return false
+    end
+
+    return true
 end
