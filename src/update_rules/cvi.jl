@@ -1,16 +1,16 @@
 @sumProductRule(:node_type     => CVI,
                       :outbound_type => Message{SetSampleList},
                       :inbound_types => (Nothing, Message{FactorNode}),
-                      :name          => SPCVIOutVD)
+                      :name          => SPCVIOutNFactorNode)
 
 @sumProductRule(:node_type     => CVI,
                       :outbound_type => Message{FactorNode},
                       :inbound_types => (Message{FactorFunction}, Nothing),
-                      :name          => SPCVIIn1MV)
+                      :name          => SPCVIIn1Factor)
 
-mutable struct SPCVIOutVDX <: SumProductRule{CVI} end
-outboundType(::Type{SPCVIOutVDX}) = Message{SetSampleList}
-function isApplicable(::Type{SPCVIOutVDX}, input_types::Vector{<:Type})
+mutable struct SPCVIOutNFactorNodeX <: SumProductRule{CVI} end
+outboundType(::Type{SPCVIOutNFactorNodeX}) = Message{SetSampleList}
+function isApplicable(::Type{SPCVIOutNFactorNodeX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
@@ -22,9 +22,9 @@ function isApplicable(::Type{SPCVIOutVDX}, input_types::Vector{<:Type})
     return true
 end
 
-mutable struct SPCVIInX <: SumProductRule{CVI} end
-outboundType(::Type{SPCVIInX}) = Message{FactorNode}
-function isApplicable(::Type{SPCVIInX}, input_types::Vector{<:Type})
+mutable struct SPCVIInFactorX <: SumProductRule{CVI} end
+outboundType(::Type{SPCVIInFactorX}) = Message{FactorNode}
+function isApplicable(::Type{SPCVIInFactorX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false

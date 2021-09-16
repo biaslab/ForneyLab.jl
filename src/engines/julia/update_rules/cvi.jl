@@ -1,8 +1,8 @@
-export ruleSPCVIOutVD, ruleSPCVIIn1MV, ruleSPCVIOutVDX, ruleSPCVIInX
+export ruleSPCVIOutNFactorNode, ruleSPCVIIn1Factor, ruleSPCVIOutNFactorNodeX, ruleSPCVIInFactorX
 
-function ruleSPCVIIn1MV(node_id::Symbol,
-                        msg_out::Message{<:FactorFunction, <:VariateType},
-                        msg_in::Message{<:FactorNode, <:VariateType})
+function ruleSPCVIIn1Factor(node_id::Symbol,
+                            msg_out::Message{<:FactorFunction, <:VariateType},
+                            msg_in::Message{<:FactorNode, <:VariateType})
 
     thenode = currentGraph().nodes[node_id]
 
@@ -23,9 +23,9 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     return standardMessage(msg_in.dist,λ_message)
 end
 
-function ruleSPCVIIn1MV(node_id::Symbol,
-                        msg_out::Message{<:FactorFunction, <:VariateType},
-                        msg_in::Message{<:Gaussian, Univariate})
+function ruleSPCVIIn1Factor(node_id::Symbol,
+                            msg_out::Message{<:FactorFunction, <:VariateType},
+                            msg_in::Message{<:Gaussian, Univariate})
 
     thenode = currentGraph().nodes[node_id]
 
@@ -47,9 +47,9 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     return standardMessage(msg_in.dist,λ_message)
 end
 
-function ruleSPCVIIn1MV(node_id::Symbol,
-                        msg_out::Message{<:FactorFunction, <:VariateType},
-                        msg_in::Message{<:Gaussian, Multivariate})
+function ruleSPCVIIn1Factor(node_id::Symbol,
+                            msg_out::Message{<:FactorFunction, <:VariateType},
+                            msg_in::Message{<:Gaussian, Multivariate})
 
     thenode = currentGraph().nodes[node_id]
 
@@ -71,9 +71,9 @@ function ruleSPCVIIn1MV(node_id::Symbol,
     return standardMessage(msg_in.dist,λ_message)
 end
 
-function ruleSPCVIOutVD(node_id::Symbol,
-                        msg_out::Nothing,
-                        msg_in::Message)
+function ruleSPCVIOutNFactorNode(node_id::Symbol,
+                                 msg_out::Nothing,
+                                 msg_in::Message)
 
     thenode = currentGraph().nodes[node_id]
 
@@ -87,10 +87,10 @@ function ruleSPCVIOutVD(node_id::Symbol,
 
 end
 
-function ruleSPCVIInX(node_id::Symbol,
-                      inx::Int64,
-                      msg_out::Message{<:FactorFunction, <:VariateType},
-                      msgs_in::Vararg{Message})
+function ruleSPCVIInFactorX(node_id::Symbol,
+                            inx::Int64,
+                            msg_out::Message{<:FactorFunction, <:VariateType},
+                            msgs_in::Vararg{Message})
 
     thenode = currentGraph().nodes[node_id]
 
@@ -155,9 +155,9 @@ function ruleSPCVIInX(node_id::Symbol,
 
 end
 
-function ruleSPCVIOutVDX(node_id::Symbol,
-                         msg_out::Nothing,
-                         msgs_in::Vararg{Message})
+function ruleSPCVIOutNFactorNodeX(node_id::Symbol,
+                                  msg_out::Nothing,
+                                  msgs_in::Vararg{Message})
 
     thenode = currentGraph().nodes[node_id]
 

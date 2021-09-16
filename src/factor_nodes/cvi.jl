@@ -28,7 +28,7 @@ Construction:
           num_iterations: Vector of integers, num iterations in optimization per variable
           num_samples: # of samples to be employed in estimations
           proper_message: flag to indicate if the message is needed to be a proper dist.
-          online_inference: vector of bools show if online inference rules are applied per variable
+          online_inference: bool argument or vector of bools that show if online inference rules are applied per variable
           M: batch size
           N: dataset size
 """
@@ -55,7 +55,7 @@ mutable struct CVI <: DeltaFactor
     function CVI(id::Symbol, g::Function,
                     #opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent, Vector{Any}},
                     opt::Any,
-                    num_iterations::Union{Int,Vector{Int}}, num_samples::Union{Int,Vector{Int}}, q::Vector{<:ProbabilityDistribution},
+                    num_iterations::Union{Int,Vector{Int}}, num_samples::Int, q::Vector{<:ProbabilityDistribution},
                     infer_memory::Int, proper_message::Bool, online_inference::Union{Bool,Vector{Bool}},
                     batch_size::Int, dataset_size::Int, out::Variable, args::Vararg)
         @ensureVariables(out)
@@ -63,8 +63,15 @@ mutable struct CVI <: DeltaFactor
         for i=1:n_args
             @ensureVariables(args[i])
         end
+        online_inference_use = online_inference
+        if n_args > 1 && online_inference == false
+            online_inference_use = Bool[]
+            for i=1:n_args
+                push!(online_inference_use,false)
+            end
+        end
         self = new(id, Array{Interface}(undef, n_args+1), Dict{Int,Interface}(), g, opt, num_iterations, num_samples,
-                    q, deepcopy(q), infer_memory, proper_message, online_inference, batch_size, dataset_size)
+                    q, deepcopy(q), infer_memory, proper_message, online_inference_use, batch_size, dataset_size)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -79,7 +86,7 @@ end
 slug(::Type{CVI}) = "cvi"
 
 function Cvi(out::Variable, args::Vararg; g::Function, opt::Any,
-             num_samples::Union{Int,Vector{Int}}, num_iterations::Union{Int,Vector{Int}},
+             num_samples::Int, num_iterations::Union{Int,Vector{Int}},
              q=[ProbabilityDistribution(Univariate,GaussianMeanVariance,m=0,v=1)], infer_memory=0,
              proper_message=false, online_inference=false,
              batch_size=1, dataset_size=1, id=ForneyLab.generateId(CVI))
