@@ -273,16 +273,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
                                           :keyword   => true))
     end
-    # # Message on out interface
-    # if (inx == 0) && (node.out_variate !== nothing)
-    #     push!(inbounds, Dict{Symbol, Any}(:variate => node.out_variate,
-    #                                       :keyword   => true))
-    # end
-    # # Message on in interface
-    # if (inx > 0) && (node.in_variates !== nothing)
-    #     push!(inbounds, Dict{Symbol, Any}(:variate => node.in_variates[inx],
-    #                                       :keyword   => true))
-    # end
     return inbounds
 end
 
