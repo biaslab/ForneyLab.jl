@@ -64,17 +64,10 @@ end
 
 function ruleSPNonlinearSOutNGX(g::Function,
                                 msg_out::Nothing,
-                                msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
-                                n_samples=default_n_samples,
-                                variate)
-    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
-end
-
-function ruleSPNonlinearSOutNGX(g::Function,
-                                msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian, V}};
-                                n_samples=default_n_samples) where V<:VariateType
-    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
+                                n_samples=default_n_samples, variate=V) where V<:VariateType
+
+    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
 function msgSPNonlinearSInGX(g::Function,
