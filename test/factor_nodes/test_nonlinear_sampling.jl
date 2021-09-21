@@ -171,7 +171,7 @@ end
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
     
-    @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1], variate=Univariate)", code)
+    @test occursin("ruleSPNonlinearSInGX(g, Univariate, 2, messages[3], messages[2], messages[1])", code)
 end
 
 end # module

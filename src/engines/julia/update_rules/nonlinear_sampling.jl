@@ -62,12 +62,18 @@ function msgSPNonlinearSOutNGX(g::Function,
     return Message(variate, SampleList, s=samples, w=weights)
 end
 
+function ruleSPNonlinearSOutNGX(g::Function, variate,
+                                msg_out::Nothing,
+                                msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
+                                n_samples=default_n_samples)
+    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
+end
+
 function ruleSPNonlinearSOutNGX(g::Function,
                                 msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian, V}};
-                                n_samples=default_n_samples, variate=V) where V<:VariateType
-
-    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
+                                n_samples=default_n_samples) where V<:VariateType
+    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
 function msgSPNonlinearSInGX(g::Function,
@@ -111,12 +117,11 @@ function ruleSPNonlinearSInGX(g::Function,
     msgSPNonlinearSInGX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
-function ruleSPNonlinearSInGX(g::Function,
+function ruleSPNonlinearSInGX(g::Function, variate,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message{<:FactorFunction, <:VariateType},
                               msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
-                              n_samples=default_n_samples,
-                              variate)
+                              n_samples=default_n_samples)
     msgSPNonlinearSInGX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
@@ -140,11 +145,10 @@ function ruleSPNonlinearSOutNFactorX(g::Function,
     msgSPNonlinearSOutNFactorX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
-function ruleSPNonlinearSOutNFactorX(g::Function,
+function ruleSPNonlinearSOutNFactorX(g::Function, variate,
                                      msg_out::Nothing,
                                      msgs_in::Vararg{Message{<:FactorNode}};
-                                     n_samples=default_n_samples,
-                                     variate)
+                                     n_samples=default_n_samples)
     msgSPNonlinearSOutNFactorX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
@@ -184,12 +188,11 @@ function ruleSPNonlinearSInFactorX(g::Function,
 
 end
 
-function ruleSPNonlinearSInFactorX(g::Function,
+function ruleSPNonlinearSInFactorX(g::Function, variate,
                                    inx::Int64, # Index of inbound interface inx
                                    msg_out::Message{<:FactorFunction},
                                    msgs_in::Vararg{Message{<:FactorNode}};
-                                   n_samples=default_n_samples,
-                                   variate)
+                                   n_samples=default_n_samples)
 
     msgSPNonlinearSInFactorX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
@@ -227,9 +230,20 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
+
     multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-
+    
+    # Message on out interface
+    if (inx == 0) && (node.out_variate !== nothing)
+        push!(inbounds, Dict{Symbol, Any}(:variate => node.out_variate,
+                                        :keyword   => false))
+    end
+    # Message on in interface
+    if (inx > 0) && (node.in_variates !== nothing)
+        push!(inbounds, Dict{Symbol, Any}(:variate => node.in_variates[inx],
+                                        :keyword   => false))
+    end
     if (inx > 0) && multi_in # Multi-inbound backward rule
         push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
                                           :keyword => false))
@@ -259,16 +273,16 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
                                           :keyword   => true))
     end
-    # Message on out interface
-    if (inx == 0) && (node.out_variate !== nothing)
-        push!(inbounds, Dict{Symbol, Any}(:variate => node.out_variate,
-                                          :keyword   => true))
-    end
-    # Message on in interface
-    if (inx > 0) && (node.in_variates !== nothing)
-        push!(inbounds, Dict{Symbol, Any}(:variate => node.in_variates[inx],
-                                          :keyword   => true))
-    end
+    # # Message on out interface
+    # if (inx == 0) && (node.out_variate !== nothing)
+    #     push!(inbounds, Dict{Symbol, Any}(:variate => node.out_variate,
+    #                                       :keyword   => true))
+    # end
+    # # Message on in interface
+    # if (inx > 0) && (node.in_variates !== nothing)
+    #     push!(inbounds, Dict{Symbol, Any}(:variate => node.in_variates[inx],
+    #                                       :keyword   => true))
+    # end
     return inbounds
 end
 
