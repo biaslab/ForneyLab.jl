@@ -211,7 +211,7 @@ end
     pf.optimize = true
 
     pf_code = optimizeSourceCode(pf)
-    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", pf_code)    
+    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX())", pf_code)    
 end
 
 @testset "posteriorFactorSourceCode" begin

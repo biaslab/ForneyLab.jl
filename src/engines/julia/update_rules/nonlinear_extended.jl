@@ -57,12 +57,12 @@ end
 # Forward rule
 function ruleSPNonlinearEOutNG(g::Function,
                                msg_out::Nothing,
-                               msg_in1::Message{F, V}) where {F<:Gaussian, V<:VariateType}
+                               msg_in1::Message{<:Gaussian, V}) where V<:VariateType
     
     (m_in1, V_in1) = unsafeMeanCov(msg_in1.dist)
     (A, b) = localLinearization(V, g, m_in1)
 
-    return Message(V, GaussianMeanVariance, m=A*m_in1 + b, v=A*V_in1*A')
+    return Message(GaussianMeanVariance, A*m_in1 + b, A*V_in1*A') # Automatically determine VariateType
 end
 
 # Multi-argument forward rule
@@ -74,25 +74,25 @@ function ruleSPNonlinearEOutNGX(g::Function, # Needs to be in front of Vararg
     (A, b) = localLinearization(V, g, ms_fw_in)
     (m_fw_in, V_fw_in, _) = concatenateGaussianMV(ms_fw_in, Vs_fw_in)
 
-    return Message(V, GaussianMeanVariance, m=A*m_fw_in + b, v=A*V_fw_in*A')
+    return Message(GaussianMeanVariance, A*m_fw_in + b, A*V_fw_in*A') # Automatically determine VariateType
 end
 
 # Backward rule with given inverse
 function ruleSPNonlinearEIn1GG(g::Function,
                                g_inv::Function,
-                               msg_out::Message{F, V},
-                               msg_in1::Nothing) where {F<:Gaussian, V<:VariateType}
+                               msg_out::Message{<:Gaussian, V},
+                               msg_in1::Nothing) where V<:VariateType
 
     (m_out, V_out) = unsafeMeanCov(msg_out.dist)
     (A, b) = localLinearization(V, g_inv, m_out)
 
-    return Message(V, GaussianMeanVariance, m=A*m_out + b, v=A*V_out*A')
+    return Message(GaussianMeanVariance, A*m_out + b, A*V_out*A') # Automatically determine VariateType
 end
 
 # Multi-argument backward rule with given inverse
 function ruleSPNonlinearEInGX(g::Function, # Needs to be in front of Vararg
                               g_inv::Function,
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Union{Message{<:Gaussian, V}, Nothing}}) where V<:VariateType
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
@@ -104,8 +104,8 @@ end
 
 # Backward rule with unknown inverse
 function ruleSPNonlinearEIn1GG(g::Function,
-                               msg_out::Message{F1, V},
-                               msg_in1::Message{F2, V}) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
+                               msg_out::Message{<:Gaussian},
+                               msg_in1::Message{<:Gaussian, V}) where V<:VariateType
 
     m_in1 = unsafeMean(msg_in1.dist)
     d_out = convert(ProbabilityDistribution{V, GaussianMeanPrecision}, msg_out.dist)
@@ -119,7 +119,7 @@ end
 # Multi-argument backward rule with unknown inverse
 function ruleSPNonlinearEInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
 
     # Approximate joint inbounds
@@ -149,7 +149,7 @@ function ruleSPNonlinearEInGX(g::Function,
 end
 
 function ruleMNonlinearEInGX(g::Function,
-                             msg_out::Message{<:Gaussian, V},
+                             msg_out::Message{<:Gaussian},
                              msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
 
     # Approximate joint inbounds

@@ -71,6 +71,16 @@ function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
     return z
 end
 
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, Bernoulli},
+    y::ProbabilityDistribution{Univariate, PointMass},
+    z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=NaN))
+
+    z.params[:m] = y.params[:m]
+
+    return z
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli})
     p = clamp(dist.params[:p], tiny, 1.0 - tiny)

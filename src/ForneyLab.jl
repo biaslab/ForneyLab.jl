@@ -8,8 +8,9 @@ using SpecialFunctions: digamma, erfc, logfactorial, logabsgamma, logabsbeta, ga
 using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr, logdet
 using InteractiveUtils: subtypes
 using Printf: @sprintf
-using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, normcdf
+using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, normcdf, normpdf
 using ForwardDiff
+using Roots: find_zero
 using StatsBase: Weights
 using PositiveFactorizations
 using DataStructures: Queue, enqueue!, dequeue!
@@ -62,9 +63,9 @@ include("factor_nodes/softmax.jl")
 include("factor_nodes/dot_product.jl")
 include("factor_nodes/poisson.jl")
 include("factor_nodes/nonlinear.jl")
-
-
-
+include("factor_nodes/moment_constraint.jl")
+include("factor_nodes/chance_constraint.jl")
+include("factor_nodes/point_mass_constraint.jl")
 
 # Factor graph
 include("factor_graph.jl")
@@ -117,6 +118,9 @@ include("update_rules/logit.jl")
 include("update_rules/softmax.jl")
 include("update_rules/dot_product.jl")
 include("update_rules/poisson.jl")
+include("update_rules/moment_constraint.jl")
+include("update_rules/chance_constraint.jl")
+include("update_rules/point_mass_constraint.jl")
 include("update_rules/nonlinear_unscented.jl")
 include("update_rules/nonlinear_sampling.jl")
 include("update_rules/nonlinear_extended.jl")

@@ -45,7 +45,7 @@ function collectInboundTypes(entry::ScheduleEntry,
                             ) where T<:ExpectationPropagationRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
-        if isClamped(node_interface.partner)
+        if isDeltaConstrained(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])

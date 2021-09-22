@@ -109,6 +109,7 @@ function energiesSourceCode(average_energies::Vector)
         count_code = countingNumberSourceCode(energy[:counting_number])
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
+
         energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
     end
 
@@ -123,6 +124,7 @@ function entropiesSourceCode(entropies::Vector)
     for entropy in entropies
         count_code = countingNumberSourceCode(entropy[:counting_number])
         inbound_code = inboundSourceCode(entropy[:inbound])
+
         entropies_code *= "F -= $(count_code)differentialEntropy($inbound_code)\n"
     end
 
@@ -175,6 +177,7 @@ function marginalTableSourceCode(table::MarginalTable)
             inbounds_code = inboundsSourceCode(entry.inbounds)
             table_code *= "rule$(rule_code)($inbounds_code)"
         end
+
         table_code *= "\n"
     end
     isempty(table_code) || (table_code *= "\n")
@@ -279,7 +282,9 @@ end
 Remove module prefixes from types and functions
 """
 removePrefix(arg::Any) = arg # Do not remove prefix in general
+removePrefix(tup::Tuple) = string(tup)
 removePrefix(num::Number) = string(num)
+removePrefix(vect::Vector) = string(vect)
 removePrefix(func::Function) = split(string(func), '.')[end]
 removePrefix(T::Type) = split(string(T), '.')[end]
 function removePrefix(T::DataType)

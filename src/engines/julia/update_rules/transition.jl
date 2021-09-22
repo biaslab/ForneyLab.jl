@@ -98,7 +98,7 @@ function ruleMTransitionCCD(msg_out::Message{Categorical, Univariate},
                             msg_in1::Message{Categorical, Univariate},
                             dist_a::ProbabilityDistribution{MatrixVariate})
 
-    B = Diagonal(msg_out.dist.params[:p])*exp.(unsafeLogMean(dist_a))*Diagonal(msg_in1.dist.params[:p])
+    B = Diagonal(msg_out.dist.params[:p])*clamp.(exp.(unsafeLogMean(dist_a)), tiny, huge)*Diagonal(msg_in1.dist.params[:p])
 
     ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
 end

@@ -8,6 +8,11 @@
                 :inbound_types => (Message{PointMass}, Nothing),
                 :name          => SPProbitIn1PN)
 
+@sumProductRule(:node_type     => Probit,
+                :outbound_type => Message{Function},
+                :inbound_types => (Message{Bernoulli}, Nothing),
+                :name          => SPProbitIn1BN)
+
 @expectationPropagationRule(:node_type     => Probit,
                             :outbound_type => Message{GaussianWeightedMeanPrecision},
                             :inbound_types => (Message{Bernoulli}, Message{Gaussian}),

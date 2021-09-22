@@ -50,7 +50,7 @@ function assembleInitialization!(pf::PosteriorFactor)
             (_, dims) = breakerParameters(entry.interface)
             assembleBreaker!(entry, family(outbound_types[entry.interface]), dims)
             pf_initialize_flag = true # Signifies the need for an initialization block
-        elseif !(partner == nothing) && isa(partner.node, Clamp)
+        elseif isClamped(partner)
             assembleBreaker!(entry, family(outbound_types[entry.interface]), size(partner.node.value))
             pf_initialize_flag = true
             pf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables

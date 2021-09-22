@@ -158,7 +158,7 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     w_raw_x = exp.(log_samples_x) # m4(s)
     w_prod = w_raw_x.*y.params[:w] # update the weights of posterior w_unnormalized = m4(s)*w_prev
     weights = w_prod./sum(w_prod) # Normalize weights
-    
+
     # Resample if required
     n_eff = 1/sum(weights.^2) # Effective number of particles
     if n_eff < n_samples/10

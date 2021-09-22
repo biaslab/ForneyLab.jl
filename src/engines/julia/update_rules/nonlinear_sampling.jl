@@ -15,6 +15,11 @@ const default_n_samples = 1000 # Default value for the number of samples
 # Sampling Update Rules
 #----------------------
 
+# Custom message constructors for undetermined VariateType
+Message(::Type{SampleList}, s::Vector{Float64}, w::Vector{Float64}) = Message(Univariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractVector}, w::Vector{Float64}) = Message(Multivariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractMatrix}, w::Vector{Float64}) = Message(MatrixVariate, SampleList, s=s, w=w)
+
 function ruleSPNonlinearSOutNM(g::Function,
                                msg_out::Nothing,
                                msg_in1::Message{F, V};
@@ -28,7 +33,7 @@ function ruleSPNonlinearSOutNM(g::Function,
 end
 
 function ruleSPNonlinearSIn1MN(g::Function,
-                               msg_out::Message{F, V},
+                               msg_out::Message{<:FactorFunction, V},
                                msg_in1::Nothing;
                                n_samples=default_n_samples,
                                variate=V) where {F<:FactorFunction, V<:VariateType}
@@ -230,8 +235,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-
-    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     
     # Message on out interface
@@ -259,7 +263,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else
@@ -283,12 +287,9 @@ end
 
 function prod!(
     x::ProbabilityDistribution{V, Function},
-    y::ProbabilityDistribution{V, Function},
-    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
+    y::ProbabilityDistribution{V, Function}) where V<:VariateType # log-pdf for z cannot be predefined, because it cannot be overwritten
 
-    z.params[:log_pdf] = ( (s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s) )
-
-    return z
+    return ProbabilityDistribution(V, Function, log_pdf=(s)->x.params[:log_pdf](s) + y.params[:log_pdf](s))
 end
 
 @symmetrical function prod!(

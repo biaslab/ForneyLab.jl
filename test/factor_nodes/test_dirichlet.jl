@@ -42,8 +42,6 @@ end
     @test ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]) == ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 4.0])
     @test ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) * ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) == ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
     @test ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) == ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
-    @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=[-0.1, 0.8, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0])
-    @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.9, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0])
 
     # MatrixVariate
     @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 2.0; 3.0 3.0]) * ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]) == ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.0 4.0; 6.0 7.0])

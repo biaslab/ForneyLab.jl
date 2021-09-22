@@ -18,8 +18,22 @@ end
 
 function ruleSPProbitIn1PN(msg_out::Message{PointMass, Univariate},
                            msg_in1::Nothing)
-
     p = msg_out.dist.params[:m]
+    if p == 1.0
+        log_pdf = normlogcdf
+    elseif p == 0.0
+        log_pdf = (z)->normlogcdf(-z)
+    else
+        log_pdf = (z)->log(p*normcdf(z) + (1.0-p)*normcdf(-z))
+    end
+
+    return Message(Univariate, Function, log_pdf=log_pdf)
+end
+
+function ruleSPProbitIn1BN(msg_out::Message{Bernoulli, Univariate},
+                           msg_in1::Nothing)
+
+    p = msg_out.dist.params[:p]
     if p == 1.0
         log_pdf = normlogcdf
     elseif p == 0.0

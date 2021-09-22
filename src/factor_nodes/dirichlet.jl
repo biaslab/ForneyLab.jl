@@ -59,8 +59,14 @@ isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],dims=1) # Normalize columns
 
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
+function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet})
+    a = clamp.(dist.params[:a], tiny, huge)
+    return digamma.(a) .- digamma.(sum(a))
+end
+function unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet})
+    a = clamp.(dist.params[:a], tiny, huge)
+    return digamma.(a) .- digamma.(sum(a,dims=1)) # Normalize columns
+end
 
 logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(loggamma.(dist.params[:a])) + loggamma(sum(dist.params[:a]))
 logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(loggamma.(dist.params[:a]), dims=1) + loggamma.(sum(dist.params[:a],dims=1)))
@@ -83,9 +89,8 @@ end
                             y::ProbabilityDistribution{Multivariate, PointMass},
                             z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN]))
 
-    all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
-    isapprox(sum(y.params[:m]), 1.0) || error("Pointmass location entries $(y.params[:m]) should sum to one")
-    z.params[:m] = deepcopy(y.params[:m])
+    a_y = clamp.(y.params[:m], 0.0, 1.0)
+    z.params[:m] = deepcopy(a_y)
 
     return z
 end
@@ -94,12 +99,8 @@ end
                             y::ProbabilityDistribution{MatrixVariate, PointMass},
                             z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
 
-    all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
-    for k = 1:dims(y)[2] # For all columns
-        isapprox(sum(y.params[:m][:,k]), 1.0) || error("Pointmass location entries $(y.params[:m][:,k]) of column $k should sum to one")
-    end
-
-    z.params[:m] = deepcopy(y.params[:m])
+    A_y = clamp.(y.params[:m], 0.0, 1.0)
+    z.params[:m] = deepcopy(A_y)
 
     return z
 end

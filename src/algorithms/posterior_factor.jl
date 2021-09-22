@@ -136,6 +136,20 @@ isClamped(edge::Edge) = isClamped(edge.a) || isClamped(edge.b)
 isClamped(::Nothing) = false
 
 """
+Check if node imposes a point-mass constraint. This enables external overloading 
+of what it means to be a point-mass constrained.
+"""
+isDeltaConstraint(node::FactorNode) = false
+isDeltaConstraint(node::Clamp) = true # 
+
+"""
+Check if edge or interface is terminated by a point-mass constraint
+"""
+isDeltaConstrained(interface::Interface) = isdefined(interface, :node) && isDeltaConstraint(interface.node)
+isDeltaConstrained(edge::Edge) = isDeltaConstrained(edge.a) || isDeltaConstrained(edge.b)
+isDeltaConstrained(::Nothing) = false
+
+"""
 Return the ids of the posterior factors to which edges connected to `node` belong
 """
 localPosteriorFactors(node::FactorNode) = Any[posteriorFactor(interface.edge) for interface in node.interfaces]

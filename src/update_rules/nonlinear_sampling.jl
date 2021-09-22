@@ -56,7 +56,9 @@ function isApplicable(::Type{SPNonlinearSOutNFactorX}, input_types::Vector{<:Typ
     factorNode_input = false
     gaussian_inputs = 0
     for input_type in input_types[2:end]
-        if matches(input_type, Message{FactorNode})
+        if matches(input_type, Message{SampleList})
+            return false
+        elseif matches(input_type, Message{FactorNode})
             factorNode_input += 1
             if matches(input_type, Message{Gaussian})
                 gaussian_inputs += 1
@@ -86,6 +88,10 @@ function isApplicable(::Type{SPNonlinearSInFactorX}, input_types::Vector{<:Type}
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
+        elseif matches(input_type, Message{PointMass})
+            return false
+        elseif matches(input_type, Message{SampleList})
+            return false
         elseif matches(input_type, Message{FactorNode})
             factorNode_input += 1
             if matches(input_type, Message{Gaussian})

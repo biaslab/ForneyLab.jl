@@ -100,6 +100,12 @@ end
     @test isapprox(var(res.dist), 1.9999999999999982, atol=0.1)
 end
 
+@testset "prod!" begin
+    d = prod!(ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s), ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s))
+    @test isa(d, ProbabilityDistribution{Multivariate,Function})
+    @test d.params[:log_pdf](1) == 2
+end
+
 @testset "SPNonlinearSOutNFactorX" begin
     @test SPNonlinearSOutNFactorX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSOutNFactorX) == Message{SampleList}
@@ -124,6 +130,7 @@ end
     @test !isApplicable(MNonlinearSInGX, [Nothing, Message{Gaussian}])
     @test !isApplicable(MNonlinearSInGX, [Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution])
 end
+
 
 #------------
 # Integration

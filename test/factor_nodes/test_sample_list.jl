@@ -3,7 +3,7 @@ module SampleListTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeCov, unsafeVar, dims, bootstrap
-using ForneyLab: SPSampleListOutNPP
+using ForneyLab: SPSampleListOutNPP, VBSampleListOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])) == 1
@@ -100,6 +100,16 @@ end
     @test ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[0.0,2.0,5.2]), Message(Multivariate, PointMass, m=[0.4,0.5,0.1])) == Message(Univariate, SampleList, s=[0.0,2.0,5.2], w=[0.4,0.5,0.1])
     @test ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[[0.0,2.0],[5.2,-0.6]]), Message(Multivariate, PointMass, m=[0.4,0.6])) == Message(Multivariate, SampleList, s=[[0.0,2.0],[5.2,-0.6]], w=[0.4,0.6])
     @test ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[eye(2),eye(2)]), Message(Multivariate, PointMass, m=[0.4,0.6])) == Message(MatrixVariate, SampleList, s=[eye(2),eye(2)], w=[0.4,0.6])
+end
+
+@testset "VBSampleListOut" begin
+    @test VBSampleListOut <: NaiveVariationalRule{SampleList}
+    @test outboundType(VBSampleListOut) == Message{SampleList}
+    @test isApplicable(VBSampleListOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+
+    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[0.0,2.0,5.2]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.5,0.1])) == Message(Univariate, SampleList, s=[0.0,2.0,5.2], w=[0.4,0.5,0.1])
+    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[[0.0,2.0],[5.2,-0.6]]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(Multivariate, SampleList, s=[[0.0,2.0],[5.2,-0.6]], w=[0.4,0.6])
+    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[eye(2),eye(2)]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(MatrixVariate, SampleList, s=[eye(2),eye(2)], w=[0.4,0.6])
 end
 
 
