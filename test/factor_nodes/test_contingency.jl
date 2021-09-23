@@ -22,6 +22,7 @@ end
 
 @testset "differentialEntropy" begin
     @test differentialEntropy(ProbabilityDistribution(Multivariate, Contingency, p=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == 2.78866425274534
+    @test differentialEntropy(ProbabilityDistribution(Multivariate, Contingency, p=[0.3*[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3], 0.7*[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3]])) == 4.621257158910021
 end
 
 end # module
