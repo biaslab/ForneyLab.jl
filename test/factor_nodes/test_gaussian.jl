@@ -3,6 +3,7 @@ module GaussianTest
 using Test
 using ForneyLab
 using LinearAlgebra: Diagonal
+using ForneyLab: naturalParams, standardMessage, standardDist
 
 @testset "sample" begin
     # Univariate

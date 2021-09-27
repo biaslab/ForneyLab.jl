@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf
 using ForneyLab: SPBernoulliOutNP, SPBernoulliIn1PN, SPBernoulliOutNB, VBBernoulliOut, VBBernoulliIn1
+using ForneyLab: naturalParams, standardMessage, standardDist
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Bernoulli, p=0.2) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.2))

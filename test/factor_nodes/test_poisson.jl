@@ -5,6 +5,7 @@ using ForneyLab
 
 using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
 using ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
+using ForneyLab: naturalParams, standardMessage, standardDist
 
 @testset "Poisson ProbabilityDistribution construction" begin
     @test ProbabilityDistribution(Univariate, Poisson, l=2.0) == ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>2.0))

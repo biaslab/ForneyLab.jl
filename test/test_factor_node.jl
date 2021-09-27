@@ -1,8 +1,10 @@
 module FactorNodeTest
 
 using Test
-using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Unscented, Sampling, Extended
+using ForneyLab: ProbabilityDistribution, VariateType, Univariate, GaussianMeanVariance
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Unscented, Sampling, Extended, SVI, CVI, Svi, Cvi, SetProbDist, SetSampleList, JointIndependentProbDist
 using InteractiveUtils: subtypes
+using Flux.Optimise
 
 @testset "FactorNode" begin
     g = FactorGraph()
@@ -15,6 +17,9 @@ using InteractiveUtils: subtypes
         for node_type in subtypes(pop!(stack))
             if isconcretetype(node_type)
                 (node_type == PointMass) && continue # skip PointMass
+                (node_type == SetProbDist) && continue # skip SetProbDist
+                (node_type == SetSampleList) && continue # skip SetSampleList
+                (node_type == JointIndependentProbDist) && continue # skip JointIndependentProbDist
                 push!(node_types, node_type)
             else
                 push!(stack, node_type)
@@ -32,6 +37,10 @@ using InteractiveUtils: subtypes
             test_node = GaussianMixture(Variable(), Variable(), Variable(), Variable(), Variable(), Variable())
         elseif node_type <: Nonlinear
             test_node = node_type(Variable(), Variable(), g=()->())
+        elseif  node_type == SVI
+            test_node = Svi(Variable(), Variable(), opt=Descent(0.1), q=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0, v=1), batch_size=1, dataset_size=1)
+        elseif  node_type == CVI
+            test_node = Cvi(Variable(), Variable(), g=()->(), opt=Descent(0.1), num_samples=1, num_iterations=1)
         else
             constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
             vars = [Variable() for v = 1:constructor_argument_length]

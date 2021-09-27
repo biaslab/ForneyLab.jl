@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
 using ForneyLab: SPGammaOutNPP, VBGammaOut, VBGammaA, VBGammaB
+using ForneyLab: naturalParams, standardMessage, standardDist
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == 1

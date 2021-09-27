@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
 using ForneyLab: SPDirichletOutNP, VBDirichletOut, VBDirichletIn1
+using ForneyLab: naturalParams, standardMessage, standardDist
 using SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin

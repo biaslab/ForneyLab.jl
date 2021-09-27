@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf
 using ForneyLab: SPCategoricalOutNP, VBCategoricalOut, VBCategoricalIn1
+using ForneyLab: naturalParams, standardMessage, standardDist
 using SparseArrays: SparseVector, spzeros
 
 @testset "Categorical ProbabilityDistribution and Message construction" begin

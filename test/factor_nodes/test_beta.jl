@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
 using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, SPBetaOutMCNMM, VBBetaOut, VBBetaA, VBBetaB
+using ForneyLab: naturalParams, standardMessage, standardDist
 using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin

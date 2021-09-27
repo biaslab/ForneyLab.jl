@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
 using ForneyLab: SPWishartOutNPP, VBWishartOut
+using ForneyLab: naturalParams, standardMessage, standardDist
 using SpecialFunctions: digamma
 
 @testset "dims" begin
