@@ -61,7 +61,7 @@ function ruleSVBTransitionMixtureOutNCCDX(msg_out::Any,
     d = dims(dist_factors[1])[1] # Dimensionality of output
     a = tiny*ones(d)
     for k=1:n_factors
-        a += z_bar[k]*exp.(unsafeLogMean(dist_factors[k]))*msg_in1.dist.params[:p]
+        a += z_bar[k]*clamp.(exp.(unsafeLogMean(dist_factors[k])), tiny, Inf)*msg_in1.dist.params[:p]
     end
     
     Message(Univariate, Categorical, p=a./sum(a))
@@ -76,7 +76,7 @@ function ruleSVBTransitionMixtureIn1CNCDX(msg_out::Message{Categorical},
     d = dims(dist_factors[1])[2] # Dimensionality of input
     a = tiny*ones(d)
     for k=1:n_factors
-        a += z_bar[k]*exp.(unsafeLogMean(dist_factors[k]))'*msg_out.dist.params[:p]
+        a += z_bar[k]*clamp.(exp.(unsafeLogMean(dist_factors[k])), tiny, Inf)'*msg_out.dist.params[:p]
     end
     
     Message(Univariate, Categorical, p=a./sum(a))
@@ -89,7 +89,7 @@ function ruleSVBTransitionMixtureZCCNDX(msg_out::Message{Categorical},
     n_factors = length(dist_factors)
     a = zeros(n_factors)
     for k=1:n_factors
-        a[k] = msg_out.dist.params[:p]'*exp.(unsafeLogMean(dist_factors[k]))*msg_in1.dist.params[:p]
+        a[k] = msg_out.dist.params[:p]'*clamp.(exp.(unsafeLogMean(dist_factors[k])), tiny, Inf)*msg_in1.dist.params[:p]
     end
     
     Message(Univariate, Categorical, p=a./sum(a))
@@ -111,7 +111,7 @@ function ruleMTransitionMixtureCCCDX(msg_out::Message{Categorical, Univariate},
     z_bar = msg_switch.dist.params[:p]
     B = Vector{Matrix}(undef, n_factors)
     for k=1:n_factors
-        B[k] = z_bar[k]*Diagonal(msg_out.dist.params[:p])*exp.(unsafeLogMean(dist_factors[k]))*Diagonal(msg_in1.dist.params[:p])
+        B[k] = z_bar[k]*Diagonal(msg_out.dist.params[:p])*clamp.(exp.(unsafeLogMean(dist_factors[k])), tiny, Inf)*Diagonal(msg_in1.dist.params[:p])
     end
 
     ProbabilityDistribution(Multivariate, Contingency, p=B./sum(sum(B)))
