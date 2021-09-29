@@ -63,5 +63,15 @@ isProper(dist::ProbabilityDistribution{Multivariate, Contingency}) = (abs(sum(di
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Contingency})
-    -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf)))
+    B = dist.params[:p]
+    if isa(B, Vector{<:Matrix}) # Contingency tensor
+        H = 0.0
+        for k=1:length(B)
+            H += -sum(B[k].*log.(clamp.(B[k], tiny, Inf)))
+        end 
+    else # Contingency matrix
+        H = -sum(B.*log.(clamp.(B, tiny, Inf)))
+    end
+
+    return H
 end
