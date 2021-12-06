@@ -131,6 +131,32 @@ function ruleSPNonlinearSInMX(g::Function,
     return Message(variateType(dims), Function, log_pdf = (z)->log(approximate_pdf(z)))
 end
 
+# Special case for two inputs with one PointMass (no inx required)
+function ruleSPNonlinearSInMX(g::Function,
+                              msg_out::Message,
+                              msg_in1::Message{PointMass},
+                              msg_in2::Nothing;
+                              dims::Any=nothing,
+                              n_samples=default_n_samples)
+
+    m_in1 = msg_in1.dist.params[:m]
+
+    return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(m_in1, z)))                          
+end
+
+# Special case for two inputs with one PointMass (no inx required)
+function ruleSPNonlinearSInMX(g::Function,
+                              msg_out::Message,
+                              msg_in1::Nothing,
+                              msg_in2::Message{PointMass};
+                              dims::Any=nothing,
+                              n_samples=default_n_samples)
+
+    m_in2 = msg_in2.dist.params[:m]
+
+    return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(z, m_in2)))                          
+end
+
 function ruleMNonlinearSInMGX(g::Function,
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}})
