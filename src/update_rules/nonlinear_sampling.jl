@@ -22,20 +22,15 @@ function isApplicable(::Type{SPNonlinearSOutNGX}, input_types::Vector{<:Type})
     return true
 end
 
-# TODO: refactor rules below
 mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
 outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
 function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
-    (input_types[1] != Nothing) || return false
+    (input_types[1] != Nothing) || return false # Require any message on out
 
     nothing_inputs = 0
-    factorfunction_input = false
     gaussian_inputs = 0
-    if matches(input_types[1], Message{FactorFunction})
-        factorfunction_input = true
-    end
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
@@ -44,7 +39,7 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
         end
     end
 
-    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-2) && factorfunction_input
+    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs - 2)
 end
 
 mutable struct SPNonlinearSOutNMX <: SumProductRule{Nonlinear{Sampling}} end
@@ -53,23 +48,17 @@ function isApplicable(::Type{SPNonlinearSOutNMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
-
-    factorNode_input = false
+    
     gaussian_inputs = 0
     for input_type in input_types[2:end]
-        if matches(input_type, Message{SampleList})
-            return false
-        elseif matches(input_type, Message{FactorNode})
-            factorNode_input += 1
-            if matches(input_type, Message{Gaussian})
-                gaussian_inputs += 1
-            end
-        else
-            return false
+        matches(input_type, Message) || return false
+        if matches(input_type, Message{Gaussian})
+            gaussian_inputs += 1
         end
     end
+    (gaussian_inputs == total_inputs - 1) && return false # Rule does not apply if all inputs are Gaussian
 
-    return (gaussian_inputs < total_inputs-1) && (factorNode_input == total_inputs-1)
+    return true
 end
 
 mutable struct SPNonlinearSInMX <: SumProductRule{Nonlinear{Sampling}} end
@@ -80,30 +69,16 @@ function isApplicable(::Type{SPNonlinearSInMX}, input_types::Vector{<:Type})
     (input_types[1] != Nothing) || return false
 
     nothing_inputs = 0
-    factorfunction_input = false
-    factorNode_input = 0
     gaussian_inputs = 0
-    if matches(input_types[1], Message{FactorFunction})
-        factorfunction_input = true
-    end
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{PointMass})
-            return false
-        elseif matches(input_type, Message{SampleList})
-            return false
-        elseif matches(input_type, Message{FactorNode})
-            factorNode_input += 1
-            if matches(input_type, Message{Gaussian})
-                gaussian_inputs += 1
-            end
-        else
-            return false
+        elseif matches(input_type, Message{Gaussian})
+            gaussian_inputs += 1
         end
     end
 
-    return (nothing_inputs == 1) && (gaussian_inputs < total_inputs-2) && (factorNode_input == total_inputs-2) && factorfunction_input
+    return (nothing_inputs == 1) && (gaussian_inputs != total_inputs - 2) # Rule does not apply if all inbounds are Gaussian
 end
 
 mutable struct MNonlinearSInMGX <: MarginalRule{Nonlinear{Sampling}} end
