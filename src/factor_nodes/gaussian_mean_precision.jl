@@ -42,10 +42,9 @@ ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0
 ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=transpose([1.0])) = ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
 
-dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = length(dist.params[:m])
+dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = size(dist.params[:m])
 
 vague(::Type{GaussianMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims))
 vague(::Type{GaussianMeanPrecision}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
@@ -63,10 +62,12 @@ unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) wher
 
 unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:w]) # unsafe precision
 
+unsafeMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), deepcopy(dist.params[:w]))
+
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (dist.params[:w]*dist.params[:m], deepcopy(dist.params[:w]))
 
 logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}, x) = -0.5*(log(2pi) - log(dist.params[:w]) + (x-dist.params[:m])^2*dist.params[:w])
-logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, x) = -0.5*(dims(dist)*log(2pi) - logdet(dist.params[:w]) + transpose(x-dist.params[:m])*dist.params[:w]*(x-dist.params[:m]))
+logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, x) = -0.5*(dims(dist)[1]*log(2pi) - logdet(dist.params[:w]) + transpose(x-dist.params[:m])*dist.params[:w]*(x-dist.params[:m]))
 
 isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
@@ -95,12 +96,12 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
     (m_out, v_out) = unsafeMeanCov(marg_out)
 
-    0.5*dims(marg_out)*log(2*pi) -
+    0.5*dims(marg_out)[1]*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
     0.5*tr( unsafeMean(marg_prec)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)' ))
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_prec::ProbabilityDistribution{Univariate}) where F<:Gaussian
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_prec::ProbabilityDistribution{Univariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
 
     0.5*log(2*pi) -
@@ -108,9 +109,9 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Probability
     0.5*unsafeMean(marg_prec)*( V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2 )
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_prec::ProbabilityDistribution{MatrixVariate}) where F<:Gaussian
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_prec::ProbabilityDistribution{MatrixVariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
-    d = Int64(dims(marg_out_mean)/2)
+    d = Int64(dims(marg_out_mean)[1]/2)
 
     0.5*d*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +

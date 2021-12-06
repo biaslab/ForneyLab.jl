@@ -22,6 +22,7 @@ function isApplicable(::Type{SPNonlinearSOutNGX}, input_types::Vector{<:Type})
     return true
 end
 
+# TODO: refactor rules below
 mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
 outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
 function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
@@ -46,9 +47,9 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-2) && factorfunction_input
 end
 
-mutable struct SPNonlinearSOutNFactorX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSOutNFactorX}) = Message{SampleList}
-function isApplicable(::Type{SPNonlinearSOutNFactorX}, input_types::Vector{<:Type})
+mutable struct SPNonlinearSOutNMX <: SumProductRule{Nonlinear{Sampling}} end
+outboundType(::Type{SPNonlinearSOutNMX}) = Message{SampleList}
+function isApplicable(::Type{SPNonlinearSOutNMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
@@ -71,9 +72,9 @@ function isApplicable(::Type{SPNonlinearSOutNFactorX}, input_types::Vector{<:Typ
     return (gaussian_inputs < total_inputs-1) && (factorNode_input == total_inputs-1)
 end
 
-mutable struct SPNonlinearSInFactorX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSInFactorX}) = Message{Function}
-function isApplicable(::Type{SPNonlinearSInFactorX}, input_types::Vector{<:Type})
+mutable struct SPNonlinearSInMX <: SumProductRule{Nonlinear{Sampling}} end
+outboundType(::Type{SPNonlinearSInMX}) = Message{Function}
+function isApplicable(::Type{SPNonlinearSInMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false
@@ -105,8 +106,8 @@ function isApplicable(::Type{SPNonlinearSInFactorX}, input_types::Vector{<:Type}
     return (nothing_inputs == 1) && (gaussian_inputs < total_inputs-2) && (factorNode_input == total_inputs-2) && factorfunction_input
 end
 
-mutable struct MNonlinearSInGX <: MarginalRule{Nonlinear{Sampling}} end
-function isApplicable(::Type{MNonlinearSInGX}, input_types::Vector{<:Type})
+mutable struct MNonlinearSInMGX <: MarginalRule{Nonlinear{Sampling}} end
+function isApplicable(::Type{MNonlinearSInMGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable

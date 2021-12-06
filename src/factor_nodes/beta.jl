@@ -45,7 +45,7 @@ format(dist::ProbabilityDistribution{Univariate, Beta}) = "$(slug(Beta))(a=$(for
 ProbabilityDistribution(::Type{Univariate}, ::Type{Beta}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Beta}(Dict(:a=>a, :b=>b))
 ProbabilityDistribution(::Type{Beta}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Beta}(Dict(:a=>a, :b=>b))
 
-dims(dist::ProbabilityDistribution{Univariate, Beta}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Beta}) = ()
 
 vague(::Type{Beta}) = ProbabilityDistribution(Univariate, Beta, a=1.0, b=1.0)
 

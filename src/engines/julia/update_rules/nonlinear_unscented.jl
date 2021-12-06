@@ -64,6 +64,7 @@ end
 """
 Return the statistics for the unscented approximation to the forward joint
 """
+# Single univariate inbound
 function unscentedStatistics(m::Float64, V::Float64, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
@@ -71,21 +72,6 @@ function unscentedStatistics(m::Float64, V::Float64, g::Function; alpha=default_
     m_tilde = sum(weights_m.*g_sigma)
     V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2)
     C_tilde = sum(weights_c.*(sigma_points .- m).*(g_sigma .- m_tilde))
-
-    return (m_tilde, V_tilde, C_tilde)
-end
-
-# Multiple univariate inbounds
-function unscentedStatistics(ms::Vector{Float64}, Vs::Vector{Float64}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
-    (m, V, ds) = concatenateGaussianMV(ms, Vs)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
-
-    g_sigma = [g(sp...) for sp in sigma_points] # Unpack each sigma point in g
-
-    d = sum(ds) # Dimensionality of joint
-    m_tilde = sum(weights_m.*g_sigma) # Scalar
-    V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) # Scalar
-    C_tilde = sum([weights_c[k+1]*(sigma_points[k+1] - ms)*(g_sigma[k+1] - m_tilde) for k=0:2*d]) # Vector
 
     return (m_tilde, V_tilde, C_tilde)
 end
@@ -103,14 +89,14 @@ function unscentedStatistics(m::Vector{Float64}, V::AbstractMatrix, g::Function;
     return (m_tilde, V_tilde, C_tilde)
 end
 
-# Multiple multivariate inbounds
-function unscentedStatistics(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
+# Multiple inbounds of possibly mixed variate type
+function unscentedStatistics(ms::Vector, Vs::Vector, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
     (m, V, ds) = concatenateGaussianMV(ms, Vs)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
     g_sigma = [g(split(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
-    d = sum(ds) # Dimensionality of joint
+    d = sum(intdim.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d]) # Vector
     V_tilde = sum([weights_c[k+1]*(g_sigma[k+1] - m_tilde)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) # Matrix
     C_tilde = sum([weights_c[k+1]*(sigma_points[k+1] - m)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) # Matrix
@@ -148,10 +134,6 @@ end
 # Unscented Update Rules
 #-----------------------
 
-# Custom message constructors for undetermined VariateType
-Message(::Type{GaussianMeanVariance}, m::Float64, v::Float64) = Message(Univariate, GaussianMeanVariance, m=m, v=v)
-Message(::Type{GaussianMeanVariance}, m::Vector{Float64}, v::AbstractMatrix) = Message(Multivariate, GaussianMeanVariance, m=m, v=v)
-
 # Forward rule (unscented transform)
 function ruleSPNonlinearUTOutNG(g::Function,
                                 msg_out::Nothing,
@@ -161,19 +143,19 @@ function ruleSPNonlinearUTOutNG(g::Function,
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
 
-    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
+    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument forward rule (unscented transform)
 function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
                                  msg_out::Nothing,
-                                 msgs_in::Vararg{Message{<:Gaussian, V}}; # Inbound variate types must match
-                                 alpha::Float64=default_alpha) where V<:VariateType
+                                 msgs_in::Vararg{Message{<:Gaussian}};
+                                 alpha::Float64=default_alpha)
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
+    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with given inverse (unscented transform)
@@ -186,27 +168,27 @@ function ruleSPNonlinearUTIn1GG(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
 
-    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
+    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument backward rule with given inverse (unscented transform)
 function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
                                g_inv::Function,
                                msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Union{Message{<:Gaussian, V}, Nothing}}; # Inbound variate types must match
-                               alpha::Float64=default_alpha) where V<:VariateType
+                               msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
+                               alpha::Float64=default_alpha)
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms, Vs, g_inv; alpha=alpha)
 
-    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with unknown inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(g::Function,
                                 msg_out::Message{<:Gaussian},
-                                msg_in1::Message{<:Gaussian, V};
-                                alpha::Float64=default_alpha) where V<:VariateType
+                                msg_in1::Message{<:Gaussian};
+                                alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
@@ -215,15 +197,15 @@ function ruleSPNonlinearUTIn1GG(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_bw_in1, V_bw_in1) = smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
 
-    return Message(V, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+    return Message(variateType(m_bw_in1), GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
 function ruleSPNonlinearUTInGX(g::Function,
                                inx::Int64, # Index of inbound interface inx
                                msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Message{<:Gaussian, V}};
-                               alpha::Float64=default_alpha) where V<:VariateType
+                               msgs_in::Vararg{Message{<:Gaussian}};
+                               alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -235,22 +217,22 @@ function ruleSPNonlinearUTInGX(g::Function,
     (m_in, V_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
     # Marginalize joint belief on in's
-    (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+    (m_inx, V_inx) = marginalizeGaussianMV(m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
     W_inx = cholinv(V_inx) # Convert to canonical statistics
     xi_inx = W_inx*m_inx
 
     # Divide marginal on inx by forward message
     (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
     xi_bw_inx = xi_inx - xi_fw_inx
-    W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
+    W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleMNonlinearUTInGX(g::Function,
                               msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Message{<:Gaussian, V}};
-                              alpha::Float64=default_alpha) where V<:VariateType
+                              msgs_in::Vararg{Message{<:Gaussian}};
+                              alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -281,7 +263,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
 
     multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-    undefined_inverse = (node.g_inv == nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] == nothing))
+    undefined_inverse = (node.g_inv === nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] === nothing))
 
     if inx > 0 # A backward message is required
         if multi_in && undefined_inverse # Multi-inbound with undefined inverse
@@ -315,8 +297,8 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
         end
     end
 
-    # Push custom arguments if manually defined
-    if (T == Unscented) && (node.alpha != nothing)
+    # Push custom arguments if defined
+    if (node.alpha !== nothing)
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
                                           :keyword => true))
     end
@@ -370,7 +352,7 @@ Collect the statistics of separate Gaussian messages
 function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
     stats = []
     for msg in msgs
-        (msg == nothing) && continue # Skip unreported messages
+        (msg === nothing) && continue # Skip unreported messages
         push!(stats, unsafeMeanCov(msg.dist))
     end
 
@@ -381,31 +363,36 @@ function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
 end
 
 """
+Return integer dimensionality
+"""
+intdim(tup::Tuple) = prod(tup) # Returns 1 for ()
+
+"""
 Return the marginalized statistics of the Gaussian corresponding to an inbound inx
 """
-marginalizeGaussianMV(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64) = (m[inx], V[inx, inx])
-
-function marginalizeGaussianMV(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64)
-    ds_start = cumsum([1; ds]) # Starting indices
-    d_start = ds_start[inx]
-    d_end = ds_start[inx + 1] - 1
-    mx = m[d_start:d_end] # Vector
-    Vx = V[d_start:d_end, d_start:d_end] # Matrix
-
-    return (mx, Vx)
+function marginalizeGaussianMV(m::Vector{Float64}, V::AbstractMatrix, ds::Vector{<:Tuple}, inx::Int64)
+    if ds[inx] == () # Univariate original
+        return (m[inx], V[inx, inx]) # Return scalars
+    else # Multivariate original
+        dl = intdim.(ds)
+        dl_start = cumsum([1; dl]) # Starting indices
+        d_start = dl_start[inx]
+        d_end = dl_start[inx + 1] - 1
+        mx = m[d_start:d_end] # Vector
+        Vx = V[d_start:d_end, d_start:d_end] # Matrix
+        return (mx, Vx)
+    end
 end
 
 """
 Concatenate independent means and (co)variances of separate Gaussians in a unified mean and covariance.
 Additionally returns a vector with the original dimensionalities, so statistics can later be re-separated.
 """
-concatenateGaussianMV(ms::Vector{Float64}, Vs::Vector{Float64}) = (ms, Diagonal(Vs), ones(Int64, length(ms)))
-
-# Concatenate multiple multivariate statistics
-function concatenateGaussianMV(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
+function concatenateGaussianMV(ms::Vector, Vs::Vector)
     # Extract dimensions
-    ds = [length(m_k) for m_k in ms]
-    d_in_tot = sum(ds)
+    ds = [size(m_k) for m_k in ms]
+    dl = intdim.(ds)
+    d_in_tot = sum(dl)
 
     # Initialize concatenated statistics
     m = zeros(d_in_tot)
@@ -414,35 +401,11 @@ function concatenateGaussianMV(ms::Vector{Vector{Float64}}, Vs::Vector{<:Abstrac
     # Construct concatenated statistics
     d_start = 1
     for k = 1:length(ms) # For each inbound statistic
-        d_end = d_start + ds[k] - 1
-
-        m[d_start:d_end] = ms[k]
-        V[d_start:d_end, d_start:d_end] = Vs[k]
-
-        d_start = d_end + 1
-    end
-
-    return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)
-end
-
-# Concatenate multiple mixed statistics
-function concatenateGaussianMV(ms::Vector{Any}, Vs::Vector{Any})
-    # Extract dimensions
-    ds = [length(m_k) for m_k in ms]
-    d_in_tot = sum(ds)
-
-    # Initialize concatenated statistics
-    m = zeros(d_in_tot)
-    V = zeros(d_in_tot, d_in_tot)
-
-    # Construct concatenated statistics
-    d_start = 1
-    for k = 1:length(ms) # For each inbound statistic
-        d_end = d_start + ds[k] - 1
-        if ds[k] == 1
+        d_end = d_start + dl[k] - 1
+        if ds[k] == () # Univariate
             m[d_start] = ms[k]
             V[d_start, d_start] = Vs[k]
-        else
+        else # Multivariate
             m[d_start:d_end] = ms[k]
             V[d_start:d_end, d_start:d_end] = Vs[k]
         end
@@ -455,15 +418,19 @@ end
 """
 Split a vector in chunks of lengths specified by ds.
 """
-function split(vec::Vector, ds::Vector{Int64})
+function split(vec::Vector, ds::Vector{<:Tuple})
     N = length(ds)
-    res = Vector{Vector}(undef, N)
+    res = Vector{Any}(undef, N)
 
     d_start = 1
     for k = 1:N # For each original statistic
-        d_end = d_start + ds[k] - 1
+        d_end = d_start + intdim(ds[k]) - 1
 
-        res[k] = vec[d_start:d_end]
+        if ds[k] == () # Univariate
+            res[k] = vec[d_start] # Return scalar
+        else # Multivariate
+            res[k] = vec[d_start:d_end] # Return vector
+        end
 
         d_start = d_end + 1
     end

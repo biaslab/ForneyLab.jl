@@ -17,7 +17,7 @@ using SpecialFunctions: digamma
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == 1
+    @test dims(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == ()
 end
 
 @testset "vague" begin

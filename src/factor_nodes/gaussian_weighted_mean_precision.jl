@@ -42,10 +42,9 @@ ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianWeightedMeanPrecision
 ProbabilityDistribution(::Type{GaussianWeightedMeanPrecision}; xi::Number=0.0, w::Number=1.0) = ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}(Dict(:xi=>xi, :w=>w))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianWeightedMeanPrecision}; xi=[0.0], w=transpose([1.0])) = ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}(Dict(:xi=>xi, :w=>w))
 
-dims(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = length(dist.params[:xi])
+dims(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = size(dist.params[:xi])
 
 vague(::Type{GaussianWeightedMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
-vague(::Type{GaussianWeightedMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(dims), w=tiny*diageye(dims))
 vague(::Type{GaussianWeightedMeanPrecision}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(dims), w=tiny*diageye(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = cholinv(dist.params[:w])*dist.params[:xi]
@@ -66,6 +65,11 @@ unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecisio
 
 unsafePrecision(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:w]) # unsafe precision
 
+function unsafeMeanPrecision(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
+    v = cholinv(dist.params[:w])
+    return (v*dist.params[:xi], dist.params[:w])
+end
+
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:xi]), deepcopy(dist.params[:w]))
 
 function logPdf(dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}, x)
@@ -75,7 +79,7 @@ end
 
 function logPdf(dist::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, x) 
     m = cholinv(dist.params[:w])*dist.params[:xi]
-    return -0.5*(dims(dist)*log(2pi) - logdet(dist.params[:w]) + transpose(x-m)*dist.params[:w]*(x-m))
+    return -0.5*(dims(dist)[1]*log(2pi) - logdet(dist.params[:w]) + transpose(x-m)*dist.params[:w]*(x-m))
 end
 
 isProper(dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
@@ -86,7 +90,7 @@ function ==(t::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, u::Pro
     isApproxEqual(t.params[:xi], u.params[:xi]) && isApproxEqual(t.params[:w], u.params[:w])
 end
 
-function ==(t::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, u::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:Gaussian}
+function ==(t::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, u::ProbabilityDistribution{V, <:Gaussian}) where V<:VariateType
     (t === u) && return true
     isApproxEqual(t.params[:xi], unsafeWeightedMean(u)) && isApproxEqual(t.params[:w], unsafePrecision(u))
 end
