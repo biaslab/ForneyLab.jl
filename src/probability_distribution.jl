@@ -38,19 +38,10 @@ sample(dist::ProbabilityDistribution, n_samples::Int64) = [sample(dist) for i in
 variateType(::ProbabilityDistribution{V, <:FactorFunction}) where V<:VariateType = V
 
 """Extract VariateType from dims tuple"""
-variateType(::Nothing) = Univariate # Default variate type
-function variateType(dims::Tuple)
-    len = length(dims)
-    if len == 0
-        return Univariate
-    elseif len == 1
-        return Multivariate
-    elseif len == 2
-        return MatrixVariate
-    else
-        error("Variate type for dimensionality $(dims) undefined")
-    end
-end
+variateType(::Nothing) = Univariate # Default
+variateType(::Tuple{}) = Univariate 
+variateType(::Tuple{Int}) = Multivariate 
+variateType(::Tuple{Int, Int}) = MatrixVariate
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
