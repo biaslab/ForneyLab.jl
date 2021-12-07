@@ -2,7 +2,6 @@ module NonlinearSamplingTest
 
 using Test
 using Random
-# using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, SPNonlinearSOutNFactorX, SPNonlinearSInFactorX, MNonlinearSInGX, gradientOptimization
