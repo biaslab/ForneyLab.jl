@@ -32,13 +32,13 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     nothing_inputs = 0
     factorfunction_input = false
     gaussian_inputs = 0
-    if matches(input_types[1], Message{FactorFunction})
+    if input_types[1] << Message{FactorFunction}
         factorfunction_input = true
     end
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -56,11 +56,11 @@ function isApplicable(::Type{SPNonlinearSOutNFactorX}, input_types::Vector{<:Typ
     factorNode_input = false
     gaussian_inputs = 0
     for input_type in input_types[2:end]
-        if matches(input_type, Message{SampleList})
+        if input_type << Message{SampleList}
             return false
-        elseif matches(input_type, Message{FactorNode})
+        elseif input_type << Message{FactorNode}
             factorNode_input += 1
-            if matches(input_type, Message{Gaussian})
+            if input_type << Message{Gaussian}
                 gaussian_inputs += 1
             end
         else
@@ -82,19 +82,19 @@ function isApplicable(::Type{SPNonlinearSInFactorX}, input_types::Vector{<:Type}
     factorfunction_input = false
     factorNode_input = 0
     gaussian_inputs = 0
-    if matches(input_types[1], Message{FactorFunction})
+    if input_types[1] << Message{FactorFunction}
         factorfunction_input = true
     end
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{PointMass})
+        elseif input_type << Message{PointMass}
             return false
-        elseif matches(input_type, Message{SampleList})
+        elseif input_type << Message{SampleList}
             return false
-        elseif matches(input_type, Message{FactorNode})
+        elseif input_type << Message{FactorNode}
             factorNode_input += 1
-            if matches(input_type, Message{Gaussian})
+            if input_type << Message{Gaussian}
                 gaussian_inputs += 1
             end
         else

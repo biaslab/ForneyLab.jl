@@ -39,8 +39,18 @@ variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:Facto
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
-matches(Ta::Type{Pa}, Tb::Type{Pb}) where {Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution} = (Pa<:Pb)
-matches(::Type{Nothing}, ::Type{T}) where T<:ProbabilityDistribution = false
+"""Parametric ineritance rule for ProbabilityDistribution, uses << symbol for ease of notation"""
+# Parametric inheritance from nonparametric ProbabilityDistribution (where clauses are required for signature matching)
+<<(::Type{ProbabilityDistribution}, ::Type{ProbabilityDistribution}) = true
+<<(::Type{ProbabilityDistribution{Va}}, ::Type{ProbabilityDistribution}) where Va<:VariateType = true
+<<(::Type{ProbabilityDistribution{Va, Fa}}, ::Type{ProbabilityDistribution}) where {Va<:VariateType, Fa<:FactorFunction} = true
+
+# Parametric inheritance from ProbabilityDistribution{<:VariateType}
+<<(::Type{ProbabilityDistribution{Va}}, ::Type{ProbabilityDistribution{Vb}}) where {Va<:VariateType, Vb<:VariateType} = (Va==Vb)
+<<(::Type{ProbabilityDistribution{Va, Fa}}, ::Type{ProbabilityDistribution{Vb}}) where {Va<:VariateType, Vb<:VariateType, Fa<:FactorFunction} = (Va==Vb)
+
+# Parametric inheritance from ProbabilityDistribution{<:VariateType, <:FactorFunction}
+<<(::Type{ProbabilityDistribution{Va, Fa}}, ::Type{ProbabilityDistribution{Vb, Fb}}) where {Va<:VariateType, Vb<:VariateType, Fa<:FactorFunction, Fb<:FactorFunction} = (Va==Vb) && (Fa<:Fb)
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 mode(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMode(dist) : error("mode($(dist)) is undefined because the distribution is improper.")
