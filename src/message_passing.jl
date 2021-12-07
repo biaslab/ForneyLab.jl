@@ -34,15 +34,23 @@ function show(io::IO, msg::Message)
 end
 
 """Special inheritance rules for parametric Message types"""
+matches(::Type, ::Type) = false # In general, types don't match
 matches(::Type{T}, ::Type{T}) where T<:Message = true
-matches(::Type{Message{F, V}}, ::Type{Message}) where {F<:FactorFunction, V<:VariateType} = true
-matches(::Type{Message{F}}, ::Type{Message}) where {F<:FactorFunction} = true
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
-matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
-matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
-matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
-matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
+matches(::Type{Message{<:FactorFunction, <:VariateType}}, ::Type{Message}) = true
+# matches(::Type{Message{<:FactorFunction}}, ::Type{Message}) = true
+matches(::Type{Message{Fa, V}}, ::Type{Message{Fb, V}}) where {Fa<:FactorFunction, Fb<:FactorFunction, V<:VariateType} = (Fa<:Fb)
+matches(::Type{Message{Fa, <:VariateType}}, ::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
+# matches(::Type{Message{Fa}}, ::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
+
+# matches(::Type{T}, ::Type{T}) where T<:Message = true
+# matches(::Type{Message{F, V}}, ::Type{Message}) where {F<:FactorFunction, V<:VariateType} = true
+# matches(::Type{Message{F}}, ::Type{Message}) where {F<:FactorFunction} = true
+# matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
+# matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
+# matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
+# matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
+# matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
+# matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
 
 function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorFunction, var_t<:VariateType, fam_u<:FactorFunction, var_u<:VariateType}
     (fam_t == fam_u) || return false
