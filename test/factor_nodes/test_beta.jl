@@ -2,7 +2,7 @@ module BetaTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDist
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDistribution
 using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, SPBetaOutMCNMM, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
@@ -45,7 +45,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0)
     η = naturalParams(d)
-    s = standardDist(Univariate, Beta, η=η)
+    s = standardDistribution(Univariate, Beta, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
     @test d.params[:b] == s.params[:b]
 

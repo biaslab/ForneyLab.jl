@@ -2,7 +2,7 @@ module GaussianTest
 
 using Test
 using ForneyLab
-using ForneyLab: naturalParams, standardDist
+using ForneyLab: naturalParams, standardDistribution
 using LinearAlgebra: Diagonal
 
 @testset "sample" begin
@@ -32,7 +32,7 @@ end
     # Univariate
     d = ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=5.0)
     η = naturalParams(d)
-    s = standardDist(Univariate, Gaussian, η=η)
+    s = standardDistribution(Univariate, Gaussian, η=η)
     @test d.params[:xi] == s.params[:xi] # Test conversion consistency
     @test d.params[:w] == s.params[:w]
 
@@ -44,7 +44,7 @@ end
     # Multivariate
     d = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0, 5.0], w=[2.0 0.1; 0.1 3.0])
     η = naturalParams(d)
-    s = standardDist(Univariate, Gaussian, η=η)
+    s = standardDistribution(Univariate, Gaussian, η=η)
     @test d.params[:xi] == s.params[:xi] # Test conversion consistency
     @test d.params[:w] == s.params[:w]
 

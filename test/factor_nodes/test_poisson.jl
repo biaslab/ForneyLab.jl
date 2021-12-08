@@ -2,7 +2,7 @@ module PoissonTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, naturalParams, standardDist
+using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, naturalParams, standardDistribution
 using ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin
@@ -49,7 +49,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, Poisson, l=2.0)
     η = naturalParams(d)
-    s = standardDist(Univariate, Poisson, η=η)
+    s = standardDistribution(Univariate, Poisson, η=η)
     @test d.params[:l] == s.params[:l] # Test conversion consistency
 
     x = [1, 4, 8]

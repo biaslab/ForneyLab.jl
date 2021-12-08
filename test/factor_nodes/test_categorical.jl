@@ -2,7 +2,7 @@ module CategoricalTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDist
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDistribution
 using ForneyLab: SPCategoricalOutNP, VBCategoricalOut, VBCategoricalIn1
 using SparseArrays: SparseVector, spzeros
 
@@ -51,7 +51,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8])
     η = naturalParams(d)
-    s = standardDist(Univariate, Categorical, η=η)
+    s = standardDistribution(Univariate, Categorical, η=η)
     @test d.params[:p] == s.params[:p] # Test conversion consistency
 
     x = [[0.0, 1.0], [1.0, 0.0]]

@@ -62,7 +62,7 @@ sample(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1.0*(rand() < dis
 
 naturalParams(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [log(dist.params[:p]/(1.0 - dist.params[:p]))]
 
-standardDist(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = ProbabilityDistribution(V, F, p=exp(η[1])/(1.0 + exp(η[1])))
+standardDistribution(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = ProbabilityDistribution(V, F, p=exp(η[1])/(1.0 + exp(η[1])))
 
 logNormalizer(::Type{Univariate}, ::Type{Bernoulli}; η::Vector) = log(1.0 + exp(η[1]))
 

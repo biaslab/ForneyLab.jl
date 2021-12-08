@@ -2,7 +2,7 @@ module LogNormalTest
 
 using Test
 using ForneyLab
-using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims, naturalParams, standardDist
+using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims, naturalParams, standardDistribution
 using ForneyLab: SPLogNormalOutNPP, VBLogNormalOut
 
 @testset "dims" begin
@@ -39,7 +39,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0)
     η = naturalParams(d)
-    s = standardDist(Univariate, LogNormal, η=η)
+    s = standardDistribution(Univariate, LogNormal, η=η)
     @test d.params[:m] == s.params[:m] # Test conversion consistency
     @test d.params[:s] == s.params[:s]
 

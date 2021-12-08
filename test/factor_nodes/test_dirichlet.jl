@@ -2,7 +2,7 @@ module DirichletTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims, naturalParams, standardDist
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims, naturalParams, standardDistribution
 using ForneyLab: SPDirichletOutNP, VBDirichletOut, VBDirichletIn1
 using SpecialFunctions: digamma
 
@@ -58,7 +58,7 @@ end
     # Multivariate
     d = ProbabilityDistribution(Multivariate, Dirichlet, a=[1.5, 3.0, 5.0])
     η = naturalParams(d)
-    s = standardDist(Multivariate, Dirichlet, η=η)
+    s = standardDistribution(Multivariate, Dirichlet, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
 
     x = [[0.2, 0.6, 0.2], [0.1, 0.4, 0.5]]
@@ -69,7 +69,7 @@ end
     # MatrixVariate
     d = ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.5 3.0; 5.0 4.0; 4.0 6.0])
     η = naturalParams(d)
-    s = standardDist(MatrixVariate, Dirichlet, η=η)
+    s = standardDistribution(MatrixVariate, Dirichlet, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
 
     x = [[0.2 0.1; 0.6 0.4; 0.2 0.5], [0.1 0.4; 0.5 0.1; 0.4 0.5]]

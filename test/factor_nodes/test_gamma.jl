@@ -2,7 +2,7 @@ module GammaTest
 
 using Test
 using ForneyLab
-using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims, naturalParams, standardDist
+using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims, naturalParams, standardDistribution
 using ForneyLab: SPGammaOutNPP, VBGammaOut, VBGammaA, VBGammaB
 
 @testset "dims" begin
@@ -28,7 +28,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=5.0)
     η = naturalParams(d)
-    s = standardDist(Univariate, Gamma, η=η)
+    s = standardDistribution(Univariate, Gamma, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
     @test d.params[:b] == s.params[:b]
 

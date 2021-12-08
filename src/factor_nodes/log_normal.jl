@@ -61,7 +61,7 @@ sample(dist::ProbabilityDistribution{Univariate, LogNormal}) = exp(dist.params[:
 
 naturalParams(dist::ProbabilityDistribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
 
-standardDist(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = ProbabilityDistribution(V, F, m=-(0.5/η[2])*η[1], s=-0.5/η[2])
+standardDistribution(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = ProbabilityDistribution(V, F, m=-(0.5/η[2])*η[1], s=-0.5/η[2])
 
 logNormalizer(::Type{Univariate}, ::Type{LogNormal}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
 

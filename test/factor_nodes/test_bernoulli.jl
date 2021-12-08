@@ -2,7 +2,7 @@ module BernoulliTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDist
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDistribution
 using ForneyLab: SPBernoulliOutNP, SPBernoulliIn1PN, SPBernoulliOutNB, VBBernoulliOut, VBBernoulliIn1
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
@@ -40,7 +40,7 @@ end
 @testset "natural parameters" begin
     d = ProbabilityDistribution(Univariate, Bernoulli, p=0.2)
     η = naturalParams(d)
-    s = standardDist(Univariate, Bernoulli, η=η)
+    s = standardDistribution(Univariate, Bernoulli, η=η)
     @test d.params[:p] == s.params[:p] # Test conversion consistency
     
     x = [0.0, 1.0]
