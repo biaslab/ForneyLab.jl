@@ -2,7 +2,7 @@ module DirichletTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims, naturalParams, standardDist
 using ForneyLab: SPDirichletOutNP, VBDirichletOut, VBDirichletIn1
 using SpecialFunctions: digamma
 
@@ -53,6 +53,31 @@ end
     @test isapprox(logPdf(ProbabilityDistribution(Multivariate, Dirichlet, a=[0.2,3.0,1.5]),[2,3,7]), 3.2556382883760024)
     @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[0.2 1.4; 3.0 1.8]),[2 7; 3 3]), 3.0442561618507087)
 end
+
+@testset "natural parameters" begin
+    # Multivariate
+    d = ProbabilityDistribution(Multivariate, Dirichlet, a=[1.5, 3.0, 5.0])
+    η = naturalParams(d)
+    s = standardDist(Multivariate, Dirichlet, η=η)
+    @test d.params[:a] == s.params[:a] # Test conversion consistency
+
+    x = [[0.2, 0.6, 0.2], [0.1, 0.4, 0.5]]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Multivariate, Dirichlet, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
+
+    # MatrixVariate
+    d = ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.5 3.0; 5.0 4.0; 4.0 6.0])
+    η = naturalParams(d)
+    s = standardDist(MatrixVariate, Dirichlet, η=η)
+    @test d.params[:a] == s.params[:a] # Test conversion consistency
+
+    x = [[0.2 0.1; 0.6 0.4; 0.2 0.5], [0.1 0.4; 0.5 0.1; 0.4 0.5]]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(MatrixVariate, Dirichlet, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
+end
+
 
 #-------------
 # Update rules

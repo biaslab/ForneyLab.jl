@@ -57,11 +57,11 @@ sample(dist::ProbabilityDistribution{Univariate, Poisson}) = poisinvcdf(dist.par
 
 naturalParams(dist::ProbabilityDistribution{Univariate, Poisson}) = [log(dist.params[:l])]
 
-standardDist(V::Type{VariateType}, F::Type{Poisson}; η::Vector) = ProbabilityDistribution(V, F, l=exp(η[1]))
+standardDist(V::Type{Univariate}, F::Type{Poisson}; η::Vector) = ProbabilityDistribution(V, F, l=exp(η[1]))
 
-logNormalizer(::Type{VariateType}, ::Type{Poisson}; η::Vector) = exp(η[1])
+logNormalizer(::Type{Univariate}, ::Type{Poisson}; η::Vector) = exp(η[1])
 
-function logPdf(V::Type{VariateType}, F::Type{Poisson}, x; η::Vector)
+function logPdf(V::Type{Univariate}, F::Type{Poisson}, x; η::Vector)
     h(x) = 1/factorial(x)
     ϕ(x) = [x]
     return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)

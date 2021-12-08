@@ -105,13 +105,13 @@ end
 
 function naturalParams(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    return [-0.5*cholinv(dist.params[:v]), 0.5*(dist.params[:nu]-d-1)] # Returns vector of matrix and scalar
+    return [-0.5*pinv(dist.params[:v]), 0.5*(dist.params[:nu]-d-1)] # Returns vector of matrix and scalar; η[1] is not positive definite
 end
 
 function standardDist(V::Type{MatrixVariate}, F::Type{Wishart}; η::Vector)
     d = size(η[1])[1]
     nu = 2*η[2] + d + 1
-    S = -0.5*cholinv(η[1])
+    S = -0.5*pinv(η[1])
     return ProbabilityDistribution(V, F, v=S, nu=nu)
 end
 

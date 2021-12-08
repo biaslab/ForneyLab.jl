@@ -89,7 +89,7 @@ logNormalizer(::Type{Univariate}, ::Type{Gamma}; η::Vector) = loggamma(η[1]+1.
 function logPdf(V::Type{Univariate}, F::Type{Gamma}, x; η::Vector)
     h(x) = 1
     ϕ(x) = [log(x), x]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η)
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F, η=η)
 end
 
 # Entropy functional

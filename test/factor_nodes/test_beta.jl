@@ -2,7 +2,7 @@ module BetaTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDist
 using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, SPBetaOutMCNMM, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
@@ -40,6 +40,19 @@ end
     @test ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0) * ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution(Univariate, PointMass, m=0.2)
     @test ProbabilityDistribution(Univariate, PointMass, m=0.2) * ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0) == ProbabilityDistribution(Univariate, PointMass, m=0.2)
     @test_throws Exception ProbabilityDistribution(Univariate, PointMass, m=-1.0) * ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0)
+end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0)
+    η = naturalParams(d)
+    s = standardDist(Univariate, Beta, η=η)
+    @test d.params[:a] == s.params[:a] # Test conversion consistency
+    @test d.params[:b] == s.params[:b]
+
+    x = [0.1, 0.6, 0.9]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Univariate, Beta, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 

@@ -122,13 +122,13 @@ end
 
 function naturalParams(dist::ProbabilityDistribution{<:VariateType, <:Gaussian})
     (xi, w) = unsafeWeightedMeanPrecision(dist)
-    return [xi, -0.5*w] # Returns vector and matrix for Multivariate to retain dimensionality info
+    return [xi, -0.5*w] # Returns vector and matrix for Multivariate to retain dimensionality info; η[2] is not positive definite
 end
 
 standardDist(::Type{V}, ::Type{<:Gaussian}; η::Vector) where V<:VariateType = ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=η[1], w=-2*η[2])
 
 logNormalizer(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
-logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector) = -0.25*η[1]'*cholinv(η[2])*η[1] - 0.5*logdet(-2*η[2])
+logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector) = -0.25*η[1]'*pinv(η[2])*η[1] - 0.5*logdet(-2*η[2])
 
 function logPdf(V::Type{Univariate}, ::Type{F}, x; η::Vector) where F<:Gaussian
     h(x) = 1/sqrt(2*pi)
