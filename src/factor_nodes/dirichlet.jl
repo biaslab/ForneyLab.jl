@@ -114,6 +114,25 @@ function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     return smpl
 end
 
+naturalParams(dist::ProbabilityDistribution{<:VariateType, Dirichlet}) = dist.params[:a] .- 1.0 # Returns matrix for MatrixVariate; variant 2 of https://en.wikipedia.org/wiki/Exponential_family
+
+standardDist(::Type{V}, ::Type{Dirichlet}; η::Union{Vector, Matrix}) where V<:VariateType = ProbabilityDistribution(V, Dirichlet, a=η.+1.0) # Size of η holds dimensionality information
+
+logNormalizer(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = sum(loggamma.(η.+1.0)) - loggamma(sum(η.+1.0))
+logNormalizer(::Type{MatrixVariate}, ::Type{Dirichlet}; η::Matrix) = sum(sum(loggamma.(η.+1.0))) - sum(loggamma.(sum(η.+1.0, dims=1)))
+
+function logPdf(V::Type{Multivariate}, F::Type{Dirichlet}, x; η::Vector)
+    h(x) = 1
+    ϕ(x) = log.(x)
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
+end
+
+function logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x; η::Matrix)
+    h(x) = 1
+    ϕ(x) = log.(vec(x))
+    return log(h(x)) + ϕ(x)'*vec(η) - logNormalizer(V, F; η=η)
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])

@@ -83,6 +83,18 @@ end
 
 sample(dist::ProbabilityDistribution{Univariate, Beta}) = betainvcdf(dist.params[:a], dist.params[:b], rand())
 
+naturalParams(dist::ProbabilityDistribution{Univariate, Beta}) = [dist.params[:a]-1.0, dist.params[:b]-1.0] # Variant 2 of https://en.wikipedia.org/wiki/Exponential_family
+
+standardDist(V::Type{Univariate}, F::Type{Beta}; η::Vector) = ProbabilityDistribution(V, F, a=η[1]+1.0, b=η[2]+1.0)
+
+logNormalizer(::Type{Univariate}, ::Type{Beta}; η::Vector) = loggamma(η[1]+1) + loggamma(η[2]+1) - loggamma(η[1]+η[2]+2)
+
+function logPdf(V::Type{Univariate}, F::Type{Beta}, x; η::Vector)
+    h(x) = 1
+    ϕ(x) = [log(x), log(1-x)]
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})
     labsbeta(dist.params[:a], dist.params[:b]) -

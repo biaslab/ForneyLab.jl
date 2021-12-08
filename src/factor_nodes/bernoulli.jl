@@ -60,6 +60,21 @@ logPdf(dist::ProbabilityDistribution{Univariate, Bernoulli}, x) = x*log(dist.par
 
 sample(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1.0*(rand() < dist.params[:p])
 
+naturalParams(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [log(dist.params[:p]/(1.0 - dist.params[:p]))]
+
+standardDist(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = ProbabilityDistribution(V, F, p=exp(η[1])/(1.0 + exp(η[1])))
+
+logNormalizer(::Type{Univariate}, ::Type{Bernoulli}; η::Vector) = log(1.0 + exp(η[1]))
+
+# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
+# precludes the usage of logPdf functions previously defined. Below function is
+# meant to be used with Zygote.
+function logPdf(V::Type{Univariate}, F::Type{Bernoulli}, x; η::Vector)
+    h(x) = 1
+    ϕ(x) = [x]
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
+end
+
 function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
                 y::ProbabilityDistribution{Univariate, Bernoulli},
                 z::ProbabilityDistribution{Univariate, Bernoulli}=ProbabilityDistribution(Univariate, Bernoulli, p=0.5))

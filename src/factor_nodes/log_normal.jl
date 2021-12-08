@@ -57,8 +57,18 @@ unsafeLogCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params
 logPdf(dist::ProbabilityDistribution{Univariate, LogNormal},x) = -0.5*(log(2pi)+log(dist.params[:s])) -log(x) -0.5*(log(x)-dist.params[:m])^2/dist.params[:s]
 isProper(dist::ProbabilityDistribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
 
-function sample(dist::ProbabilityDistribution{Univariate, LogNormal})
-    return exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
+sample(dist::ProbabilityDistribution{Univariate, LogNormal}) = exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
+
+naturalParams(dist::ProbabilityDistribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
+
+standardDist(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = ProbabilityDistribution(V, F, m=s*η[1], s=-0.5/η[2])
+
+logNormalizer(::Type{Univariate}, ::Type{LogNormal}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+
+function logPdf(V::Type{Univariate}, F::Type{LogNormal}, x; η::Vector)
+    h(x) = 1/(sqrt(2pi)*x)
+    ϕ(x) = [log(x), log(x)^2]
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F, η=η)
 end
 
 """

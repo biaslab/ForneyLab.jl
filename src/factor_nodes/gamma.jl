@@ -80,6 +80,18 @@ end
 
 sample(dist::ProbabilityDistribution{Univariate, Gamma}) = gammainvcdf(dist.params[:a], 1/dist.params[:b], rand())
 
+naturalParams(dist::ProbabilityDistribution{Univariate, Gamma}) = [dist.params[:a]-1.0, -dist.params[:b]]
+
+standardDist(V::Type{Univariate}, F::Type{Gamma}; η::Vector) = ProbabilityDistribution(V, F, a=η[1]+1.0, b=-η[2])
+
+logNormalizer(::Type{Univariate}, ::Type{Gamma}; η::Vector) = loggamma(η[1]+1.0) - (η[1]+1.0)*log(-η[2])
+
+function logPdf(V::Type{Univariate}, F::Type{Gamma}, x; η::Vector)
+    h(x) = 1
+    ϕ(x) = [log(x), x]
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η)
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gamma})
     labsgamma(dist.params[:a]) -

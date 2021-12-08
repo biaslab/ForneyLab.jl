@@ -90,6 +90,18 @@ function sample(dist::ProbabilityDistribution{Univariate, Categorical})
     return x
 end
 
+naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = [log.(dist.params[:p][1:end-1]./dist.params[:p][end]); 0] # Variant 3 of https://en.wikipedia.org/wiki/Exponential_family
+
+standardDist(V::Type{Univariate}, F::Type{Categorical}; η::Vector) = ProbabilityDistribution(V, F, p=exp.(η)./sum(exp.(η)))
+
+logNormalizer(::Type{Univariate}, ::Type{Categorical}; η::Vector) = log(sum(exp.(η)))
+
+function logPdf(V::Type{Univariate}, F::Type{Categorical}, x; η::Vector)
+    h(x) = 1
+    ϕ(x) = x
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
+end
+
 function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 y::ProbabilityDistribution{Univariate, Categorical},
                 z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(size(x.params[:p]))./length(x.params[:p])))

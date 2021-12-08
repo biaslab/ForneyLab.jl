@@ -55,6 +55,18 @@ logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, x) = x*log(dist.param
 
 sample(dist::ProbabilityDistribution{Univariate, Poisson}) = poisinvcdf(dist.params[:l], rand())
 
+naturalParams(dist::ProbabilityDistribution{Univariate, Poisson}) = [log(dist.params[:l])]
+
+standardDist(V::Type{VariateType}, F::Type{Poisson}; η::Vector) = ProbabilityDistribution(V, F, l=exp(η[1]))
+
+logNormalizer(::Type{VariateType}, ::Type{Poisson}; η::Vector) = exp(η[1])
+
+function logPdf(V::Type{VariateType}, F::Type{Poisson}, x; η::Vector)
+    h(x) = 1/factorial(x)
+    ϕ(x) = [x]
+    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
+end
+
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
 # @ref https://arxiv.org/pdf/1708.06394.pdf
