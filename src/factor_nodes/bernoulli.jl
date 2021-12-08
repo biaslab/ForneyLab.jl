@@ -66,14 +66,7 @@ standardDistribution(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = Prob
 
 logNormalizer(::Type{Univariate}, ::Type{Bernoulli}; η::Vector) = log(1.0 + exp(η[1]))
 
-# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
-# precludes the usage of logPdf functions previously defined. Below function is
-# meant to be used with Zygote.
-function logPdf(V::Type{Univariate}, F::Type{Bernoulli}, x; η::Vector)
-    h(x) = 1
-    ϕ(x) = [x]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Univariate}, F::Type{Bernoulli}, x::Number; η::Vector) = [x]'*η - logNormalizer(V, F; η=η)
 
 function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
                 y::ProbabilityDistribution{Univariate, Bernoulli},

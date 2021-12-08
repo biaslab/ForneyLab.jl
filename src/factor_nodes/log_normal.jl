@@ -65,11 +65,7 @@ standardDistribution(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = Prob
 
 logNormalizer(::Type{Univariate}, ::Type{LogNormal}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
 
-function logPdf(V::Type{Univariate}, F::Type{LogNormal}, x; η::Vector)
-    h(x) = 1/(sqrt(2pi)*x)
-    ϕ(x) = [log(x), log(x)^2]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F, η=η)
-end
+logPdf(V::Type{Univariate}, F::Type{LogNormal}, x::Number; η::Vector) = -0.5*log(2pi) - log(x) + [log(x), log(x)^2]'*η - logNormalizer(V, F, η=η)
 
 """
 Gamma approximation to the log-normal distribution using Laplace's method

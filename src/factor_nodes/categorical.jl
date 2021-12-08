@@ -96,11 +96,7 @@ standardDistribution(V::Type{Univariate}, F::Type{Categorical}; η::Vector) = Pr
 
 logNormalizer(::Type{Univariate}, ::Type{Categorical}; η::Vector) = log(sum(exp.(η)))
 
-function logPdf(V::Type{Univariate}, F::Type{Categorical}, x; η::Vector)
-    h(x) = 1
-    ϕ(x) = x
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Univariate}, F::Type{Categorical}, x::Vector; η::Vector) = x'*η - logNormalizer(V, F; η=η)
 
 function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 y::ProbabilityDistribution{Univariate, Categorical},

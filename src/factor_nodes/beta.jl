@@ -89,11 +89,7 @@ standardDistribution(V::Type{Univariate}, F::Type{Beta}; η::Vector) = Probabili
 
 logNormalizer(::Type{Univariate}, ::Type{Beta}; η::Vector) = loggamma(η[1]+1) + loggamma(η[2]+1) - loggamma(η[1]+η[2]+2)
 
-function logPdf(V::Type{Univariate}, F::Type{Beta}, x; η::Vector)
-    h(x) = 1
-    ϕ(x) = [log(x), log(1-x)]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Univariate}, F::Type{Beta}, x::Number; η::Vector) = [log(x), log(1-x)]'*η - logNormalizer(V, F; η=η)
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})

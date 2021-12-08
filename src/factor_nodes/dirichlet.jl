@@ -121,17 +121,8 @@ standardDistribution(::Type{V}, ::Type{Dirichlet}; η::Union{Vector, Matrix}) wh
 logNormalizer(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = sum(loggamma.(η.+1.0)) - loggamma(sum(η.+1.0))
 logNormalizer(::Type{MatrixVariate}, ::Type{Dirichlet}; η::Matrix) = sum(sum(loggamma.(η.+1.0))) - sum(loggamma.(sum(η.+1.0, dims=1)))
 
-function logPdf(V::Type{Multivariate}, F::Type{Dirichlet}, x; η::Vector)
-    h(x) = 1
-    ϕ(x) = log.(x)
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
-
-function logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x; η::Matrix)
-    h(x) = 1
-    ϕ(x) = log.(vec(x))
-    return log(h(x)) + ϕ(x)'*vec(η) - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Multivariate}, F::Type{Dirichlet}, x::Vector; η::Vector) = log.(x)'*η - logNormalizer(V, F; η=η)
+logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x::Matrix; η::Matrix) = log.(vec(x))'*vec(η) - logNormalizer(V, F; η=η)
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})

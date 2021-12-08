@@ -130,18 +130,8 @@ standardDistribution(::Type{V}, ::Type{<:Gaussian}; η::Vector) where V<:Variate
 logNormalizer(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
 logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector) = η[1]'*cholinv(-4*η[2])*η[1] - 0.5*logdet(-2*η[2])
 
-function logPdf(V::Type{Univariate}, ::Type{F}, x; η::Vector) where F<:Gaussian
-    h(x) = 1/sqrt(2*pi)
-    ϕ(x) = [x, x^2]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
-
-function logPdf(V::Type{Multivariate}, ::Type{F}, x; η::Vector) where F<:Gaussian # η is vector of vector and matrix
-    d = length(η[1])
-    h(x) = (2*pi)^(-0.5*d)
-    ϕ(x) = [x; vec(x*x')]
-    return log(h(x)) + ϕ(x)'*[η[1]; vec(η[2])] - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Univariate}, ::Type{F}, x::Number; η::Vector) where F<:Gaussian = -0.5*log(2pi) + [x, x^2]'*η - logNormalizer(V, F; η=η)
+logPdf(V::Type{Multivariate}, ::Type{F}, x::Vector; η::Vector) where F<:Gaussian = -0.5*length(η[1])*log(2pi) + [x; vec(x*x')]'*[η[1]; vec(η[2])] - logNormalizer(V, F; η=η)
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian

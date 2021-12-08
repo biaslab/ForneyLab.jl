@@ -61,11 +61,7 @@ standardDistribution(V::Type{Univariate}, F::Type{Poisson}; η::Vector) = Probab
 
 logNormalizer(::Type{Univariate}, ::Type{Poisson}; η::Vector) = exp(η[1])
 
-function logPdf(V::Type{Univariate}, F::Type{Poisson}, x; η::Vector)
-    h(x) = 1/factorial(x)
-    ϕ(x) = [x]
-    return log(h(x)) + ϕ(x)'*η - logNormalizer(V, F; η=η)
-end
+logPdf(V::Type{Univariate}, F::Type{Poisson}, x::Number; η::Vector) = -logfactorial(x) + [x]'*η - logNormalizer(V, F; η=η)
 
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
