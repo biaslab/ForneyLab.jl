@@ -41,7 +41,7 @@ format(dist::ProbabilityDistribution{Univariate, Gamma}) = "$(slug(Gamma))(a=$(f
 ProbabilityDistribution(::Type{Univariate}, ::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
 ProbabilityDistribution(::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
 
-dims(dist::ProbabilityDistribution{Univariate, Gamma}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Gamma}) = ()
 
 vague(::Type{Gamma}) = ProbabilityDistribution(Univariate, Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
 

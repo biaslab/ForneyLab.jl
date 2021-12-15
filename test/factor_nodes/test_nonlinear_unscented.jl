@@ -16,6 +16,7 @@ g_inv(y::Vector{Float64}) = sqrt.(y .+ 5.0)
 
 h(x::Float64, y::Float64) = x^2 - y
 h(x::Vector{Float64}, y::Vector{Float64}) = x.^2 .- y
+h(x::Float64, y::Vector{Float64}) = x^2 .- y
 h_inv_x(z::Float64, y::Float64) = sqrt(z + y)
 h_inv_x(z::Vector{Float64}, y::Vector{Float64}) = sqrt.(z .+ y)
 
@@ -65,6 +66,12 @@ end
     @test m_tilde == [-1.000000000174623, -1.000000000174623]
     @test V_tilde == [5.000002998916898 1.9999989990901668; 1.999998999031959 5.000002998946002]
     @test C_tilde == [0.0 0.0; 0.0 0.0; -2.9999999999998863 0.0; 0.0 -2.9999999999998863]
+
+    # Mixed variate inbounds
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics([m_x, [m_y, m_y]], [v_x, Diagonal([v_y, v_y])], h)
+    @test m_tilde == [-1.0, -1.0]
+    @test V_tilde == [5.000002000015229 2.000002000015229; 2.000002000015229 5.000002000015229]
+    @test C_tilde == [0.0 0.0; -3.0000000000001137 0.0; 0.0 -3.0000000000001137]
 end
 
 @testset "smoothRTSMessage" begin
@@ -79,22 +86,26 @@ end
 
 @testset "collectStatistics" begin
     @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == ([0.0, 2.0], [1.0, 3.0])
-    @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)), nothing, Message(Univariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == ([[0.0], [2.0]], [mat(1.0), mat(3.0)])
+    @test collectStatistics(Message(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == ([[0.0], [2.0]], [mat(1.0), mat(3.0)])
+    @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == ([0.0, [2.0]], [1.0, mat(3.0)])
 end
 
 @testset "marginalizeGaussianMV" begin
-    @test marginalizeGaussianMV(Univariate, [0.0, 1.0], [2.0 0.5; 0.5 3.0], ones(Int64, 2), 1) == (0.0, 2.0)
-    @test marginalizeGaussianMV(Multivariate, [0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [1, 2], 2) == ([1.0, 2.0], [3.0 0.0; 0.0 4.0])
+    @test marginalizeGaussianMV([0.0, 1.0], [2.0 0.5; 0.5 3.0], [(), ()], 1) == (0.0, 2.0) # Univariate
+    @test marginalizeGaussianMV([0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [(), (2,)], 1) == (0.0, 2.0) # Univariate
+    @test marginalizeGaussianMV([0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [(), (2,)], 2) == ([1.0, 2.0], [3.0 0.0; 0.0 4.0]) # Multivariate
 end
 
 @testset "concatenateGaussianMV" begin
-    @test concatenateGaussianMV([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) == ([1.0, 2.0, 3.0], Diagonal([4.0, 5.0, 6.0]), ones(Int64, 3))
-    @test concatenateGaussianMV([[1.0], [2.0, 3.0]], [mat(4.0), Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [1, 2])
-    @test concatenateGaussianMV([1.0, [2.0, 3.0]], [4.0, Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [1, 2])
+    @test concatenateGaussianMV([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) == ([1.0, 2.0, 3.0], Diagonal([4.0, 5.0, 6.0]), [(), (), ()])
+    @test concatenateGaussianMV([[1.0], [2.0, 3.0]], [mat(4.0), Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [(1,), (2,)])
+    @test concatenateGaussianMV([1.0, [2.0, 3.0]], [4.0, Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [(), (2,)])
 end
 
 @testset "split" begin
-    @test split([1.0, 2.0, 3.0], [1, 2]) == [[1.0], [2.0, 3.0]]
+    @test split([1.0, 2.0], [(), ()]) == [1.0, 2.0]
+    @test split([1.0, 2.0, 3.0, 4.0], [(2,), (2,)]) == [[1.0, 2.0], [3.0, 4.0]]
+    @test split([1.0, 2.0, 3.0], [(), (2,)]) == [1.0, [2.0, 3.0]]
 end
 
 @testset "requiresBreaker and breakerParameters" begin
@@ -173,7 +184,7 @@ end
     @test isApplicable(SPNonlinearUTOutNGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
     @test !isApplicable(SPNonlinearUTOutNGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
 
-    @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.9999999997671694, v=67.00000899797305)
+    @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.9999999997671694, v=67.00000899657607)
     @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.9999999997671694], v=mat(67.00000899657607))
 end
 
@@ -203,7 +214,7 @@ end
     @test isApplicable(SPNonlinearUTInGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
 
     # Without given inverse
-    @test ruleSPNonlinearUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=6.666665554160243, w=2.6666662217033044)
+    @test ruleSPNonlinearUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=6.666665554127903, w=2.6666662216903676)
     @test ruleSPNonlinearUTInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[6.666665554127903], w=mat(2.666666221690368))
 
     # With given inverse

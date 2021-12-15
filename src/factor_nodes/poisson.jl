@@ -41,7 +41,7 @@ format(dist::ProbabilityDistribution{Univariate, Poisson}) = "$(slug(Poisson))(l
 ProbabilityDistribution(::Type{Univariate}, ::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
 ProbabilityDistribution(::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
 
-dims(dist::ProbabilityDistribution{Univariate, Poisson}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Poisson}) = ()
 
 vague(::Type{Poisson}) = ProbabilityDistribution(Univariate, Poisson, l=huge)
 

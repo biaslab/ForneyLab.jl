@@ -54,7 +54,7 @@ function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Multiv
     (m_mean, v_mean) = unsafeMeanCov(dist_mean)
     (m_out, v_out) = unsafeMeanCov(dist_out)
 
-    Message(MatrixVariate, Wishart, v=cholinv( v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)' ), nu=dims(dist_out) + 2.0) 
+    Message(MatrixVariate, Wishart, v=cholinv( v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)' ), nu=dims(dist_out)[1] + 2.0) 
 end
 
 ruleVBGaussianMeanPrecisionOut( dist_out::Any,
@@ -63,21 +63,21 @@ ruleVBGaussianMeanPrecisionOut( dist_out::Any,
     Message(V, GaussianMeanPrecision, m=unsafeMean(dist_mean), w=unsafeMean(dist_prec))
 
 ruleSVBGaussianMeanPrecisionOutVGD(dist_out::Any,
-                                   msg_mean::Message{F, V},
-                                   dist_prec::ProbabilityDistribution) where{F<:Gaussian, V<:VariateType} = 
+                                   msg_mean::Message{<:Gaussian, V},
+                                   dist_prec::ProbabilityDistribution) where V<:VariateType = 
     Message(V, GaussianMeanVariance, m=unsafeMean(msg_mean.dist), v=unsafeCov(msg_mean.dist) + cholinv(unsafeMean(dist_prec)))
 
 function ruleSVBGaussianMeanPrecisionW(
     dist_out_mean::ProbabilityDistribution{Multivariate, F},
     dist_prec::Any) where F<:Gaussian
 
-    joint_dims = dims(dist_out_mean)
+    joint_d = dims(dist_out_mean)[1]
     d_out_mean = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, dist_out_mean)
     (m, V) = unsafeMeanCov(d_out_mean)
-    if joint_dims == 2
+    if joint_d == 2
         return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2))
     else
-        d = Int64(joint_dims/2)
+        d = Int64(joint_d/2)
         return Message(MatrixVariate, Wishart, v=cholinv( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end, 1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ), nu=d + 2.0) 
     end
 end

@@ -21,7 +21,7 @@ end
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Poisson)) == 1
+    @test dims(ProbabilityDistribution(Poisson)) == ()
 end
 
 @testset "slug" begin

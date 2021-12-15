@@ -42,7 +42,7 @@ format(dist::ProbabilityDistribution{Univariate, Bernoulli}) = "$(slug(Bernoulli
 ProbabilityDistribution(::Type{Univariate}, ::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 ProbabilityDistribution(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 
-dims(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Bernoulli}) = ()
 
 vague(::Type{Bernoulli}) = ProbabilityDistribution(Univariate, Bernoulli, p=0.5)
 

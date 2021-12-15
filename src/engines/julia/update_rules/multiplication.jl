@@ -139,7 +139,6 @@ function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
 
     dist_a_matr = convert(ProbabilityDistribution{MatrixVariate, PointMass}, msg_a.dist)
     msg_in1_mult = ruleSPMultiplicationIn1GNP(msg_out, nothing, Message(dist_a_matr))
-    (dims(msg_in1_mult.dist) == 1) || error("Implicit conversion to Univariate failed for $(msg_in1_mult.dist)")
 
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=msg_in1_mult.dist.params[:xi][1], w=msg_in1_mult.dist.params[:w][1,1])
 end

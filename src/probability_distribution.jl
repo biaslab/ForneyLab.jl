@@ -35,7 +35,13 @@ end
 sample(dist::ProbabilityDistribution, n_samples::Int64) = [sample(dist) for i in 1:n_samples] # TODO: individual samples can be optimized
 
 """Extract VariateType from dist"""
-variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = V
+variateType(::ProbabilityDistribution{V, <:FactorFunction}) where V<:VariateType = V
+
+"""Extract VariateType from dims tuple"""
+variateType(::Nothing) = Univariate # Default
+variateType(::Tuple{}) = Univariate 
+variateType(::Tuple{Int}) = Multivariate 
+variateType(::Tuple{Int, Int}) = MatrixVariate
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
@@ -59,9 +65,7 @@ slug(::Type{PointMass}) = "δ"
 
 format(dist::ProbabilityDistribution{V, PointMass}) where V<:VariateType = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
 
-dims(dist::ProbabilityDistribution{Univariate, PointMass}) = 1
-dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.params[:m])
-dims(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = size(dist.params[:m])
+dims(dist::ProbabilityDistribution{<:VariateType, PointMass}) = size(dist.params[:m])
 
 # PointMass distribution constructors
 ProbabilityDistribution(::Type{Univariate}, ::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
@@ -89,10 +93,10 @@ unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = logd
 unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(1.0 - dist.params[:m])
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
-unsafeVar(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist))
+unsafeVar(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist)) # Vector
 
 unsafeCov(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
-unsafeCov(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist), dims(dist))
+unsafeCov(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist)[1], dims(dist)[1]) # Matrix
 
 unsafeMeanCov(dist::ProbabilityDistribution) = (unsafeMean(dist), unsafeCov(dist)) # Can be overloaded for efficiency
 
@@ -123,7 +127,7 @@ convert(::Type{ProbabilityDistribution{Multivariate, PointMass}}, dist::Probabil
 convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Univariate, PointMass}) =
     ProbabilityDistribution(MatrixVariate, PointMass, m=mat(dist.params[:m]))
 convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Multivariate, PointMass}) =
-    ProbabilityDistribution(MatrixVariate, PointMass, m=reshape(dist.params[:m], dims(dist), 1))
+    ProbabilityDistribution(MatrixVariate, PointMass, m=reshape(dist.params[:m], dims(dist)[1], 1))
 
 sample(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
 

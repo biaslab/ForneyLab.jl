@@ -55,7 +55,7 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
     (m_mean_k, v_mean_k) = unsafeMeanCov(dist_means[k])
     (m_out, v_out) = unsafeMeanCov(dist_out)
     z_bar = unsafeMeanVector(dist_switch)
-    d = dims(dist_means[1])
+    d = dims(dist_means[1])[1]
 
     return Message(MatrixVariate, Wishart,
         nu = 1.0 + z_bar[k] + d,
@@ -123,7 +123,7 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     z_bar = unsafeMeanVector(dist_switch)
-    d = dims(dist_means[1])
+    d = dims(dist_means[1])[1]
 
     w = Diagonal(zeros(d))
     xi = zeros(d)

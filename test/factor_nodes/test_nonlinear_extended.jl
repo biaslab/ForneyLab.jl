@@ -5,7 +5,7 @@ using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, Extended, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearEOutNG, SPNonlinearEIn1GG, SPNonlinearEOutNGX, SPNonlinearEInGX, MNonlinearEInGX
-using ForneyLab: concatenate, localLinearization, requiresBreaker, breakerParameters
+using ForneyLab: concatenate, localLinearizationSingleIn, localLinearizationMultiIn, requiresBreaker, breakerParameters
 
 f(x) = x
 
@@ -25,23 +25,24 @@ h_inv_x(z::Vector, y::Vector) = sqrt.(z .+ y)
 #--------
 
 @testset "concatenate" begin
-    @test concatenate([[1.0, 2.0], [3.0]]) == ([1.0, 2.0, 3.0], [2, 1])
+    @test concatenate([[1.0, 2.0], [3.0]]) == ([1.0, 2.0, 3.0], [(2,), (1,)])
+    @test concatenate([[1.0, 2.0], 3.0]) == ([1.0, 2.0, 3.0], [(2,), ()])
 end
 
 @testset "localLinearization" begin
-    (a, b) = localLinearization(Univariate, g, 1.0)
+    (a, b) = localLinearizationSingleIn(g, 1.0)
     @test a == 2.0
     @test b == -6.0
 
-    (A, b) = localLinearization(Multivariate, g, [1.0])
+    (A, b) = localLinearizationSingleIn(g, [1.0])
     @test A == mat(2.0)
     @test b == [-6.0]
 
-    (A, b) = localLinearization(Univariate, h, [1.0, 2.0])
+    (A, b) = localLinearizationMultiIn(h, [1.0, 2.0])
     @test A == [2.0, -1.0]'
     @test b == -1.0
 
-    (A, b) = localLinearization(Multivariate, h, [[1.0], [2.0]])
+    (A, b) = localLinearizationMultiIn(h, [[1.0], [2.0]])
     @test A == [2.0 -1.0]
     @test b == [-1.0]
 end
@@ -120,8 +121,8 @@ end
     @test ruleSPNonlinearEInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[10.999999999999996], w=mat(3.9999999999999982))
 
     # With given inverse
-    @test ruleSPNonlinearEInGX(h, h_inv_x, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.3228756555322954, v=0.14285714285714282)
-    @test ruleSPNonlinearEInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.3228756555322954], v=mat(0.14285714285714282))
+    @test ruleSPNonlinearEInGX(h, h_inv_x, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.6457513110645907, v=0.14285714285714282)
+    @test ruleSPNonlinearEInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.6457513110645907], v=mat(0.14285714285714282))
 end
 
 @testset "MNonlinearEInGX" begin
