@@ -1,16 +1,16 @@
-@sumProductRule(:node_type     => Nonlinear{Sampling},
+@sumProductRule(:node_type     => Nonlinear{Conjugate},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message),
-                :name          => SPNonlinearSOutNM)
+                :name          => SPNonlinearCOutNM)
 
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{Function},
+@sumProductRule(:node_type     => Nonlinear{Conjugate},
+                :outbound_type => Message{FactorNode},
                 :inbound_types => (Message, Nothing),
-                :name          => SPNonlinearSIn1MN)
+                :name          => SPNonlinearCIn1MN)
 
-mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
-function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
+mutable struct SPNonlinearCInGX <: SumProductRule{Nonlinear{Conjugate}} end
+outboundType(::Type{SPNonlinearCInGX}) = Message{GaussianWeightedMeanPrecision}
+function isApplicable(::Type{SPNonlinearCInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false # Require any message on out
@@ -28,9 +28,9 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs - 2)
 end
 
-mutable struct SPNonlinearSOutNMX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSOutNMX}) = Message{SampleList}
-function isApplicable(::Type{SPNonlinearSOutNMX}, input_types::Vector{<:Type})
+mutable struct SPNonlinearCOutNMX <: SumProductRule{Nonlinear{Conjugate}} end
+outboundType(::Type{SPNonlinearCOutNMX}) = Message{SampleList}
+function isApplicable(::Type{SPNonlinearCOutNMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
@@ -42,9 +42,9 @@ function isApplicable(::Type{SPNonlinearSOutNMX}, input_types::Vector{<:Type})
     return true
 end
 
-mutable struct SPNonlinearSInMX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSInMX}) = Message{Function}
-function isApplicable(::Type{SPNonlinearSInMX}, input_types::Vector{<:Type})
+mutable struct SPNonlinearCInMX <: SumProductRule{Nonlinear{Conjugate}} end
+outboundType(::Type{SPNonlinearCInMX}) = Message{FactorNode}
+function isApplicable(::Type{SPNonlinearCInMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false
@@ -62,8 +62,8 @@ function isApplicable(::Type{SPNonlinearSInMX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs != total_inputs - 2) # Rule does not apply if all inbounds are Gaussian
 end
 
-mutable struct MNonlinearSInMGX <: MarginalRule{Nonlinear{Sampling}} end
-function isApplicable(::Type{MNonlinearSInMGX}, input_types::Vector{<:Type})
+mutable struct MNonlinearCInMGX <: MarginalRule{Nonlinear{Conjugate}} end
+function isApplicable(::Type{MNonlinearCInMGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable

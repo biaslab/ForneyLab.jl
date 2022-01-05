@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Test
-using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical
+using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
@@ -97,6 +97,15 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         # should return all subtypes that are leafs on the type tree
         @test Set(leaftypes(Integer)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8])
         @test Set(leaftypes(AbstractFloat)) == Set([BigFloat, Float16, Float32, Float64])
+    end
+
+    @testset "ForgetDelayDescent" begin
+        opt = ForgetDelayDescent(1.,0.6)
+        x_test, grad_test = zeros(2), [1,-1]
+        update!(opt,x_test,grad_test)
+        @test x_test[1] < 0
+        @test x_test[2] > 0
+        @test opt.iteration_num == 2 
     end
 end
 

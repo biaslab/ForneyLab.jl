@@ -1,7 +1,6 @@
 export
 ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
-ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSInGX,
 ruleSPNonlinearSOutNMX,
 ruleSPNonlinearSInMX,
@@ -46,20 +45,6 @@ function ruleSPNonlinearSIn1MN(g::Function,
                                n_samples=default_n_samples)
 
     return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
-end
-
-function ruleSPNonlinearSOutNGX(g::Function,
-                                msg_out::Nothing,
-                                msgs_in::Vararg{Message{<:Gaussian}};
-                                dims::Any=nothing,
-                                n_samples=default_n_samples)
-
-    samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
-
-    samples = g.(samples_in...)
-    weights = ones(n_samples)/n_samples
-
-    return Message(variateType(dims), SampleList, s=samples, w=weights)
 end
 
 function ruleSPNonlinearSInGX(g::Function,

@@ -1,9 +1,10 @@
-export Nonlinear, Unscented, Sampling, Extended
+export Nonlinear, Unscented, Sampling, Extended, Conjugate
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
 abstract type Sampling <: ApproximationMethod end
 abstract type Extended <: ApproximationMethod end
+abstract type Conjugate <: ApproximationMethod end
 
 """
 Description:
@@ -79,12 +80,21 @@ function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=not
     return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, out, args...)
 end
 
+function Nonlinear{Conjugate}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Conjugate}))
+    return Nonlinear{Conjugate}(id, g, nothing, nothing, dims, n_samples, out, args...)
+end
+
 # A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
 function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Sampling})
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
     multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
 
     return backward && multi_in
+end
+
+# A breaker message is always required if interface is partnered with a Nonlinear{Conjugate} inbound
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Conjugate})
+    return (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
 end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Unscented/Extended} inbound and no inverse is available

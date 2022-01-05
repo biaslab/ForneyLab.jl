@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init
+export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init, ForgetDelayDescent
 
 # Constants to define smallest/largest supported numbers.
 # Used for clipping quantities to ensure numerical stability.
@@ -221,4 +221,22 @@ Helper function to call dynamically generated `init` functions
 """
 function init(id::Symbol)
     getfield(Main, :init*id)()
+end
+
+# Define the optimizer provided in Stochastic Variational Inference paper
+mutable struct ForgetDelayDescent
+    iteration_num
+    τ # delay
+    κ # forget rate
+end
+
+# Constructer for optimizer
+ForgetDelayDescent(τ::Real, κ::Real) = ForgetDelayDescent(1,τ,κ)
+
+# The below function realizes gradient descent, see https://fluxml.ai/Flux.jl/stable/training/optimisers/
+function Optimise.apply!(o::ForgetDelayDescent, x, Δ)
+    t, τ, κ = o.iteration_num, o.τ, o.κ
+    ρ = (t+τ)^(-κ)
+    o.iteration_num = t+1
+    ρ .* Δ
 end
