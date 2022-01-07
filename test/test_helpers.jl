@@ -3,6 +3,7 @@ module HelpersTest
 using Test
 using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
+using Flux.Optimise
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -11,7 +12,7 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test ensureMatrix(Diagonal([1.0, 2.0])) == Diagonal([1.0, 2.0])
         @test ensureMatrix(Matrix(1.0I,2,2)) == Matrix(1.0I,2,2)
         @test ensureMatrix(1.0) == Matrix(1.0I,1,1)
-        @test ensureMatrix(nothing) == nothing
+        @test ensureMatrix(nothing) === nothing
     end
 
     @testset "isApproxEqual" begin
