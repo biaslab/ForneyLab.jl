@@ -17,7 +17,7 @@ using SparseArrays: SparseVector, spzeros
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Categorical, p=[0.1, 0.8, 0.1])) == 1
+    @test dims(ProbabilityDistribution(Categorical, p=[0.1, 0.8, 0.1])) == ()
 end
 
 @testset "vague" begin

@@ -6,7 +6,7 @@ using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsa
 using ForneyLab: SPLogNormalOutNPP, VBLogNormalOut
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=1.0)) == 1
+    @test dims(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=1.0)) == ()
 end
 
 @testset "vague" begin

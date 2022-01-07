@@ -6,7 +6,7 @@ using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims,
 using ForneyLab: SPGammaOutNPP, VBGammaOut, VBGammaA, VBGammaB
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == 1
+    @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == ()
 end
 
 @testset "vague" begin

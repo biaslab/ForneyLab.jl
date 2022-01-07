@@ -192,7 +192,7 @@ function vagueSourceCode(entry::ScheduleEntry)
     family_code = removePrefix(entry.family)
     dims = entry.dimensionality
     if dims == ()
-        vague_code = "vague($family_code)"
+        vague_code = "vague($family_code)" # Default
     else
         vague_code = "vague($family_code, $dims)"
     end

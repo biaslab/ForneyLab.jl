@@ -41,7 +41,7 @@ format(dist::ProbabilityDistribution{Univariate, LogNormal}) = "$(slug(LogNormal
 ProbabilityDistribution(::Type{Univariate}, ::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
 ProbabilityDistribution(::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
 
-dims(dist::ProbabilityDistribution{Univariate, LogNormal}) = 1
+dims(dist::ProbabilityDistribution{Univariate, LogNormal}) = ()
 
 vague(::Type{LogNormal}) = ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=huge)
 

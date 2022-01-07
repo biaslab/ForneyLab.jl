@@ -55,7 +55,7 @@ format(dist::ProbabilityDistribution{Multivariate, Contingency}) = "$(slug(Conti
 ProbabilityDistribution(::Type{Multivariate}, ::Type{Contingency}; p=1/9*ones(3,3)) = ProbabilityDistribution{Multivariate, Contingency}(Dict(:p=>p))
 ProbabilityDistribution(::Type{Contingency}; p=1/9*ones(3,3)) = ProbabilityDistribution{Multivariate, Contingency}(Dict(:p=>p))
 
-dims(dist::ProbabilityDistribution{Multivariate, Contingency}) = length(size(dist.params[:p]))
+dims(dist::ProbabilityDistribution{Multivariate, Contingency}) = (length(size(dist.params[:p])),)
 
 vague(::Type{Contingency}, n_factors::Tuple{Int64, Int64}=(3,3)) = ProbabilityDistribution(Multivariate, Contingency, p=(1/prod(n_factors))*ones(n_factors))
 

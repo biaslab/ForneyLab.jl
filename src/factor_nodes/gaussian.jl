@@ -52,9 +52,9 @@ convert(::Type{ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecisi
     ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[dist.params[:xi]], w=mat(dist.params[:w]))
 
 function prod!(
-    x::ProbabilityDistribution{Univariate, F1},
-    y::ProbabilityDistribution{Univariate, F2},
-    z::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0)) where {F1<:Gaussian, F2<:Gaussian}
+    x::ProbabilityDistribution{Univariate, <:Gaussian},
+    y::ProbabilityDistribution{Univariate, <:Gaussian},
+    z::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0))
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
@@ -63,18 +63,18 @@ function prod!(
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate, F},
+    x::ProbabilityDistribution{Univariate, <:Gaussian},
     y::ProbabilityDistribution{Univariate, PointMass},
-    z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0)) where F<:Gaussian
+    z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0))
 
     z.params[:m] = y.params[:m]
     return z
 end
 
 function prod!(
-    x::ProbabilityDistribution{Multivariate, F1},
-    y::ProbabilityDistribution{Multivariate, F2},
-    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN]))) where {F1<:Gaussian, F2<:Gaussian}
+    x::ProbabilityDistribution{Multivariate, <:Gaussian},
+    y::ProbabilityDistribution{Multivariate, <:Gaussian},
+    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN])))
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
@@ -83,35 +83,35 @@ function prod!(
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate, F},
+    x::ProbabilityDistribution{Multivariate, <:Gaussian},
     y::ProbabilityDistribution{Multivariate, PointMass},
-    z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN])) where F<:Gaussian
+    z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN]))
 
     z.params[:m] = deepcopy(y.params[:m])
 
     return z
 end
 
-function sample(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
+function sample(dist::ProbabilityDistribution{Univariate, <:Gaussian})
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,v) = unsafeMeanCov(dist)
     return sqrt(v)*randn() + m
 end
 
-function sample(dist::ProbabilityDistribution{Univariate, F}, n_samples::Int64) where F<:Gaussian
+function sample(dist::ProbabilityDistribution{Univariate, <:Gaussian}, n_samples::Int64)
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,v) = unsafeMeanCov(dist)
 
     return sqrt(v).*randn(n_samples) .+ m
 end
 
-function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
+function sample(dist::ProbabilityDistribution{Multivariate, <:Gaussian})
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
     return (cholesky(default_cholesky_mode, V)).U' *randn(dims(dist)) + m
 end
 
-function sample(dist::ProbabilityDistribution{Multivariate, F}, n_samples::Int64) where F<:Gaussian
+function sample(dist::ProbabilityDistribution{Multivariate, <:Gaussian}, n_samples::Int64)
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
     U = (cholesky(default_cholesky_mode, V)).U
@@ -134,14 +134,15 @@ logPdf(V::Type{Univariate}, ::Type{F}, x::Number; η::Vector) where F<:Gaussian 
 logPdf(V::Type{Multivariate}, ::Type{F}, x::Vector; η::Vector) where F<:Gaussian = -0.5*length(η[1])*log(2pi) + [x; vec(x*x')]'*[η[1]; vec(η[2])] - logNormalizer(V, F; η=η)
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
+function differentialEntropy(dist::ProbabilityDistribution{Univariate, <:Gaussian})
     return  0.5*log(unsafeCov(dist)) +
             0.5*log(2*pi) +
             0.5
 end
 
-function differentialEntropy(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
+function differentialEntropy(dist::ProbabilityDistribution{Multivariate, <:Gaussian})
+    d = dims(dist)[1]
     return  0.5*logdet(unsafeCov(dist)) +
-            (dims(dist)/2)*log(2*pi) +
-            (dims(dist)/2)
+            (d/2)*log(2*pi) +
+            d/2
 end

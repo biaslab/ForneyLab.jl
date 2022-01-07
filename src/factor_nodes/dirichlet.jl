@@ -47,8 +47,7 @@ ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Dirichlet}; a=ones(3,3)) =
 ProbabilityDistribution(::Type{Multivariate}, ::Type{Dirichlet}; a=ones(3)) = ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>a))
 ProbabilityDistribution(::Type{Dirichlet}; a=ones(3)) = ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>a))
 
-dims(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = length(dist.params[:a])
-dims(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = size(dist.params[:a])
+dims(dist::ProbabilityDistribution{<:VariateType, Dirichlet}) = size(dist.params[:a])
 
 vague(::Type{Dirichlet}, dims::Int64) = ProbabilityDistribution(Multivariate, Dirichlet, a=ones(dims))
 vague(::Type{Dirichlet}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, Dirichlet, a=ones(dims))

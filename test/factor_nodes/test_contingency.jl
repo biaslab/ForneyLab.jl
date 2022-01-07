@@ -12,7 +12,7 @@ using ForneyLab: vague, dims
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Contingency, p=[0.1 0.4; 0.3 0.2])) == 2
+    @test dims(ProbabilityDistribution(Contingency, p=[0.1 0.4; 0.3 0.2])) == (2,)
 end
 
 @testset "vague" begin

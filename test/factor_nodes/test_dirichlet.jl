@@ -19,12 +19,11 @@ using SpecialFunctions: digamma
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0, 2.0])) == 3
+    @test dims(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0, 2.0])) == (3,)
     @test dims(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 2.0 2.0; 2.0 2.0 2.0])) == (2,3)
 end
 
 @testset "vague" begin
-    @test vague(Dirichlet, 3) == ProbabilityDistribution(Dirichlet, a=ones(3))
     @test vague(Dirichlet, (3,)) == ProbabilityDistribution(Dirichlet, a=ones(3))
     @test vague(Dirichlet, (2,3)) == ProbabilityDistribution(MatrixVariate, Dirichlet, a=ones(2,3))
 end

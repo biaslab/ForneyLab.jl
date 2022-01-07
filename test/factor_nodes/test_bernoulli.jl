@@ -16,7 +16,7 @@ using ForneyLab: SPBernoulliOutNP, SPBernoulliIn1PN, SPBernoulliOutNB, VBBernoul
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Bernoulli, p=0.5)) == 1
+    @test dims(ProbabilityDistribution(Bernoulli, p=0.5)) == ()
 end
 
 @testset "vague" begin

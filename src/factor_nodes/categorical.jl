@@ -46,7 +46,7 @@ format(dist::ProbabilityDistribution{Univariate, Categorical}) = "$(slug(Categor
 ProbabilityDistribution(::Type{Univariate}, ::Type{Categorical}; p=[1/3, 1/3, 1/3]) = ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>p))
 ProbabilityDistribution(::Type{Categorical}; p=[1/3, 1/3, 1/3]) = ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>p))
 
-dims(dist::ProbabilityDistribution{Univariate, Categorical}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Categorical}) = ()
 
 vague(::Type{Categorical}, n_factors::Int64=3) = ProbabilityDistribution(Univariate, Categorical, p=(1/n_factors)*ones(n_factors))
 vague(::Type{Categorical}, n_factors::Tuple) = vague(Categorical, n_factors[1])
