@@ -1,3 +1,5 @@
+import Base: vec
+
 export
 ruleSPNonlinearEOutNG,
 ruleSPNonlinearEOutNGX,
@@ -9,11 +11,13 @@ ruleMNonlinearEInGX
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
 """
 function concatenate(xs::Vector)
-    ds = [size(x_k) for x_k in xs] # Extract dimensions
-    x = vcat(xs...)
+    ds = size.(xs) # Extract dimensions
+    x = vcat(vec.(xs)...)
 
     return (x, ds)
 end
+
+ForneyLab.vec(d::Float64) = [d] # Extend vectorization to Float
 
 """
 Return local linearization of g around expansion point x_hat
