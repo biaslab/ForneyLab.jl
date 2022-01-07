@@ -4,6 +4,7 @@ using Test
 using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
 using Flux.Optimise
+using Flux.Optimise: update!
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin

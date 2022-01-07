@@ -89,7 +89,7 @@ end
     @test isApplicable(SPNonlinearCOutNMX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
     msg = ruleSPNonlinearCOutNMX(h, nothing, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0), n_samples=1)
-    @test typeof(msg) == Message{SampleList}
+    @test typeof(msg) == Message{SampleList, Univariate}
 end
 
 @testset "SPNonlinearCInMX" begin
