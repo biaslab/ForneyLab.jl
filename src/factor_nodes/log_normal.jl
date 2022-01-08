@@ -57,9 +57,15 @@ unsafeLogCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params
 logPdf(dist::ProbabilityDistribution{Univariate, LogNormal},x) = -0.5*(log(2pi)+log(dist.params[:s])) -log(x) -0.5*(log(x)-dist.params[:m])^2/dist.params[:s]
 isProper(dist::ProbabilityDistribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
 
-function sample(dist::ProbabilityDistribution{Univariate, LogNormal})
-    return exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
-end
+sample(dist::ProbabilityDistribution{Univariate, LogNormal}) = exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
+
+naturalParams(dist::ProbabilityDistribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
+
+standardDistribution(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = ProbabilityDistribution(V, F, m=-(0.5/η[2])*η[1], s=-0.5/η[2])
+
+logNormalizer(::Type{Univariate}, ::Type{LogNormal}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+
+logPdf(V::Type{Univariate}, F::Type{LogNormal}, x::Number; η::Vector) = -0.5*log(2pi) - log(x) + [log(x), log(x)^2]'*η - logNormalizer(V, F, η=η)
 
 """
 Gamma approximation to the log-normal distribution using Laplace's method

@@ -2,8 +2,7 @@ module PoissonTest
 
 using Test
 using ForneyLab
-
-using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
+using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, naturalParams, standardDistribution
 using ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin
@@ -45,6 +44,18 @@ end
 
 @testset "log pdf" begin
     @test isapprox(logPdf(ProbabilityDistribution(Poisson, l=2.5),1), -1.583709268125845)
+end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(Univariate, Poisson, l=2.0)
+    η = naturalParams(d)
+    s = standardDistribution(Univariate, Poisson, η=η)
+    @test d.params[:l] == s.params[:l] # Test conversion consistency
+
+    x = [1, 4, 8]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Univariate, Poisson, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 

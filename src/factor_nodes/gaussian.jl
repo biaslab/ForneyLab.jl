@@ -120,6 +120,19 @@ function sample(dist::ProbabilityDistribution{Multivariate, <:Gaussian}, n_sampl
     return [U' *randn(d) + m for i in 1:n_samples]
 end
 
+function naturalParams(dist::ProbabilityDistribution{<:VariateType, <:Gaussian})
+    (xi, w) = unsafeWeightedMeanPrecision(dist)
+    return [xi, -0.5*w] # Returns vector and matrix for Multivariate to retain dimensionality info; η[2] is not positive definite
+end
+
+standardDistribution(::Type{V}, ::Type{<:Gaussian}; η::Vector) where V<:VariateType = ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=η[1], w=-2*η[2])
+
+logNormalizer(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector) = η[1]'*cholinv(-4*η[2])*η[1] - 0.5*logdet(-2*η[2])
+
+logPdf(V::Type{Univariate}, ::Type{F}, x::Number; η::Vector) where F<:Gaussian = -0.5*log(2pi) + [x, x^2]'*η - logNormalizer(V, F; η=η)
+logPdf(V::Type{Multivariate}, ::Type{F}, x::Vector; η::Vector) where F<:Gaussian = -0.5*length(η[1])*log(2pi) + [x; vec(x*x')]'*[η[1]; vec(η[2])] - logNormalizer(V, F; η=η)
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, <:Gaussian})
     return  0.5*log(unsafeCov(dist)) +

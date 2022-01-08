@@ -418,7 +418,7 @@ end
 """
 Split a vector in chunks of lengths specified by ds.
 """
-function split(vec::Vector, ds::Vector{<:Tuple})
+function ForneyLab.split(vec::Vector, ds::Vector{<:Tuple})
     N = length(ds)
     res = Vector{Any}(undef, N)
 
@@ -428,8 +428,8 @@ function split(vec::Vector, ds::Vector{<:Tuple})
 
         if ds[k] == () # Univariate
             res[k] = vec[d_start] # Return scalar
-        else # Multivariate
-            res[k] = vec[d_start:d_end] # Return vector
+        else # Multi- of matrix variate
+            res[k] = reshape(vec[d_start:d_end], ds[k]) # Return vector or matrix
         end
 
         d_start = d_end + 1
