@@ -1,16 +1,16 @@
 function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
     # TODO: this implementation only works when the inbound types match the outbound type
     nothing_inputs = 0
-    message_inputs = 0
+    matching_inputs = 0
     for input_type in input_types
         if input_type == Nothing
             nothing_inputs += 1
         elseif matches(input_type, outbound_type)
-            message_inputs += 1
+            matching_inputs += 1
         end
     end
 
-    return (nothing_inputs == 1) && (message_inputs == 2)
+    return (nothing_inputs == 1) && (matching_inputs == 2)
 end
 
 mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
@@ -133,15 +133,15 @@ function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
     for input_type in input_types
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{PointMass})
+        elseif input_type << Message{PointMass}
             return false
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             return false
-        elseif matches(input_type, Message{Function})
+        elseif input_type << Message{Function}
             return false
-        elseif matches(input_type, Message{PointMass})
+        elseif input_type << Message{PointMass}
             return false
-        elseif matches(input_type, Message{FactorNode})
+        elseif input_type << Message{FactorNode}
             if first_type === nothing
                 first_type = input_type
             else
@@ -150,5 +150,5 @@ function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
         end
     end
 
-    return (nothing_inputs == 1) && !matches(first_type, second_type) && !matches(second_type, first_type)
+    return (nothing_inputs == 1) && !(first_type == second_type)
 end

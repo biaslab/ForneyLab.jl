@@ -18,7 +18,7 @@ using Flux.Optimise
 using Zygote
 
 import Statistics: mean, var, cov
-import Base: +, -, *, ^, ==, exp, convert, show, prod!
+import Base: +, -, *, ^, ==, <<, exp, convert, show, prod!
 import LinearAlgebra: dot, cholesky
 import StatsBase: sample
 

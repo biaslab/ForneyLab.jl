@@ -97,8 +97,11 @@ using Flux.Optimise: update!
 
     @testset "leaftypes" begin
         # should return all subtypes that are leafs on the type tree
+        @test Set(leaftypes(Float64)) == Set([Float64])
+        @test Set(leaftypes(Function)) == Set([Function])
         @test Set(leaftypes(Integer)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8])
         @test Set(leaftypes(AbstractFloat)) == Set([BigFloat, Float16, Float32, Float64])
+        @test Set(leaftypes(Union{Float64, Int64})) == Set([Float64, Int64])
     end
 
     @testset "ForgetDelayDescent" begin
