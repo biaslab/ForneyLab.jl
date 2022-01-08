@@ -39,7 +39,7 @@ function isApplicable(::Type{SPNonlinearEInGX}, input_types::Vector{<:Type})
         end
     end
 
-    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
+    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs - 1)
 end
 
 mutable struct MNonlinearEInGX <: MarginalRule{Nonlinear{Extended}} end

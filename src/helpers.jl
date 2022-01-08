@@ -39,7 +39,7 @@ cholinv(m::Number) = 1.0/m
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 
 eye(n::Number) = Diagonal(I,n)
-diageye(dims::Int64) = Diagonal(ones(dims))
+diageye(d::Int64) = Diagonal(ones(d))
 
 # Symbol concatenation
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))

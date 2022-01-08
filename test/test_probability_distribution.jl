@@ -106,10 +106,9 @@ end
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, PointMass, m=0.0)) == 1
-    @test dims(ProbabilityDistribution(Multivariate, PointMass, m=ones(2))) == 2
-    @test dims(ProbabilityDistribution(MatrixVariate, PointMass, m=eye(2))) == (2, 2)
-    @test dims(ProbabilityDistribution(MatrixVariate, PointMass, m=diageye(2))) == (2, 2)
+    @test dims(ProbabilityDistribution(Univariate, PointMass, m=0.0)) == ()
+    @test dims(ProbabilityDistribution(Multivariate, PointMass, m=ones(2))) == (2,)
+    @test dims(ProbabilityDistribution(MatrixVariate, PointMass, m=eye(2))) == (2,2)
 end
 
 @testset "gaussianQuadrature" begin

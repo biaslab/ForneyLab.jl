@@ -2,17 +2,16 @@ module GaussianMeanVarianceTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeMeanPrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut, bootstrap
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1
-    @test dims(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=ones(2), v=diageye(2))) == 2
+    @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == ()
+    @test dims(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=ones(2), v=diageye(2))) == (2,)
 end
 
 @testset "vague" begin
     @test vague(GaussianMeanVariance) == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=huge)
-    @test vague(GaussianMeanVariance, 2) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
     @test vague(GaussianMeanVariance, (2,)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
 end
 
@@ -45,6 +44,7 @@ end
     @test unsafeCov(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == 4.0
     @test unsafeMeanCov(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == (2.0, 4.0)
     @test unsafePrecision(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == 0.25
+    @test unsafeMeanPrecision(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == (2.0, 0.25)
     @test unsafeWeightedMean(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == 0.5
     @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=4.0)) == (0.5, 0.25)
 
@@ -55,6 +55,7 @@ end
     @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == mat(4.0)
     @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == ([2.0], mat(4.0))
     @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == mat(0.25)
+    @test unsafeMeanPrecision(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == ([2.0], mat(0.25))
     @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == [0.5]
     @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == ([0.5], mat(0.25))
 end

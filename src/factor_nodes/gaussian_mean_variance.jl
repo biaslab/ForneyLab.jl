@@ -44,10 +44,9 @@ ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0,
 ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=mat(1.0)) = ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 
-dims(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = length(dist.params[:m])
+dims(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = size(dist.params[:m])
 
 vague(::Type{GaussianMeanVariance}) = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=huge)
-vague(::Type{GaussianMeanVariance}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=huge*diageye(dims))
 vague(::Type{GaussianMeanVariance}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=huge*diageye(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
@@ -65,8 +64,10 @@ unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where
 
 unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])
 
+unsafeMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = (deepcopy(dist.params[:m]), cholinv(dist.params[:v]))
+
 logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}, x) = -0.5*(log(2pi) + log(dist.params[:v]) + (x-dist.params[:m])^2/dist.params[:v])
-logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}, x) = -0.5*(dims(dist)*log(2pi) + logdet(dist.params[:v]) + transpose(x-dist.params[:m])*cholinv(dist.params[:v])*(x-dist.params[:m]))
+logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}, x) = -0.5*(dims(dist)[1]*log(2pi) + logdet(dist.params[:v]) + transpose(x-dist.params[:m])*cholinv(dist.params[:v])*(x-dist.params[:m]))
 
 # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
 # this function ensures only a single inversion is performed
@@ -102,12 +103,12 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistri
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
     (m_out, v_out) = unsafeMeanCov(marg_out)
 
-    0.5*dims(marg_out)*log(2*pi) +
+    0.5*dims(marg_out)[1]*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +
     0.5*tr( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
 end
 
-function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_var::ProbabilityDistribution{Univariate}) where F<:Gaussian
+function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_var::ProbabilityDistribution{Univariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
 
     0.5*log(2*pi) +
@@ -115,9 +116,9 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityD
     0.5*unsafeInverseMean(marg_var)*( V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2 )
 end
 
-function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_var::ProbabilityDistribution{MatrixVariate}) where F<:Gaussian
+function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_var::ProbabilityDistribution{MatrixVariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
-    d = Int64(dims(marg_out_mean)/2)
+    d = Int64(dims(marg_out_mean)[1]/2)
 
     0.5*d*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +

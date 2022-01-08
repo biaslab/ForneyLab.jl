@@ -40,19 +40,15 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     g::Function # Vector function that expresses the output as a function of the inputs
     g_inv::Union{Function, Nothing, Vector} # Inverse of g with respect to individual inbounds (optional)
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
-    dims::Union{Tuple, Vector} # Dimension of breaker message(s) on input interface(s)
+    dims::Union{Vector, Nothing} # Dimensions of messages on (all) interfaces
     n_samples::Union{Int64, Nothing} # Number of samples for sampling
-    in_variates::Union{Vector{DataType}, Nothing} # Variate types of messages on in interfaces
-    out_variate::Union{DataType, Nothing} # Variate types of message on out interface
 
     function Nonlinear{T}(id::Symbol,
                           g::Function,
                           g_inv::Union{Function, Nothing, Vector},
                           alpha::Union{Float64, Nothing},
-                          dims::Union{Tuple, Vector},
+                          dims::Union{Vector, Nothing},
                           n_samples::Union{Int64, Nothing},
-                          in_variates::Union{Vector{DataType}, Nothing},
-                          out_variate::Union{DataType, Nothing},
                           out::Variable,
                           args::Vararg) where T<:ApproximationMethod
         
@@ -60,7 +56,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         for i=1:n_args
             @ensureVariables(args[i])
         end
-        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples, in_variates, out_variate)
+        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -71,16 +67,16 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     end
 end
 
-function Nonlinear{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Unscented}))
-    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
+function Nonlinear{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Unscented}))
+    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, out, args...)
 end
 
-function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=(), n_samples=nothing, in_variates=nothing, out_variate=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
-    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, in_variates, out_variate, out, args...)
+function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
+    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, out, args...)
 end
 
-function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Extended}))
-    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, nothing, nothing, out, args...)
+function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Extended}))
+    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, out, args...)
 end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
@@ -91,12 +87,12 @@ function requiresBreaker(interface::Interface, partner_interface::Interface, par
     return backward && multi_in
 end
 
-# A breaker message is required if interface is partnered with a Nonlinear{Unscented} inbound and no inverse is available
+# A breaker message is required if interface is partnered with a Nonlinear{Unscented/Extended} inbound and no inverse is available
 function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{T}) where T<:Union{Unscented, Extended}
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
     multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-    undefined_inverse = (partner_node.g_inv == nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] == nothing)) # (Inbound-specific) inverse is undefined
+    undefined_inverse = (partner_node.g_inv === nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] === nothing)) # (Inbound-specific) inverse is undefined
 
     return backward && undefined_inverse
 end
@@ -104,21 +100,14 @@ end
 function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Nonlinear)
     requiresBreaker(interface, partner_interface, partner_node) || error("Breaker dimensions requested for non-breaker interface: $(interface)")
 
-    if isa(partner_node.dims, Vector) # Varying inbound dimensionalities are defined
-        inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface
-        dims = partner_node.dims[inx] # Extract dimensionality from vector
+    if partner_node.dims === nothing
+        dims = ()
     else
-        dims = partner_node.dims # All inbound dimensions are equal
+        inx = findfirst(isequal(partner_interface), partner_node.interfaces) # Find interface index
+        dims = partner_node.dims[inx] # Extract dimensionality from node.dims vector
     end
 
-    # Deterimine message variate type
-    if dims == ()
-        var_type = Univariate
-    else
-        var_type = Multivariate
-    end
-
-    return (Message{GaussianMeanVariance, var_type}, dims)
+    return (Message{GaussianMeanVariance, variateType(dims)}, dims)
 end
 
 slug(::Type{Nonlinear{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"
