@@ -20,7 +20,7 @@ function isApplicable(::Type{SPNonlinearCInGX}, input_types::Vector{<:Type})
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -36,7 +36,7 @@ function isApplicable(::Type{SPNonlinearCOutNMX}, input_types::Vector{<:Type})
     (input_types[1] == Nothing) || return false
     
     for input_type in input_types[2:end]
-        matches(input_type, Message) || return false
+        (input_type << Message) || return false
     end
 
     return true
@@ -54,7 +54,7 @@ function isApplicable(::Type{SPNonlinearCInMX}, input_types::Vector{<:Type})
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
