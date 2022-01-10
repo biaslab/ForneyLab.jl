@@ -69,7 +69,7 @@ function isApplicable(::Type{MNonlinearSInMGX}, input_types::Vector{<:Type})
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable
 
     for input_type in input_types[2:end]
-        (input_type << Message{Gaussian}) || return false
+        matches(input_type, Message{Gaussian}) || return false
     end
 
     return true

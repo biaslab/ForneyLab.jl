@@ -1,3 +1,5 @@
+import Flux.Optimise: apply!
+
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init, ForgetDelayDescent
 
 # Constants to define smallest/largest supported numbers.

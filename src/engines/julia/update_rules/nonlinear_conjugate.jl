@@ -7,7 +7,7 @@ ruleSPNonlinearCInGX,
 ruleMNonlinearCInMGX
 
 const default_opt = ForgetDelayDescent(200.0, 0.6) # Default optimizer TODO: make variable
-const default_n_its = 1000 # Default number of iterations for gradient descent # TODO: make variable
+const default_n_iterations = 1000 # Default number of iterations for gradient descent # TODO: make variable
 
 
 #-----------------------
@@ -31,7 +31,7 @@ function ruleSPNonlinearCIn1MN(g::Function,
     η = naturalParams(msg_in1.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in1)
 
-    return Message(standardDist(V, F, λ - η))
+    return Message(standardDistribution(V, F, η=λ-η))
 end
 
 ruleSPNonlinearCOutNMX(g::Function,
@@ -59,7 +59,7 @@ function ruleSPNonlinearCInGX(g::Function,
     # Compute joint marginal belief
     η = naturalParams(msg_fw_in.dist)
     λ = renderCVI(log_pdf_s, default_n_iterations, default_opt, η, msg_fw_in)
-    d_marg = standardDist(Multivariate, GaussianMeanVariance, λ)
+    d_marg = standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
     (m_in, V_in) = unsafeMeanCov(d_marg)
     
     # Marginalize joint belief on in's
@@ -87,7 +87,7 @@ function ruleSPNonlinearCInMX(g::Function,
     η = naturalParams(msg_in1.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in1)
 
-    return Message(standardDist(V, F, λ - η))
+    return Message(standardDistribution(V, F, η=λ-η))
 end
 
 # Special case for two inputs with one PointMass (no inx required)
@@ -102,7 +102,7 @@ function ruleSPNonlinearCInMX(g::Function,
     η = naturalParams(msg_in2.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in2)
 
-    return Message(standardDist(V, F, λ - η))
+    return Message(standardDistribution(V, F, η=λ-η))
 end
 
 # Joint marginal belief over inbounds
@@ -121,7 +121,7 @@ function ruleMNonlinearCInMGX(g::Function,
     η = naturalParams(msg_fw_in.dist)
     λ = renderCVI(log_pdf_s, default_n_iterations, default_opt, η, msg_fw_in) # Natural statistics of marginal
 
-    return standardDist(Multivariate, GaussianMeanVariance, λ)
+    return standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
 end
 
 
@@ -186,7 +186,7 @@ function renderCVI(logp_nc::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
                    λ_init::Vector,
-                   msg_in::Message{<:Gaussian, Univariate})
+                   msg_in::Message{F, Univariate}) where F<:Gaussian
 
     η = deepcopy(naturalParams(msg_in.dist))
     λ = deepcopy(λ_init)
@@ -195,7 +195,7 @@ function renderCVI(logp_nc::Function,
     df_v(z) = 0.5*ForwardDiff.derivative(df_m, z)
 
     for i=1:n_its
-        q = standardDist(msg_in.dist, λ)
+        q = standardDistribution(Univariate, F, η=λ)
         z_s = sample(q)
         df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
         df_μ2 = df_v(z_s)
@@ -203,7 +203,7 @@ function renderCVI(logp_nc::Function,
         λ_old = deepcopy(λ)
         ∇ = λ .- η .- ∇f
         update!(opt, λ, ∇)
-        if !isProper(standardDist(msg_in.dist, λ))
+        if !isProper(standardDistribution(Univariate, F, η=λ))
             λ = λ_old
         end
     end
@@ -215,7 +215,7 @@ function renderCVI(logp_nc::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
                    λ_init::Vector,
-                   msg_in::Message{<:Gaussian, Multivariate})
+                   msg_in::Message{F, Multivariate}) where F<:Gaussian
 
     η = deepcopy(naturalParams(msg_in.dist))
     λ = deepcopy(λ_init)
@@ -224,7 +224,7 @@ function renderCVI(logp_nc::Function,
     df_v(z) = 0.5*ForwardDiff.jacobian(df_m, z)
 
     for i=1:n_its
-        q = standardDist(msg_in.dist, λ)
+        q = standardDistribution(Multivariate, F, η=λ)
         z_s = sample(q)
         df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
         df_μ2 = df_v(z_s)
@@ -232,7 +232,7 @@ function renderCVI(logp_nc::Function,
         λ_old = deepcopy(λ)
         ∇ = λ .- η .- ∇f
         update!(opt, λ, ∇)
-        if !isProper(standardDist(msg_in.dist, λ))
+        if !isProper(standardDistribution(Multivariate, F, η=λ))
             λ = λ_old
         end
     end
@@ -244,16 +244,16 @@ function renderCVI(logp_nc::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
                    λ_init::Vector,
-                   msg_in::Message{<:FactorNode, <:VariateType})
+                   msg_in::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
-    η = deepcopy(naturalParams(msg_in.dist))
+    η = deepcopy(naturalParams(msg_in.dist)) # Concatenate natural parameters to vector
     λ = deepcopy(λ_init)
 
     A(η) = logNormalizer(msg_in.dist, η)
     gradA(η) = A'(η) # Zygote
     Fisher(η) = ForwardDiff.jacobian(gradA, η) # Zygote throws mutating array error
     for i=1:n_its
-        q = standardDist(msg_in.dist, λ)
+        q = standardDistribution(V, F, η=λ)
         z_s = sample(q)
         logq(λ) = logPdf(q, λ, z_s)
         ∇logq = logq'(λ)
@@ -261,7 +261,7 @@ function renderCVI(logp_nc::Function,
         λ_old = deepcopy(λ)
         ∇ = λ .- η .- ∇f
         update!(opt, λ, ∇)
-        if !isProper(standardDist(msg_in.dist, λ))
+        if !isProper(standardDistribution(V, F, η=λ))
             λ = λ_old
         end
     end

@@ -15,6 +15,7 @@ using StatsBase: Weights
 using PositiveFactorizations
 using DataStructures: Queue, enqueue!, dequeue!
 using Flux.Optimise
+using Flux.Optimise: update!
 using Zygote
 
 import Statistics: mean, var, cov
