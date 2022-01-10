@@ -90,7 +90,7 @@ function sample(dist::ProbabilityDistribution{Univariate, Categorical})
     return x
 end
 
-naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = [log.(dist.params[:p][1:end-1]./dist.params[:p][end]); 0] # Variant 3 of https://en.wikipedia.org/wiki/Exponential_family
+naturalParams(dist::ProbabilityDistribution{Univariate, Categorical}) = vcat(log.(dist.params[:p][1:end-1]./dist.params[:p][end]), 0.0) # Variant 3 of https://en.wikipedia.org/wiki/Exponential_family
 
 standardDistribution(V::Type{Univariate}, F::Type{Categorical}; η::Vector) = ProbabilityDistribution(V, F, p=exp.(η)./sum(exp.(η)))
 

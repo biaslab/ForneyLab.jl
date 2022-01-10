@@ -113,15 +113,16 @@ function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     return smpl
 end
 
-naturalParams(dist::ProbabilityDistribution{<:VariateType, Dirichlet}) = dist.params[:a] .- 1.0 # Returns matrix for MatrixVariate; variant 2 of https://en.wikipedia.org/wiki/Exponential_family
+naturalParams(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a] .- 1.0 # Variant 2 of https://en.wikipedia.org/wiki/Exponential_family
+naturalParams(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = vec(dist.params[:a]) .- 1.0
 
-standardDistribution(::Type{V}, ::Type{Dirichlet}; η::Union{Vector, Matrix}) where V<:VariateType = ProbabilityDistribution(V, Dirichlet, a=η.+1.0) # Size of η holds dimensionality information
+standardDistribution(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = ProbabilityDistribution(Multivariate, Dirichlet, a=η.+1.0)
+# TODO: dimensionality of non-square MatrixVariate Dirichlet cannot be uniquely extracted from η vector
 
-logNormalizer(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = sum(loggamma.(η.+1.0)) - loggamma(sum(η.+1.0))
-logNormalizer(::Type{MatrixVariate}, ::Type{Dirichlet}; η::Matrix) = sum(sum(loggamma.(η.+1.0))) - sum(loggamma.(sum(η.+1.0, dims=1)))
+logNormalizer(::Type{<:VariateType}, ::Type{Dirichlet}; η::Vector) = sum(loggamma.(η.+1.0)) - loggamma(sum(η.+1.0))
 
 logPdf(V::Type{Multivariate}, F::Type{Dirichlet}, x::Vector; η::Vector) = log.(x)'*η - logNormalizer(V, F; η=η)
-logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x::Matrix; η::Matrix) = log.(vec(x))'*vec(η) - logNormalizer(V, F; η=η)
+logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x::Matrix; η::Vector) = log.(vec(x))'*η - logNormalizer(V, F; η=η)
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})

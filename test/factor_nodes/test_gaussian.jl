@@ -44,7 +44,7 @@ end
     # Multivariate
     d = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0, 5.0], w=[2.0 0.1; 0.1 3.0])
     η = naturalParams(d)
-    s = standardDistribution(Univariate, Gaussian, η=η)
+    s = standardDistribution(Multivariate, Gaussian, η=η)
     @test d.params[:xi] == s.params[:xi] # Test conversion consistency
     @test d.params[:w] == s.params[:w]
 

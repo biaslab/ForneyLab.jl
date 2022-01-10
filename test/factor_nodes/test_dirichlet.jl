@@ -64,17 +64,6 @@ end
     d_x = logPdf.([d], x)
     η_x = logPdf.(Multivariate, Dirichlet, x; η=η)
     @test isapprox(d_x, η_x) # Test pdf consistency
-
-    # MatrixVariate
-    d = ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.5 3.0; 5.0 4.0; 4.0 6.0])
-    η = naturalParams(d)
-    s = standardDistribution(MatrixVariate, Dirichlet, η=η)
-    @test d.params[:a] == s.params[:a] # Test conversion consistency
-
-    x = [[0.2 0.1; 0.6 0.4; 0.2 0.5], [0.1 0.4; 0.5 0.1; 0.4 0.5]]
-    d_x = logPdf.([d], x)
-    η_x = logPdf.(MatrixVariate, Dirichlet, x; η=η)
-    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 
