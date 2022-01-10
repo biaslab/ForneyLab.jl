@@ -103,20 +103,24 @@ end
 
 function naturalParams(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    return [-0.5*cholinv(dist.params[:v]), 0.5*(dist.params[:nu]-d-1)] # Returns vector of matrix and scalar; η[1] is not positive definite
+    return vcat(-0.5*vec(cholinv(dist.params[:v])), 0.5*(dist.params[:nu]-d-1))
 end
 
 function standardDistribution(V::Type{MatrixVariate}, F::Type{Wishart}; η::Vector)
-    d = size(η[1])[1]
-    return ProbabilityDistribution(V, F, v=cholinv(-2.0*η[1]), nu=2*η[2]+d+1)
+    d = Int(sqrt(length(η) - 1))
+    η_1 = reshape(η[1:end-1], d, d)
+    η_2 = η[end]
+    return ProbabilityDistribution(V, F, v=cholinv(-2.0*η_1), nu=2*η_2+d+1)
 end
 
 function logNormalizer(::Type{MatrixVariate}, ::Type{Wishart}; η::Vector)
-    d = size(η[1])[1]
-    return -(η[2]+(d+1)/2)*logdet(-η[1]) + logmvgamma(d, η[2]+(d+1)/2)
+    d = Int(sqrt(length(η) - 1))
+    η_1 = reshape(η[1:end-1], d, d)
+    η_2 = η[end]
+    return -(η_2+(d+1)/2)*logdet(-η_1) + logmvgamma(d, η_2+(d+1)/2)
 end
 
-logPdf(V::Type{MatrixVariate}, F::Type{Wishart}, x::Matrix; η::Vector) = [vec(x); logdet(x)]'*[vec(η[1]); η[2]] - logNormalizer(V, F; η=η)
+logPdf(V::Type{MatrixVariate}, F::Type{Wishart}, x::Matrix; η::Vector) = vcat(vec(x), logdet(x))'*η - logNormalizer(V, F; η=η)
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
