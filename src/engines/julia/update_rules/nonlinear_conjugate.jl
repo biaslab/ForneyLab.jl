@@ -211,11 +211,12 @@ function renderCVI(logp_nc::Function,
     return λ
 end
 
+# Gaussian result that avoids Fisher information matrix construction
 function renderCVI(logp_nc::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
                    λ_init::Vector,
-                   msg_in::Message{F, Multivariate}) where F<:Gaussian
+                   msg_in::Message{F, Univariate}) where F<:Gaussian
 
     η = deepcopy(naturalParams(msg_in.dist))
     λ = deepcopy(λ_init)
@@ -240,31 +241,44 @@ function renderCVI(logp_nc::Function,
     return λ
 end
 
-function renderCVI(logp_nc::Function,
+function renderCVI(log_μ_bw::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
-                   λ_init::Vector,
-                   msg_in::Message{F, V}) where {F<:FactorNode, V<:VariateType}
+                   λ_0::Vector,
+                   μ_fw::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
-    η = deepcopy(naturalParams(msg_in.dist)) # Concatenate natural parameters to vector
-    λ = deepcopy(λ_init)
+    # Intialize natural parameters of forward message
+    η = naturalParams(μ_fw.dist)                   
 
-    A(η) = logNormalizer(msg_in.dist, η)
-    gradA(η) = A'(η) # Zygote
-    Fisher(η) = ForwardDiff.jacobian(gradA, η) # Zygote throws mutating array error
+    # Initialize Fisher information matrix
+    A(λ) = logNormalizer(V, F, η=λ)
+    Fisher(λ) = hessian(A, λ)
+
+    # Initialize q marginal
+    λ_i = deepcopy(λ_0)
+    q_i = standardDistribution(V, F, η=λ_i)
     for i=1:n_its
-        q = standardDistribution(V, F, η=λ)
-        z_s = sample(q)
-        logq(λ) = logPdf(q, λ, z_s)
-        ∇logq = logq'(λ)
-        ∇f = Fisher(λ)\(logp_nc(z_s).*∇logq)
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(opt, λ, ∇)
-        if !isProper(standardDistribution(V, F, η=λ))
-            λ = λ_old
+        # Store previous results for possible reset
+        q_i_min = deepcopy(q_i)
+        λ_i_min = deepcopy(λ_i)
+
+        # Given the current sample, define natural gradient of q
+        s_q_i = sample(q_i)
+        log_q(λ) = logPdf(V, F, s_q_i, η=λ)
+        ∇log_q(λ) = gradient(log_q, λ)[1]
+        
+        # Compute current free energy gradient and update natural statistics
+        ∇log_μ_bw_i = log_μ_bw(s_q_i)*cholinv(Fisher(λ_i))*∇log_q(λ_i) # Natural gradient of backward message
+        ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
+        update!(opt, λ_i, ∇F_i) # Updates λ_i in-place
+
+        # Update q_i
+        q_i = standardDistribution(V, F, η=λ_i)
+        if !isProper(q_i) # Result is improper; reset statistics
+            q_i = q_i_min
+            λ_i = λ_i_min
         end
     end
 
-    return λ
+    return λ_i
 end
