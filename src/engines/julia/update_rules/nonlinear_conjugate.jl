@@ -149,8 +149,8 @@ function collectSumProductNodeInbounds(node::Nonlinear{Conjugate}, entry::Schedu
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        if (node_interface == entry.interface != node.interfaces[1]) && multi_in
-            # Collect the breaker message for a backward rule with multiple inbounds
+        if (node_interface == entry.interface != node.interfaces[1])
+            # Collect the breaker message for a backward rule
             haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
