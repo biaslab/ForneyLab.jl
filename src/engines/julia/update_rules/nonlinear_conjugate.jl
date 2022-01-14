@@ -182,65 +182,6 @@ end
 # Optimization subroutines
 #-------------------------
 
-function renderCVI(logp_nc::Function,
-                   n_its::Int,
-                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
-                   λ_init::Vector,
-                   msg_in::Message{F, Univariate}) where F<:Gaussian
-
-    η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(λ_init)
-
-    df_m(z) = ForwardDiff.derivative(logp_nc, z)
-    df_v(z) = 0.5*ForwardDiff.derivative(df_m, z)
-
-    for i=1:n_its
-        q = standardDistribution(Univariate, F, η=λ)
-        z_s = sample(q)
-        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = [df_μ1, df_μ2]
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(opt, λ, ∇)
-        if !isProper(standardDistribution(Univariate, F, η=λ))
-            λ = λ_old
-        end
-    end
-
-    return λ
-end
-
-# Gaussian result that avoids Fisher information matrix construction
-function renderCVI(logp_nc::Function,
-                   n_its::Int,
-                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
-                   λ_init::Vector,
-                   msg_in::Message{F, Univariate}) where F<:Gaussian
-
-    η = deepcopy(naturalParams(msg_in.dist))
-    λ = deepcopy(λ_init)
-
-    df_m(z) = ForwardDiff.gradient(logp_nc, z)
-    df_v(z) = 0.5*ForwardDiff.jacobian(df_m, z)
-
-    for i=1:n_its
-        q = standardDistribution(Multivariate, F, η=λ)
-        z_s = sample(q)
-        df_μ1 = df_m(z_s) - 2*df_v(z_s)*mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = [df_μ1; vec(df_μ2)]
-        λ_old = deepcopy(λ)
-        ∇ = λ .- η .- ∇f
-        update!(opt, λ, ∇)
-        if !isProper(standardDistribution(Multivariate, F, η=λ))
-            λ = λ_old
-        end
-    end
-
-    return λ
-end
-
 function renderCVI(log_μ_bw::Function,
                    n_its::Int,
                    opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
@@ -251,12 +192,13 @@ function renderCVI(log_μ_bw::Function,
     η = naturalParams(μ_fw.dist)                   
 
     # Initialize Fisher information matrix
-    A(λ) = logNormalizer(V, F, η=λ)
-    Fisher(λ) = hessian(A, λ)
+    A = λ -> logNormalizer(V, F, η=λ)
+    Fisher = λ -> ForwardDiff.hessian(A, λ)
 
     # Initialize q marginal
     λ_i = deepcopy(λ_0)
     q_i = standardDistribution(V, F, η=λ_i)
+
     for i=1:n_its
         # Store previous results for possible reset
         q_i_min = deepcopy(q_i)
@@ -264,11 +206,61 @@ function renderCVI(log_μ_bw::Function,
 
         # Given the current sample, define natural gradient of q
         s_q_i = sample(q_i)
-        log_q(λ) = logPdf(V, F, s_q_i, η=λ)
-        ∇log_q(λ) = gradient(log_q, λ)[1]
-        
+        log_q = λ -> logPdf(V, F, s_q_i, η=λ)
+        ∇log_q = λ -> ForwardDiff.gradient(log_q, λ)
+
         # Compute current free energy gradient and update natural statistics
         ∇log_μ_bw_i = log_μ_bw(s_q_i)*cholinv(Fisher(λ_i))*∇log_q(λ_i) # Natural gradient of backward message
+        ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
+        update!(opt, λ_i, ∇F_i) # Updates λ_i in-place
+
+        # Update q_i
+        q_i = standardDistribution(V, F, η=λ_i)
+        if !isProper(q_i) # Result is improper; reset statistics
+            q_i = q_i_min
+            λ_i = λ_i_min
+        end
+    end
+
+    return λ_i
+end
+
+# Gaussian result that avoids Fisher information matrix construction
+function renderCVI(log_μ_bw::Function,
+                   n_its::Int,
+                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   λ_0::Vector,
+                   μ_fw::Message{F, V}) where {F<:Gaussian, V<:VariateType}
+
+    # Intialize natural parameters of forward message
+    η = naturalParams(μ_fw.dist)                   
+
+    # Intialize gradients/derivatives of Gaussian moments
+    if V == Univariate
+        ∇m = s -> ForwardDiff.derivative(log_μ_bw, s)
+        ∇v = s -> 0.5*ForwardDiff.derivative(∇m, s)
+    else
+        ∇m = s -> ForwardDiff.gradient(log_μ_bw, s)
+        ∇v = s -> 0.5*ForwardDiff.jacobian(∇m, s)
+    end
+
+    # Initialize q marginal
+    λ_i = deepcopy(λ_0)
+    q_i = standardDistribution(V, F, η=λ_i)
+
+    for i=1:n_its
+        # Store previous results for possible reset
+        q_i_min = deepcopy(q_i)
+        λ_i_min = deepcopy(λ_i)
+
+        # Given the current sample, define natural gradient of q
+        m_q_i = unsafeMean(q_i)
+        s_q_i = sample(q_i)
+        ∇λ_i_1 = ∇m(s_q_i) - 2*∇v(s_q_i)*m_q_i
+        ∇λ_i_2 = ∇v(s_q_i)
+        
+        # Compute current free energy gradient and update natural statistics
+        ∇log_μ_bw_i = vcat(∇λ_i_1, vec(∇λ_i_2))
         ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
         update!(opt, λ_i, ∇F_i) # Updates λ_i in-place
 

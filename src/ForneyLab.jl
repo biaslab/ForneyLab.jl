@@ -16,7 +16,6 @@ using PositiveFactorizations
 using DataStructures: Queue, enqueue!, dequeue!
 using Flux.Optimise
 using Flux.Optimise: update!
-using Zygote
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, <<, exp, convert, show, prod!

@@ -3,7 +3,7 @@ module NonlinearConjugateTest
 using Test
 using Random
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Conjugate, requiresBreaker, breakerParameters, renderCVI
+using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Conjugate, requiresBreaker, breakerParameters, renderCVI, naturalParams, ForgetDelayDescent
 using ForneyLab: SPNonlinearCInGX, SPNonlinearCOutNM, SPNonlinearCIn1MN, SPNonlinearCOutNMX, SPNonlinearCInMX, MNonlinearCInMGX
 
 f(x) = x
@@ -11,7 +11,32 @@ g(x) = x^2
 h(x, y) = x + y
 
 @testset "renderCVI" begin
-    @test true == false
+    log_μ_bw(s) = -s'*s
+    opt = ForgetDelayDescent(1.0, 1.0)
+    
+    # Multivariate Gaussian
+    μ_fw = Message(Multivariate, GaussianMeanVariance, m=[1.0, 2.0], v=[2.0 1.0; 1.0 3.0])
+    η = naturalParams(μ_fw.dist)
+    λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
+    @test length(λ) == 6
+
+    # Univariate Gaussian
+    μ_fw = Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)
+    η = naturalParams(μ_fw.dist)
+    λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
+    @test length(λ) == 2
+
+    # Gamma
+    μ_fw = Message(Univariate, Gamma, a=1.0, b=2.0)
+    η = naturalParams(μ_fw.dist)
+    λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
+    @test length(λ) == 2
+
+    # Categorical
+    μ_fw = Message(Univariate, Categorical, p=[0.2, 0.3, 0.5])
+    η = naturalParams(μ_fw.dist)
+    λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
+    @test length(λ) == 3
 end
 
 @testset "requiresBreaker and breakerParameters" begin
@@ -62,7 +87,8 @@ end
     @test outboundType(SPNonlinearCIn1MN) == Message{FactorNode}
     @test isApplicable(SPNonlinearCIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
 
-    @test ruleSPNonlinearCIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=0.1), n_samples=0) == false
+    msg = ruleSPNonlinearCIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=0.1), n_samples=0)
+    @test typeof(msg) == Message{GaussianWeightedMeanPrecision, Univariate}
 end
 
 @testset "SPNonlinearCInGX" begin
@@ -101,7 +127,7 @@ end
     @test isApplicable(SPNonlinearCInMX, [Message, Message{PointMass}, Nothing])
 
     msg = ruleSPNonlinearCInMX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0))
-    @test true == false # TODO: test rule
+    @test typeof(msg) == Message{GaussianWeightedMeanPrecision, Univariate}
 end
 
 @testset "MNonlinearCInMGX" begin
@@ -111,7 +137,7 @@ end
     @test !isApplicable(MNonlinearCInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
 
     dist = ruleMNonlinearCInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
-    @test true == false # TODO: test rule
+    @test typeof(dist) == ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}
 end
 
 end # module
