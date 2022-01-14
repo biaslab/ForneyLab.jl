@@ -6,8 +6,8 @@ ruleSPNonlinearCInMX,
 ruleSPNonlinearCInGX,
 ruleMNonlinearCInMGX
 
-const default_opt = ForgetDelayDescent(200.0, 0.6) # Default optimizer TODO: make variable
-const default_n_iterations = 1000 # Default number of iterations for gradient descent # TODO: make variable
+const default_optimizer = ForgetDelayDescent(200.0, 0.6) # Default optimizer
+const default_n_iterations = 1000 # Default number of iterations for gradient descent
 
 
 #-----------------------
@@ -18,18 +18,22 @@ ruleSPNonlinearCOutNM(g::Function,
                       msg_out::Nothing,
                       msg_in1::Message;
                       dims::Any=nothing,
-                      n_samples=default_n_samples) =
+                      n_samples=default_n_samples,
+                      n_iterations=default_n_iterations,
+                      optimizer=default_optimizer) =
     ruleSPNonlinearSOutNM(g, nothing, msg_in1; dims=dims, n_samples=n_samples) # Reuse sampling update
 
 function ruleSPNonlinearCIn1MN(g::Function,
                                msg_out::Message,
                                msg_in1::Message{F, V};
                                dims::Any=nothing,
-                               n_samples=default_n_samples) where {F<:FactorNode, V<:VariateType}
+                               n_samples=default_n_samples,
+                               n_iterations=default_n_iterations,
+                               optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
 
     msg_s = ruleSPNonlinearSIn1MN(g, msg_out, nothing; dims=dims, n_samples=n_samples) # Returns Message{Function}
     η = naturalParams(msg_in1.dist)
-    λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in1)
+    λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in1)
 
     return Message(standardDistribution(V, F, η=λ-η))
 end
@@ -38,15 +42,19 @@ ruleSPNonlinearCOutNMX(g::Function,
                        msg_out::Nothing,
                        msgs_in::Vararg{Message};
                        dims::Any=nothing,
-                       n_samples=default_n_samples) = 
-    ruleSPNonlinearSOutNMX(g, nothing, msgs_in...; dims=dims, n_samples=n_samples)                                 
+                       n_samples=default_n_samples,
+                       n_iterations=default_n_iterations,
+                       optimizer=default_optimizer) =
+     ruleSPNonlinearSOutNMX(g, nothing, msgs_in...; dims=dims, n_samples=n_samples)                                 
 
 function ruleSPNonlinearCInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}}; # Only Gaussian because of marginalization over inbounds
                               dims::Any=nothing,
-                              n_samples=default_n_samples)
+                              n_samples=default_n_samples,
+                              n_iterations=default_n_iterations,
+                              optimizer=default_optimizer)                                      
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
@@ -58,7 +66,7 @@ function ruleSPNonlinearCInGX(g::Function,
 
     # Compute joint marginal belief
     η = naturalParams(msg_fw_in.dist)
-    λ = renderCVI(log_pdf_s, default_n_iterations, default_opt, η, msg_fw_in)
+    λ = renderCVI(log_pdf_s, n_iterations, optimizer, η, msg_fw_in)
     d_marg = standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
     (m_in, V_in) = unsafeMeanCov(d_marg)
     
@@ -81,11 +89,13 @@ function ruleSPNonlinearCInMX(g::Function,
                               msg_in1::Message{F, V},
                               msg_in2::Message{PointMass};
                               dims::Any=nothing,
-                              n_samples=default_n_samples) where {F<:FactorNode, V<:VariateType}
+                              n_samples=default_n_samples,
+                              n_iterations=default_n_iterations,
+                              optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
     msg_s = ruleSPNonlinearSInMX(g, msg_out, nothing, msg_in2; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in1.dist)
-    λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in1)
+    λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in1)
 
     return Message(standardDistribution(V, F, η=λ-η))
 end
@@ -96,11 +106,13 @@ function ruleSPNonlinearCInMX(g::Function,
                               msg_in1::Message{PointMass},
                               msg_in2::Message{F, V};
                               dims::Any=nothing,
-                              n_samples=default_n_samples) where {F<:FactorNode, V<:VariateType}
+                              n_samples=default_n_samples,
+                              n_iterations=default_n_iterations,
+                              optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
     msg_s = ruleSPNonlinearSInMX(g, msg_out, msg_in1, nothing; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in2.dist)
-    λ = renderCVI(msg_s.dist.params[:log_pdf], default_n_iterations, default_opt, η, msg_in2)
+    λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in2)
 
     return Message(standardDistribution(V, F, η=λ-η))
 end
@@ -119,7 +131,7 @@ function ruleMNonlinearCInMGX(g::Function,
     log_pdf_s(z) = logPdf(msg_out.dist, g(split(z, ds)...))
 
     η = naturalParams(msg_fw_in.dist)
-    λ = renderCVI(log_pdf_s, default_n_iterations, default_opt, η, msg_fw_in) # Natural statistics of marginal
+    λ = renderCVI(log_pdf_s, default_n_iterations, default_optimizer, η, msg_fw_in) # Natural statistics of marginal
 
     return standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
 end
@@ -174,6 +186,14 @@ function collectSumProductNodeInbounds(node::Nonlinear{Conjugate}, entry::Schedu
         push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
                                           :keyword   => true))
     end
+    if (node.n_iterations !== nothing)
+        push!(inbounds, Dict{Symbol, Any}(:n_iterations => node.n_iterations,
+                                          :keyword      => true))
+    end
+    if (node.optimizer !== nothing)
+        push!(inbounds, Dict{Symbol, Any}(:optimizer => node.optimizer,
+                                          :keyword   => true))
+    end
     return inbounds
 end
 
@@ -183,8 +203,8 @@ end
 #-------------------------
 
 function renderCVI(log_μ_bw::Function,
-                   n_its::Int,
-                   opt::Any, # Optimizer
+                   n_iterations::Int,
+                   optimizer::Any,
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
@@ -199,7 +219,7 @@ function renderCVI(log_μ_bw::Function,
     λ_i = deepcopy(λ_0)
     q_i = standardDistribution(V, F, η=λ_i)
 
-    for i=1:n_its
+    for i=1:n_iterations
         # Store previous results for possible reset
         q_i_min = deepcopy(q_i)
         λ_i_min = deepcopy(λ_i)
@@ -212,7 +232,7 @@ function renderCVI(log_μ_bw::Function,
         # Compute current free energy gradient and update natural statistics
         ∇log_μ_bw_i = log_μ_bw(s_q_i)*cholinv(Fisher(λ_i))*∇log_q(λ_i) # Natural gradient of backward message
         ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
-        λ_i -= apply!(opt, λ_i, ∇F_i) # Update λ_i
+        λ_i -= apply!(optimizer, λ_i, ∇F_i) # Update λ_i
 
         # Update q_i
         q_i = standardDistribution(V, F, η=λ_i)
@@ -227,8 +247,8 @@ end
 
 # Gaussian result that avoids Fisher information matrix construction
 function renderCVI(log_μ_bw::Function,
-                   n_its::Int,
-                   opt::Any, # Optimizer
+                   n_iterations::Int,
+                   optimizer::Any,
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:Gaussian, V<:VariateType}
 
@@ -248,7 +268,7 @@ function renderCVI(log_μ_bw::Function,
     λ_i = deepcopy(λ_0)
     q_i = standardDistribution(V, F, η=λ_i)
 
-    for i=1:n_its
+    for i=1:n_iterations
         # Store previous results for possible reset
         q_i_min = deepcopy(q_i)
         λ_i_min = deepcopy(λ_i)
@@ -262,7 +282,7 @@ function renderCVI(log_μ_bw::Function,
         # Compute current free energy gradient and update natural statistics
         ∇log_μ_bw_i = vcat(∇λ_i_1, vec(∇λ_i_2))
         ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
-        λ_i -= apply!(opt, λ_i, ∇F_i) # Update λ_i
+        λ_i -= apply!(optimizer, λ_i, ∇F_i) # Update λ_i
 
         # Update q_i
         q_i = standardDistribution(V, F, η=λ_i)
