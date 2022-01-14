@@ -1,10 +1,8 @@
 module HelpersTest
 
 using Test
-using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent
+using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent, apply!
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
-using Flux.Optimise
-using Flux.Optimise: update!
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -107,7 +105,7 @@ using Flux.Optimise: update!
     @testset "ForgetDelayDescent" begin
         opt = ForgetDelayDescent(1.,0.6)
         x_test, grad_test = zeros(2), [1,-1]
-        update!(opt,x_test,grad_test)
+        x_test -= apply!(opt, x_test, grad_test)
         @test x_test[1] < 0
         @test x_test[2] > 0
         @test opt.iteration_num == 2 

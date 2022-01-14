@@ -184,7 +184,7 @@ end
 
 function renderCVI(log_μ_bw::Function,
                    n_its::Int,
-                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   opt::Any, # Optimizer
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
@@ -212,7 +212,7 @@ function renderCVI(log_μ_bw::Function,
         # Compute current free energy gradient and update natural statistics
         ∇log_μ_bw_i = log_μ_bw(s_q_i)*cholinv(Fisher(λ_i))*∇log_q(λ_i) # Natural gradient of backward message
         ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
-        update!(opt, λ_i, ∇F_i) # Updates λ_i in-place
+        λ_i -= apply!(opt, λ_i, ∇F_i) # Update λ_i
 
         # Update q_i
         q_i = standardDistribution(V, F, η=λ_i)
@@ -228,7 +228,7 @@ end
 # Gaussian result that avoids Fisher information matrix construction
 function renderCVI(log_μ_bw::Function,
                    n_its::Int,
-                   opt::Union{Descent, Momentum, Nesterov, RMSProp, ADAM, ForgetDelayDescent},
+                   opt::Any, # Optimizer
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:Gaussian, V<:VariateType}
 
@@ -262,7 +262,7 @@ function renderCVI(log_μ_bw::Function,
         # Compute current free energy gradient and update natural statistics
         ∇log_μ_bw_i = vcat(∇λ_i_1, vec(∇λ_i_2))
         ∇F_i = λ_i - η - ∇log_μ_bw_i # Natural gradient of free energy
-        update!(opt, λ_i, ∇F_i) # Updates λ_i in-place
+        λ_i -= apply!(opt, λ_i, ∇F_i) # Update λ_i
 
         # Update q_i
         q_i = standardDistribution(V, F, η=λ_i)

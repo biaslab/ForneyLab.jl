@@ -1,5 +1,3 @@
-import Flux.Optimise: apply!
-
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init, ForgetDelayDescent
 
 # Constants to define smallest/largest supported numbers.
@@ -239,7 +237,7 @@ end
 ForgetDelayDescent(τ::Real, κ::Real) = ForgetDelayDescent(1,τ,κ)
 
 # The below function realizes gradient descent, see https://fluxml.ai/Flux.jl/stable/training/optimisers/
-function Optimise.apply!(o::ForgetDelayDescent, x, Δ)
+function apply!(o::ForgetDelayDescent, x, Δ)
     t, τ, κ = o.iteration_num, o.τ, o.κ
     ρ = (t+τ)^(-κ)
     o.iteration_num = t+1

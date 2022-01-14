@@ -14,8 +14,6 @@ using Roots: find_zero
 using StatsBase: Weights
 using PositiveFactorizations
 using DataStructures: Queue, enqueue!, dequeue!
-using Flux.Optimise
-using Flux.Optimise: update!
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, <<, exp, convert, show, prod!
