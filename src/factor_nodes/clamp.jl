@@ -53,9 +53,9 @@ function copy(src::Clamp{V}) where V<:VariateType
     return nd
 end
 
-variateType(value::Number) = Univariate
-variateType(value::Vector) = Multivariate
-variateType(value::AbstractMatrix) = MatrixVariate
+variateType(::Number) = Univariate
+variateType(::AbstractVector) = Multivariate
+variateType(::AbstractMatrix) = MatrixVariate
 
 """
 `constant` creates a `Variable` which is linked to a new `Clamp`,

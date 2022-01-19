@@ -5,11 +5,11 @@ using ForneyLab
 using ForneyLab: isProper, gaussianQuadrature, matches
 using LinearAlgebra: Diagonal
 
-@testset "matches" begin
-    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
-    @test matches(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution)
-    @test matches(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution)
-    @test !matches(Nothing, ProbabilityDistribution)
+@testset "<<" begin
+    @test <<(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
+    @test <<(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution)
+    @test <<(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution)
+    @test !<<(Nothing, ProbabilityDistribution)
 end
 
 @testset "sample" begin

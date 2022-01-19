@@ -33,16 +33,25 @@ function show(io::IO, msg::Message)
     end
 end
 
-"""Special inheritance rules for parametric Message types"""
-matches(::Type{T}, ::Type{T}) where T<:Message = true
-matches(::Type{Message{F, V}}, ::Type{Message}) where {F<:FactorFunction, V<:VariateType} = true
-matches(::Type{Message{F}}, ::Type{Message}) where {F<:FactorFunction} = true
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
-matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
-matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
-matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
-matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
+"""Parametric ineritance rules for Message types, uses << symbol for ease of notation"""
+<<(::Type, ::Type) = false # In general, types don't parametric inherit; exceptions are specified below
+
+# Parametric inheritance from nonparametric Message (where clauses are required for signature matching)
+<<(::Type{Message}, ::Type{Message}) = true
+<<(::Type{Message{Fa}}, ::Type{Message}) where Fa<:FactorFunction = true
+<<(::Type{Message{Fa, Va}}, ::Type{Message}) where {Fa<:FactorFunction, Va<:VariateType} = true
+
+# Parametric inheritance from Message{<:FactorFunction}
+<<(::Type{Message{Fa}}, ::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
+<<(::Type{Message{Fa, Va}}, ::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
+
+# Parametric inheritance from Message{<:FactorFunction, <:VariateType}
+<<(::Type{Message{Fa, Va}}, ::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
+
+"""
+Matching for Message update rules checks for 2-way parametric inheritance
+"""
+matches(Ta::Type, Tb::Type) = (Ta << Tb) || (Tb << Ta)
 
 function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorFunction, var_t<:VariateType, fam_u<:FactorFunction, var_u<:VariateType}
     (fam_t == fam_u) || return false
