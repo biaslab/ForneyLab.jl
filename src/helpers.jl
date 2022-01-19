@@ -190,14 +190,17 @@ end
 function leaftypes(datatype::Type)
     leafs = []
     stack = Type[datatype]
-    # push!(stack, datatype)
     while !isempty(stack)
-        for T in subtypes(pop!(stack))
-            if isconcretetype(T)
-                push!(leafs, T)
-            else
-                push!(stack, T)
-            end
+        T = pop!(stack)
+        if isconcretetype(T)
+            push!(leafs, T)
+        elseif typeof(T) == Union
+            push!(stack, T.a) # Split Union types
+            push!(stack, T.b)
+        elseif T == Function # Prevent overflow
+            push!(leafs, Function)
+        else
+            append!(stack, subtypes(T))
         end
     end
 

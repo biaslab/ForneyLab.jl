@@ -2,7 +2,7 @@ module MessagePassingTest
 
 using Test
 using ForneyLab
-using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten, Cluster
+using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, <<, matches, flatten, Cluster
 
 @testset "Message" begin
     msg = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -19,22 +19,28 @@ using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, m
     @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, PointMass, m=1.0)
 end
 
+@testset "<<" begin
+    @test <<(Message{Gaussian}, Message)
+    @test <<(Message{Gaussian, Univariate}, Message)
+    @test <<(Message{Gaussian, Univariate}, Message{Gaussian, Univariate})
+    @test <<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Univariate})
+    @test !<<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Multivariate})
+    @test !<<(Message{GaussianMeanVariance, Univariate}, Message{PointMass, Univariate})
+    @test <<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian})
+    @test <<(Message{Gaussian}, Message{Gaussian})
+    @test <<(Message{GaussianMeanVariance}, Message{Gaussian})
+    @test !<<(Nothing, Message{Gaussian})
+    @test !<<(Nothing, Message{GaussianMeanVariance})
+    @test <<(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
+    @test <<(Message{Gamma}, Message{Union{Gamma, Wishart}})
+    @test !<<(Message{GaussianMeanVariance, Univariate}, ProbabilityDistribution{Univariate, GaussianMeanVariance})
+    @test !<<(ProbabilityDistribution{Univariate, GaussianMeanVariance}, Message{GaussianMeanVariance, Univariate})
+end
+
 @testset "matches" begin
-    @test matches(Message{Gaussian}, Message)
-    @test matches(Message{Gaussian, Univariate}, Message)
-    @test matches(Message{Gaussian, Univariate}, Message{Gaussian, Univariate})
-    @test matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Univariate})
-    @test !matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Multivariate})
-    @test !matches(Message{GaussianMeanVariance, Univariate}, Message{PointMass, Univariate})
-    @test matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian})
-    @test matches(Message{Gaussian}, Message{Gaussian})
-    @test matches(Message{GaussianMeanVariance}, Message{Gaussian})
+    @test matches(Message{Gaussian}, Message{FactorFunction})
+    @test matches(Message{FactorFunction}, Message{Gaussian})
     @test !matches(Nothing, Message{Gaussian})
-    @test !matches(Nothing, Message{GaussianMeanVariance})
-    @test matches(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
-    @test matches(Message{Gamma}, Message{Union{Gamma, Wishart}})
-    @test !matches(Message{GaussianMeanVariance, Univariate}, ProbabilityDistribution{Univariate, GaussianMeanVariance})
-    @test !matches(ProbabilityDistribution{Univariate, GaussianMeanVariance}, Message{GaussianMeanVariance, Univariate})
 end
 
 # Integration helper

@@ -16,7 +16,7 @@ function isApplicable(::Type{SPNonlinearSOutNGX}, input_types::Vector{<:Type})
     (input_types[1] == Nothing) || return false
 
     for input_type in input_types[2:end]
-        matches(input_type, Message{Gaussian}) || return false
+        (input_type << Message{Gaussian}) || return false
     end
 
     return true
@@ -27,14 +27,14 @@ outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
 function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
-    (input_types[1] != Nothing) || return false # Require any message on out
+    (input_types[1] == Nothing) && return false # Require any message on out
 
     nothing_inputs = 0
     gaussian_inputs = 0
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -51,8 +51,8 @@ function isApplicable(::Type{SPNonlinearSOutNMX}, input_types::Vector{<:Type})
     
     gaussian_inputs = 0
     for input_type in input_types[2:end]
-        matches(input_type, Message) || return false
-        if matches(input_type, Message{Gaussian})
+        (input_type << Message) || return false
+        if input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -66,14 +66,14 @@ outboundType(::Type{SPNonlinearSInMX}) = Message{Function}
 function isApplicable(::Type{SPNonlinearSInMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
-    (input_types[1] != Nothing) || return false
+    (input_types[1] == Nothing) && return false
 
     nothing_inputs = 0
     gaussian_inputs = 0
     for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
+        elseif input_type << Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -88,7 +88,7 @@ function isApplicable(::Type{MNonlinearSInMGX}, input_types::Vector{<:Type})
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable
 
     for input_type in input_types[2:end]
-        matches(input_type, Message{Gaussian}) || return false
+        (input_type << Message{Gaussian}) || return false
     end
 
     return true
