@@ -2,7 +2,7 @@ module BernoulliTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf, naturalParams, standardDistribution
 using ForneyLab: SPBernoulliOutNP, SPBernoulliIn1PN, SPBernoulliOutNB, VBBernoulliOut, VBBernoulliIn1
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
@@ -36,6 +36,19 @@ end
     @test ProbabilityDistribution(Bernoulli, p=0.2) * ProbabilityDistribution(Bernoulli, p=0.8) == ProbabilityDistribution(Bernoulli, p=0.5000000000000001)
     @test_throws Exception ProbabilityDistribution(Bernoulli, p=0.0) * ProbabilityDistribution(Bernoulli, p=1.0)
 end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(Univariate, Bernoulli, p=0.2)
+    η = naturalParams(d)
+    s = standardDistribution(Univariate, Bernoulli, η=η)
+    @test d.params[:p] == s.params[:p] # Test conversion consistency
+    
+    x = [0.0, 1.0]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Univariate, Bernoulli, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
+end
+
 
 #-------------
 # Update rules

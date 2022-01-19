@@ -120,6 +120,33 @@ function sample(dist::ProbabilityDistribution{Multivariate, <:Gaussian}, n_sampl
     return [U' *randn(d) + m for i in 1:n_samples]
 end
 
+function naturalParams(dist::ProbabilityDistribution{<:VariateType, <:Gaussian})
+    (xi, w) = unsafeWeightedMeanPrecision(dist)
+    return vcat(xi, -0.5*vec(w))
+end
+
+standardDistribution(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=η[1], w=-2*η[2])
+function standardDistribution(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector)
+    d = Int(-0.5 + 0.5*sqrt(1 + 4*length(η))) # Extract dimensionality
+    η_1 = η[1:d]
+    η_2 = reshape(η[d+1:end], d, d)
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=η_1, w=-2.0*η_2)
+end
+
+logNormalizer(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
+function logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector) 
+    d = Int(-0.5 + 0.5*sqrt(1 + 4*length(η))) # Extract dimensionality
+    η_1 = η[1:d]
+    η_2 = reshape(η[d+1:end], d, d)
+    return η_1'*cholinv(-4*η_2)*η_1 - 0.5*logdet(-2*η_2)
+end
+
+logPdf(V::Type{Univariate}, ::Type{F}, x::Number; η::Vector) where F<:Gaussian = -0.5*log(2pi) + vcat(x, x^2)'*η - logNormalizer(V, F; η=η)
+function logPdf(V::Type{Multivariate}, ::Type{F}, x::Vector; η::Vector) where F<:Gaussian
+    d = Int(-0.5 + 0.5*sqrt(1 + 4*length(η))) # Extract dimensionality
+    return -0.5*d*log(2pi) + vcat(x, vec(x*x'))'*η - logNormalizer(V, F; η=η)
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, <:Gaussian})
     return  0.5*log(unsafeCov(dist)) +

@@ -2,7 +2,7 @@ module LogNormalTest
 
 using Test
 using ForneyLab
-using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
+using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims, naturalParams, standardDistribution
 using ForneyLab: SPLogNormalOutNPP, VBLogNormalOut
 
 @testset "dims" begin
@@ -34,6 +34,19 @@ end
     @test ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0) * ProbabilityDistribution(Univariate, PointMass, m=1.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
     @test_throws Exception ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0) * ProbabilityDistribution(Univariate, PointMass, m=-1.0)
     @test ProbabilityDistribution(Univariate, LogNormal, m=0.0, s=2.0) * ProbabilityDistribution(Univariate, Gamma, a=3.0, b=4.0) == ProbabilityDistribution(Univariate, Gamma, a=2.5, b=4.5)
+end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0)
+    η = naturalParams(d)
+    s = standardDistribution(Univariate, LogNormal, η=η)
+    @test d.params[:m] == s.params[:m] # Test conversion consistency
+    @test d.params[:s] == s.params[:s]
+
+    x = [0.2, 1.0, 8.0]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Univariate, LogNormal, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 

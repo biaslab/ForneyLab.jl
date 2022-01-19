@@ -113,6 +113,18 @@ function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     return smpl
 end
 
+naturalParams(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a] .- 1.0 # Variant 2 of https://en.wikipedia.org/wiki/Exponential_family
+naturalParams(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = vec(dist.params[:a]) .- 1.0
+
+standardDistribution(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = ProbabilityDistribution(Multivariate, Dirichlet, a=η.+1.0)
+standardDistribution(::Type{MatrixVariate}, ::Type{Dirichlet}; η::Vector, dims::Tuple) = ProbabilityDistribution(MatrixVariate, Dirichlet, a=reshape(η, dims).+1.0) # Include dimensionality argument for rectangular case
+
+logNormalizer(::Type{Multivariate}, ::Type{Dirichlet}; η::Vector) = sum(loggamma.(η.+1.0)) - loggamma(sum(η.+1.0))
+logNormalizer(::Type{MatrixVariate}, ::Type{Dirichlet}; η::Vector, dims::Tuple) = sum(loggamma.(η.+1.0)) - sum(loggamma.(sum(reshape(η,dims).+1.0, dims=1)))
+
+logPdf(V::Type{Multivariate}, F::Type{Dirichlet}, x::Vector; η::Vector) = log.(x)'*η - logNormalizer(V, F; η=η)
+logPdf(V::Type{MatrixVariate}, F::Type{Dirichlet}, x::Matrix; η::Vector) = log.(vec(x))'*η - logNormalizer(V, F; η=η, dims=size(x))
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])

@@ -101,6 +101,27 @@ end
     return z
 end
 
+function naturalParams(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    d = dims(dist)[1]
+    return vcat(-0.5*vec(cholinv(dist.params[:v])), 0.5*(dist.params[:nu]-d-1))
+end
+
+function standardDistribution(V::Type{MatrixVariate}, F::Type{Wishart}; η::Vector)
+    d = Int(sqrt(length(η) - 1))
+    η_1 = reshape(η[1:end-1], d, d)
+    η_2 = η[end]
+    return ProbabilityDistribution(V, F, v=cholinv(-2.0*η_1), nu=2*η_2+d+1)
+end
+
+function logNormalizer(::Type{MatrixVariate}, ::Type{Wishart}; η::Vector)
+    d = Int(sqrt(length(η) - 1))
+    η_1 = reshape(η[1:end-1], d, d)
+    η_2 = η[end]
+    return -(η_2+(d+1)/2)*logdet(-η_1) + logmvgamma(d, η_2+(d+1)/2)
+end
+
+logPdf(V::Type{MatrixVariate}, F::Type{Wishart}, x::Matrix; η::Vector) = vcat(vec(x), logdet(x))'*η - logNormalizer(V, F; η=η)
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]

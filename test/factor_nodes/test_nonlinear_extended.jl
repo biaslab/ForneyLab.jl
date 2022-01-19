@@ -27,6 +27,7 @@ h_inv_x(z::Vector, y::Vector) = sqrt.(z .+ y)
 @testset "concatenate" begin
     @test concatenate([[1.0, 2.0], [3.0]]) == ([1.0, 2.0, 3.0], [(2,), (1,)])
     @test concatenate([[1.0, 2.0], 3.0]) == ([1.0, 2.0, 3.0], [(2,), ()])
+    @test concatenate([[1.0, 2.0], [3.0 5.0; 4.0 6.0]]) == ([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [(2,), (2,2)])
 end
 
 @testset "localLinearization" begin

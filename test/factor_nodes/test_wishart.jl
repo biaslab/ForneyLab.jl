@@ -2,7 +2,7 @@ module WishartTest
 
 using Test
 using ForneyLab
-using ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
+using ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf, naturalParams, standardDistribution
 using ForneyLab: SPWishartOutNPP, VBWishartOut
 using SpecialFunctions: digamma
 
@@ -39,6 +39,19 @@ end
 
 @testset "log pdf" begin
     @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.0 1.0; 1.0 1.2], nu=6.0),[2.0 1.0; 1.0 2.0]), -8.15846321016661)
+end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0 0.5; 0.5 2.0], nu=4.0)
+    η = naturalParams(d)
+    s = standardDistribution(MatrixVariate, Wishart, η=η)
+    @test isapprox(d.params[:v], s.params[:v]) # Test conversion consistency
+    @test d.params[:nu] == s.params[:nu]
+
+    x = [[3.0 0.1; 0.1 2.0], [1.0 0.3; 0.3 4.0]]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(MatrixVariate, Wishart, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 

@@ -2,7 +2,7 @@ module GammaTest
 
 using Test
 using ForneyLab
-using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
+using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims, naturalParams, standardDistribution
 using ForneyLab: SPGammaOutNPP, VBGammaOut, VBGammaA, VBGammaB
 
 @testset "dims" begin
@@ -23,6 +23,19 @@ end
 @testset "unsafe mean and variance" begin
     @test unsafeMean(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.5
     @test unsafeVar(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.25
+end
+
+@testset "natural parameters" begin
+    d = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=5.0)
+    η = naturalParams(d)
+    s = standardDistribution(Univariate, Gamma, η=η)
+    @test d.params[:a] == s.params[:a] # Test conversion consistency
+    @test d.params[:b] == s.params[:b]
+
+    x = [0.1, 2.0, 15.0]
+    d_x = logPdf.([d], x)
+    η_x = logPdf.(Univariate, Gamma, x; η=η)
+    @test isapprox(d_x, η_x) # Test pdf consistency
 end
 
 
