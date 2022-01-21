@@ -1,3 +1,8 @@
+# Inplementation based on Khan et al. (2017), "Conjugate-computation variational inference: 
+# Converting variational inference in non-conjugate models to inferences in conjugate models",
+# and Akbayrak et al. (2021), "Extended Variational Message Passing for Automated Approximate
+# Bayesian Inference"
+
 export
 ruleSPNonlinearCOutNM,
 ruleSPNonlinearCIn1MN,
