@@ -8,6 +8,6 @@ ruleSPGaussianWeightedMeanPrecisionOutNPP(  msg_out::Nothing,
     Message(V, GaussianWeightedMeanPrecision, xi=deepcopy(msg_weighted_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))
 
 ruleVBGaussianWeightedMeanPrecisionOut( dist_out::Any,
-                                        dist_weighted_mean::ProbabilityDistribution{V},
-                                        dist_prec::ProbabilityDistribution) where V<:VariateType =
+                                        dist_weighted_mean::Distribution{V},
+                                        dist_prec::Distribution) where V<:VariateType =
     Message(V, GaussianWeightedMeanPrecision, xi=unsafeMean(dist_weighted_mean), w=unsafeMean(dist_prec))

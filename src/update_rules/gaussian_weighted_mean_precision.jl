@@ -5,5 +5,5 @@
 
 @naiveVariationalRule(:node_type     => GaussianWeightedMeanPrecision,
                       :outbound_type => Message{GaussianWeightedMeanPrecision},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBGaussianWeightedMeanPrecisionOut)

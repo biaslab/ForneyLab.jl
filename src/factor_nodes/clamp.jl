@@ -24,7 +24,7 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
     value::Any
 
     # Fields for algorithm assembly
-    dist_or_msg::Type # Define whether the clamp outputs a Message or ProbabilityDistribution
+    dist_or_msg::Type # Define whether the clamp outputs a Message or Distribution
     buffer_id::Symbol # Specify the buffer id for an attached placeholder
     buffer_index::Int64 # Specify the buffer index when the placeholder attaches a vector
 

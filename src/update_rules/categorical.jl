@@ -10,10 +10,10 @@
 
 @naiveVariationalRule(:node_type     => Categorical,
                       :outbound_type => Message{Categorical},
-                      :inbound_types => (Nothing, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution),
                       :name          => VBCategoricalOut)
 
 @naiveVariationalRule(:node_type     => Categorical,
                       :outbound_type => Message{Dirichlet},
-                      :inbound_types => (ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Nothing),
                       :name          => VBCategoricalIn1)

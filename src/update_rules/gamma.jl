@@ -5,15 +5,15 @@
 
 @naiveVariationalRule(:node_type     => Gamma,
                       :outbound_type => Message{Gamma},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBGammaOut)
 
 @naiveVariationalRule(:node_type     => Gamma,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
+                      :inbound_types => (Distribution, Nothing, Distribution),
                       :name          => VBGammaA)
 
 @naiveVariationalRule(:node_type     => Gamma,
                       :outbound_type => Message{Gamma},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Distribution, Nothing),
                       :name          => VBGammaB)

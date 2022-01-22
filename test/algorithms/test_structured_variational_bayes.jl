@@ -26,25 +26,25 @@ end
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{PointMass}, Distribution),
                            :name          => SVBMock1VGD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
+                           :inbound_types => (Message{PointMass}, Nothing, Distribution),
                            :name          => SVBMock2GVD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (ProbabilityDistribution, Nothing),
+                           :inbound_types => (Distribution, Nothing),
                            :name          => SVBMock3DV)
 
 @testset "@structuredVariationalRule" begin
     @test SVBMock1VGD <: StructuredVariationalRule{MockNode}
     @test SVBMock2GVD <: StructuredVariationalRule{MockNode}
     @test SVBMock3DV <: StructuredVariationalRule{MockNode}
-    @test isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution])
-    @test !isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution, ProbabilityDistribution])    
+    @test isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, Distribution])
+    @test !isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, Distribution, Distribution])    
 end
 
 @testset "inferUpdateRule!" begin

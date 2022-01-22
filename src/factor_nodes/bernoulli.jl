@@ -37,40 +37,40 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
-format(dist::ProbabilityDistribution{Univariate, Bernoulli}) = "$(slug(Bernoulli))(p=$(format(dist.params[:p])))"
+format(dist::Distribution{Univariate, Bernoulli}) = "$(slug(Bernoulli))(p=$(format(dist.params[:p])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
-ProbabilityDistribution(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
+Distribution(::Type{Univariate}, ::Type{Bernoulli}; p=0.5) = Distribution{Univariate, Bernoulli}(Dict(:p=>p))
+Distribution(::Type{Bernoulli}; p=0.5) = Distribution{Univariate, Bernoulli}(Dict(:p=>p))
 
-dims(dist::ProbabilityDistribution{Univariate, Bernoulli}) = ()
+dims(dist::Distribution{Univariate, Bernoulli}) = ()
 
-vague(::Type{Bernoulli}) = ProbabilityDistribution(Univariate, Bernoulli, p=0.5)
+vague(::Type{Bernoulli}) = Distribution(Univariate, Bernoulli, p=0.5)
 
-isProper(dist::ProbabilityDistribution{Univariate, Bernoulli}) = (0 <= dist.params[:p] <= 1)
+isProper(dist::Distribution{Univariate, Bernoulli}) = (0 <= dist.params[:p] <= 1)
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]
+unsafeMean(dist::Distribution{Univariate, Bernoulli}) = dist.params[:p]
 
-unsafeMode(dist::ProbabilityDistribution{Univariate, Bernoulli}) = round(dist.params[:p])
+unsafeMode(dist::Distribution{Univariate, Bernoulli}) = round(dist.params[:p])
 
-unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [dist.params[:p], 1 - dist.params[:p]]
+unsafeMeanVector(dist::Distribution{Univariate, Bernoulli}) = [dist.params[:p], 1 - dist.params[:p]]
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
+unsafeVar(dist::Distribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
 
-logPdf(dist::ProbabilityDistribution{Univariate, Bernoulli}, x) = x*log(dist.params[:p]) + (1.0-x)*log(1.0-dist.params[:p])
+logPdf(dist::Distribution{Univariate, Bernoulli}, x) = x*log(dist.params[:p]) + (1.0-x)*log(1.0-dist.params[:p])
 
-sample(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1.0*(rand() < dist.params[:p])
+sample(dist::Distribution{Univariate, Bernoulli}) = 1.0*(rand() < dist.params[:p])
 
-naturalParams(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [log(dist.params[:p]/(1.0 - dist.params[:p]))]
+naturalParams(dist::Distribution{Univariate, Bernoulli}) = [log(dist.params[:p]/(1.0 - dist.params[:p]))]
 
-standardDistribution(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = ProbabilityDistribution(V, F, p=exp(η[1])/(1.0 + exp(η[1])))
+standardDistribution(V::Type{Univariate}, F::Type{Bernoulli}; η::Vector) = Distribution(V, F, p=exp(η[1])/(1.0 + exp(η[1])))
 
 logNormalizer(::Type{Univariate}, ::Type{Bernoulli}; η::Vector) = log(1.0 + exp(η[1]))
 
 logPdf(V::Type{Univariate}, F::Type{Bernoulli}, x::Number; η::Vector) = [x]'*η - logNormalizer(V, F; η=η)
 
-function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
-                y::ProbabilityDistribution{Univariate, Bernoulli},
-                z::ProbabilityDistribution{Univariate, Bernoulli}=ProbabilityDistribution(Univariate, Bernoulli, p=0.5))
+function prod!( x::Distribution{Univariate, Bernoulli},
+                y::Distribution{Univariate, Bernoulli},
+                z::Distribution{Univariate, Bernoulli}=Distribution(Univariate, Bernoulli, p=0.5))
 
     norm = x.params[:p] * y.params[:p] + (1 - x.params[:p]) * (1 - y.params[:p])
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")
@@ -80,9 +80,9 @@ function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate, Bernoulli},
-    y::ProbabilityDistribution{Univariate, PointMass},
-    z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=NaN))
+    x::Distribution{Univariate, Bernoulli},
+    y::Distribution{Univariate, PointMass},
+    z::Distribution{Univariate, PointMass}=Distribution(Univariate, PointMass, m=NaN))
 
     z.params[:m] = y.params[:m]
 
@@ -90,7 +90,7 @@ end
 end
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli})
+function differentialEntropy(dist::Distribution{Univariate, Bernoulli})
     p = clamp(dist.params[:p], tiny, 1.0 - tiny)
 
     -(1.0 - p)*log(1.0 - p) -
@@ -98,7 +98,7 @@ function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli
 end
 
 # Average energy functional
-function averageEnergy(::Type{Bernoulli}, marg_out::ProbabilityDistribution{Univariate}, marg_p::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{Bernoulli}, marg_out::Distribution{Univariate}, marg_p::Distribution{Univariate})
     -unsafeMean(marg_out)*unsafeLogMean(marg_p) -
     (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_p)
 end

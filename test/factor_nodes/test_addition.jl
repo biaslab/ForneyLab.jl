@@ -157,8 +157,8 @@ end
     @test MAdditionNGG <: MarginalRule{Addition}
     @test isApplicable(MAdditionNGG, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    @test ruleMAdditionNGG(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=5.0, w=6.0)) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
-    @test ruleMAdditionNGG(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[5.0], w=mat(6.0))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
+    @test ruleMAdditionNGG(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=5.0, w=6.0)) == Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
+    @test ruleMAdditionNGG(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[5.0], w=mat(6.0))) == Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
 end
 
 end # module

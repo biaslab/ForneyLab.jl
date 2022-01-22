@@ -48,8 +48,8 @@ slug(::Type{TransitionMixture}) = "TM"
 
 # Average energy functional
 function averageEnergy(::Type{TransitionMixture},
-                       dist_out_in1_switch::ProbabilityDistribution{Multivariate, Contingency},
-                       dist_factors::Vararg{ProbabilityDistribution})
+                       dist_out_in1_switch::Distribution{Multivariate, Contingency},
+                       dist_factors::Vararg{Distribution})
 
     n_factors = length(dist_factors)
     U = 0.0

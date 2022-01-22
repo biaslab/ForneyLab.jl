@@ -6,7 +6,7 @@ function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{<:Type}
         if (i == 2)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -21,7 +21,7 @@ function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{<:Type}
         if (i == 2)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -31,7 +31,7 @@ function matchPVInputs(input_types::Vector{<:Type})
     Nothing_positions = []
     p_positions = []
     for (i, input_type) in enumerate(input_types)
-        if matches(input_type, ProbabilityDistribution)
+        if matches(input_type, Distribution)
             push!(p_positions, i)
         elseif (input_type == Nothing)
             push!(Nothing_positions, i)
@@ -87,7 +87,7 @@ function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{<:Type})
         if (i == 1)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true

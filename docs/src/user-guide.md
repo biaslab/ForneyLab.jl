@@ -256,9 +256,9 @@ Meta.parse(algo) = quote
     #= none:3 =#
     function stepM!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 2))
         #= none:5 =#
-        messages[1] = ruleVBGaussianMeanVarianceOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=0), ProbabilityDistribution(Univariate, PointMass, m=10))
+        messages[1] = ruleVBGaussianMeanVarianceOut(nothing, Distribution(Univariate, PointMass, m=0), Distribution(Univariate, PointMass, m=10))
         #= none:6 =#
-        messages[2] = ruleVBGaussianMeanPrecisionM(ProbabilityDistribution(Univariate, PointMass, m=data[:y]), nothing, marginals[:w])
+        messages[2] = ruleVBGaussianMeanPrecisionM(Distribution(Univariate, PointMass, m=data[:y]), nothing, marginals[:w])
         #= none:8 =#
         marginals[:m] = (messages[1]).dist * (messages[2]).dist
         #= none:10 =#
@@ -267,9 +267,9 @@ Meta.parse(algo) = quote
     #= none:14 =#
     function stepW!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 2))
         #= none:16 =#
-        messages[1] = ruleVBGammaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=0.1), ProbabilityDistribution(Univariate, PointMass, m=0.1))
+        messages[1] = ruleVBGammaOut(nothing, Distribution(Univariate, PointMass, m=0.1), Distribution(Univariate, PointMass, m=0.1))
         #= none:17 =#
-        messages[2] = ruleVBGaussianMeanPrecisionW(ProbabilityDistribution(Univariate, PointMass, m=data[:y]), marginals[:m], nothing)
+        messages[2] = ruleVBGaussianMeanPrecisionW(Distribution(Univariate, PointMass, m=data[:y]), marginals[:m], nothing)
         #= none:19 =#
         marginals[:w] = (messages[1]).dist * (messages[2]).dist
         #= none:21 =#

@@ -137,7 +137,7 @@ end
     @test !isApplicable(MNonlinearCInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
 
     dist = ruleMNonlinearCInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
-    @test typeof(dist) == ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}
+    @test typeof(dist) == Distribution{Multivariate, GaussianWeightedMeanPrecision}
 end
 
 end # module

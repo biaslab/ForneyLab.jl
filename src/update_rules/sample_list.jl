@@ -5,5 +5,5 @@
 
 @naiveVariationalRule(:node_type     => SampleList,
                       :outbound_type => Message{SampleList},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBSampleListOut)

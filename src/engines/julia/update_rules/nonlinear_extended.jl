@@ -182,5 +182,5 @@ function ruleMNonlinearEInGX(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_in, V_in) = smoothRTS(m_fw_out, V_fw_out, C_fw, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
 end

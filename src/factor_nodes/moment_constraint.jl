@@ -46,4 +46,4 @@ requiresBreaker(interface::Interface, partner_interface::Interface, partner_node
 breakerParameters(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
 
 # Constraints do not contribute to average energy
-averageEnergy(::Type{MomentConstraint}, marg_out::ProbabilityDistribution) = 0.0
+averageEnergy(::Type{MomentConstraint}, marg_out::Distribution) = 0.0

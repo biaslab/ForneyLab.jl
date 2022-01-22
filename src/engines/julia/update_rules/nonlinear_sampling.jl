@@ -158,7 +158,7 @@ function ruleMNonlinearSInMGX(g::Function,
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
     W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
 
-    return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=m_in, w=W_in)
+    return Distribution(Multivariate, GaussianMeanPrecision, m=m_in, w=W_in)
 end
 
 
@@ -220,16 +220,16 @@ end
 #---------------------------
 
 function prod!(
-    x::ProbabilityDistribution{V, Function},
-    y::ProbabilityDistribution{V, Function}) where V<:VariateType # log-pdf for z cannot be predefined, because it cannot be overwritten
+    x::Distribution{V, Function},
+    y::Distribution{V, Function}) where V<:VariateType # log-pdf for z cannot be predefined, because it cannot be overwritten
 
-    return ProbabilityDistribution(V, Function, log_pdf=(s)->x.params[:log_pdf](s) + y.params[:log_pdf](s))
+    return Distribution(V, Function, log_pdf=(s)->x.params[:log_pdf](s) + y.params[:log_pdf](s))
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate}, # Includes function distributions
-    y::ProbabilityDistribution{Univariate, <:Gaussian},
-    z::ProbabilityDistribution{Univariate, GaussianMeanPrecision}=ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0))
+    x::Distribution{Univariate}, # Includes function distributions
+    y::Distribution{Univariate, <:Gaussian},
+    z::Distribution{Univariate, GaussianMeanPrecision}=Distribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0))
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
@@ -246,9 +246,9 @@ end
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate}, # Includes function distributions
-    y::ProbabilityDistribution{Multivariate, <:Gaussian},
-    z::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)))
+    x::Distribution{Multivariate}, # Includes function distributions
+    y::Distribution{Multivariate, <:Gaussian},
+    z::Distribution{Multivariate, GaussianMeanPrecision}=Distribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)))
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
@@ -315,7 +315,7 @@ end
 # Helpers
 #--------
 
-function logJointPdfs(m_fw_in::Vector, W_fw_in::AbstractMatrix, dist_out::ProbabilityDistribution, g::Function, ds::Vector)
+function logJointPdfs(m_fw_in::Vector, W_fw_in::AbstractMatrix, dist_out::Distribution, g::Function, ds::Vector)
     log_joint(x) = -0.5*sum(intdim.(ds))*log(2pi) + 0.5*logdet(W_fw_in) - 0.5*(x - m_fw_in)'*W_fw_in*(x - m_fw_in) + logPdf(dist_out, g(split(x, ds)...))
     d_log_joint(x) = ForwardDiff.gradient(log_joint, x)
 

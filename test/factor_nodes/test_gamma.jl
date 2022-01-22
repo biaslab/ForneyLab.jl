@@ -6,27 +6,27 @@ using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims,
 using ForneyLab: SPGammaOutNPP, VBGammaOut, VBGammaA, VBGammaB
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == ()
+    @test dims(Distribution(Univariate, Gamma, a=1.0, b=1.0)) == ()
 end
 
 @testset "vague" begin
-    @test vague(Gamma) == ProbabilityDistribution(Univariate, Gamma, a=1.0, b=tiny)
+    @test vague(Gamma) == Distribution(Univariate, Gamma, a=1.0, b=tiny)
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0) * ProbabilityDistribution(Univariate, Gamma, a=3.0, b=4.0) == ProbabilityDistribution(Univariate, Gamma, a=3.0, b=6.0)
-    @test ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0) * ProbabilityDistribution(Univariate, PointMass, m=1.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
-    @test ProbabilityDistribution(Univariate, PointMass, m=1.0) * ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
-    @test_throws Exception ProbabilityDistribution(Univariate, PointMass, m=-1.0) * ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)
+    @test Distribution(Univariate, Gamma, a=1.0, b=2.0) * Distribution(Univariate, Gamma, a=3.0, b=4.0) == Distribution(Univariate, Gamma, a=3.0, b=6.0)
+    @test Distribution(Univariate, Gamma, a=1.0, b=2.0) * Distribution(Univariate, PointMass, m=1.0) == Distribution(Univariate, PointMass, m=1.0)
+    @test Distribution(Univariate, PointMass, m=1.0) * Distribution(Univariate, Gamma, a=1.0, b=2.0) == Distribution(Univariate, PointMass, m=1.0)
+    @test_throws Exception Distribution(Univariate, PointMass, m=-1.0) * Distribution(Univariate, Gamma, a=1.0, b=2.0)
 end
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.5
-    @test unsafeVar(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.25
+    @test unsafeMean(Distribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.5
+    @test unsafeVar(Distribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.25
 end
 
 @testset "natural parameters" begin
-    d = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=5.0)
+    d = Distribution(Univariate, Gamma, a=2.0, b=5.0)
     η = naturalParams(d)
     s = standardDistribution(Univariate, Gamma, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
@@ -54,30 +54,30 @@ end
 @testset "VBGammaOut" begin
     @test VBGammaOut <: NaiveVariationalRule{Gamma}
     @test outboundType(VBGammaOut) == Message{Gamma}
-    @test isApplicable(VBGammaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
-    @test !isApplicable(VBGammaOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
+    @test isApplicable(VBGammaOut, [Nothing, Distribution, Distribution])
+    @test !isApplicable(VBGammaOut, [Distribution, Distribution, Nothing])
 
-    @test ruleVBGammaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gamma, a=1.5, b=3.0)
+    @test ruleVBGammaOut(nothing, Distribution(Univariate, PointMass, m=1.5), Distribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gamma, a=1.5, b=3.0)
 end
 
 @testset "VBGammaA" begin
     @test VBGammaA <: NaiveVariationalRule{Gamma}
     @test outboundType(VBGammaA) == Message{Function}
-    @test !isApplicable(VBGammaA, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
-    @test isApplicable(VBGammaA, [ProbabilityDistribution, Nothing, ProbabilityDistribution])
+    @test !isApplicable(VBGammaA, [Nothing, Distribution, Distribution])
+    @test isApplicable(VBGammaA, [Distribution, Nothing, Distribution])
 end
 
 @testset "VBGammaB" begin
     @test VBGammaB <: NaiveVariationalRule{Gamma}
     @test outboundType(VBGammaB) == Message{Gamma}
-    @test !isApplicable(VBGammaB, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
-    @test isApplicable(VBGammaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
+    @test !isApplicable(VBGammaB, [Nothing, Distribution, Distribution])
+    @test isApplicable(VBGammaB, [Distribution, Distribution, Nothing])
 
-    @test ruleVBGammaB(ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0), nothing) == Message(Univariate, Gamma, a=4.0, b=1.5)
+    @test ruleVBGammaB(Distribution(Univariate, PointMass, m=1.5), Distribution(Univariate, PointMass, m=3.0), nothing) == Message(Univariate, Gamma, a=4.0, b=1.5)
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test differentialEntropy(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, PointMass, m=1.0), ProbabilityDistribution(Univariate, PointMass, m=2.0))
+    @test differentialEntropy(Distribution(Univariate, Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, Distribution(Univariate, Gamma, a=1.0, b=2.0), Distribution(Univariate, PointMass, m=1.0), Distribution(Univariate, PointMass, m=2.0))
 end
 
 end #module

@@ -8,7 +8,7 @@ ruleEPProbitIn1PG
 function ruleSPProbitOutNG(msg_out::Nothing,
                            msg_in1::Message{F, Univariate}) where F<:Gaussian
 
-    d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+    d_in1 = convert(Distribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     
     p = normcdf(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
     isnan(p) && (p = 0.5)

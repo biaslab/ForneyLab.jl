@@ -13,8 +13,8 @@ function ruleSPSampleListOutNPP(msg_out::Nothing,
 end
 
 function ruleVBSampleListOut(dist_out::Any,
-                             dist_s::ProbabilityDistribution{Multivariate, PointMass}, # Multivariate, because vectors of samples and weight are passed as parameters
-                             dist_w::ProbabilityDistribution{Multivariate, PointMass})
+                             dist_s::Distribution{Multivariate, PointMass}, # Multivariate, because vectors of samples and weight are passed as parameters
+                             dist_w::Distribution{Multivariate, PointMass})
     
     s = deepcopy(dist_s.params[:m])
     w = deepcopy(dist_w.params[:m])

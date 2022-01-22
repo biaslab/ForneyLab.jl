@@ -12,7 +12,7 @@ using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, <
     @test !isa(msg, Message{GaussianMeanPrecision})
     @test !isa(msg, Message{GaussianMeanVariance, Multivariate})
     @test !isa(msg, Message{GaussianMeanVariance, MatrixVariate})
-    @test msg.dist == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    @test msg.dist == Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
 
     @test Message(Univariate, PointMass, m=0.0) == Message(Univariate, PointMass, m=0.0)
     @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -33,8 +33,8 @@ end
     @test !<<(Nothing, Message{GaussianMeanVariance})
     @test <<(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
     @test <<(Message{Gamma}, Message{Union{Gamma, Wishart}})
-    @test !<<(Message{GaussianMeanVariance, Univariate}, ProbabilityDistribution{Univariate, GaussianMeanVariance})
-    @test !<<(ProbabilityDistribution{Univariate, GaussianMeanVariance}, Message{GaussianMeanVariance, Univariate})
+    @test !<<(Message{GaussianMeanVariance, Univariate}, Distribution{Univariate, GaussianMeanVariance})
+    @test !<<(Distribution{Univariate, GaussianMeanVariance}, Message{GaussianMeanVariance, Univariate})
 end
 
 @testset "matches" begin

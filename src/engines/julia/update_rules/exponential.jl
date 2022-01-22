@@ -7,7 +7,7 @@ ruleSPExponentialIn1PN
 function ruleSPExponentialOutNG(msg_out::Nothing, 
 								msg_in1::Message{F, Univariate}) where F<:Gaussian
 
-    d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+    d_in1 = convert(Distribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
     return Message(Univariate, LogNormal, m=d_in1.params[:m], s=d_in1.params[:v])
 end

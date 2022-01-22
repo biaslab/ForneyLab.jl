@@ -6,32 +6,32 @@ using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeCov, unsaf
 using ForneyLab: SPSampleListOutNPP, VBSampleListOut
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])) == ()
-    @test dims(ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])) == (1,)
-    @test dims(ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(0.0), mat(1.0)], w=[0.5, 0.5])) == (1,1)
+    @test dims(Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])) == ()
+    @test dims(Distribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])) == (1,)
+    @test dims(Distribution(MatrixVariate, SampleList, s=[mat(0.0), mat(1.0)], w=[0.5, 0.5])) == (1,1)
 end
 
 @testset "unsafeMean" begin
-    @test unsafeMean(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 1.0
-    @test unsafeMean(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [1.0]
-    @test unsafeMean(ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(1.0), mat(1.0)], w=[0.5, 0.5])) == mat(1.0)
+    @test unsafeMean(Distribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 1.0
+    @test unsafeMean(Distribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [1.0]
+    @test unsafeMean(Distribution(MatrixVariate, SampleList, s=[mat(1.0), mat(1.0)], w=[0.5, 0.5])) == mat(1.0)
 end
 
 @testset "unsafeVar" begin
-    @test unsafeVar(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
-    @test unsafeVar(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [0.0]
+    @test unsafeVar(Distribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
+    @test unsafeVar(Distribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [0.0]
 end
 
 @testset "unsafeCov" begin
-    @test unsafeCov(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
-    @test unsafeCov(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == mat(0.0)
-    @test unsafeCov(ProbabilityDistribution(MatrixVariate, SampleList, s=[eye(2), eye(2)], w=[0.5, 0.5])) == zeros(4,4)
+    @test unsafeCov(Distribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
+    @test unsafeCov(Distribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == mat(0.0)
+    @test unsafeCov(Distribution(MatrixVariate, SampleList, s=[eye(2), eye(2)], w=[0.5, 0.5])) == zeros(4,4)
 end
 
 @testset "Univariate SampleList prod!" begin
-    dist_gaussian = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    dist_prod = dist_gaussian * ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
-    dist_true_prod = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
+    dist_gaussian = Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    dist_prod = dist_gaussian * Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist_true_prod = Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
 
     @test dist_prod.params[:s] == dist_true_prod.params[:s]
     @test dist_prod.params[:w] == dist_true_prod.params[:w]
@@ -39,9 +39,9 @@ end
 end
 
 @testset "Multivariate SampleList prod!" begin
-    dist_gaussian = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
-    dist_prod = dist_gaussian * ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])
-    dist_true_prod = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
+    dist_gaussian = Distribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
+    dist_prod = dist_gaussian * Distribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])
+    dist_true_prod = Distribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
 
     @test dist_prod.params[:s] == dist_true_prod.params[:s]
     @test dist_prod.params[:w] == dist_true_prod.params[:w]
@@ -49,9 +49,9 @@ end
 end
 
 @testset "Initialization of logproposal, logintegrand, unnormalizedweights" begin
-    dist_beta = ProbabilityDistribution(Univariate, Beta, a=2.0, b=1.0)
-    dist_gamma = ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)
-    dist_sample = ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
+    dist_beta = Distribution(Univariate, Beta, a=2.0, b=1.0)
+    dist_gamma = Distribution(Univariate, Gamma, a=2.0, b=1.0)
+    dist_sample = Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
     dist_betagamma = dist_beta*dist_gamma
     dist_gammasample = dist_gamma*dist_sample
     dist_betagg = dist_betagamma*dist_gamma
@@ -70,20 +70,20 @@ end
 end
 
 @testset "bootstrap" begin
-    p1 = ProbabilityDistribution(Univariate, SampleList, s=[2.0], w=[1.0])
-    p2 = ProbabilityDistribution(Univariate, PointMass, m=0.0)
+    p1 = Distribution(Univariate, SampleList, s=[2.0], w=[1.0])
+    p2 = Distribution(Univariate, PointMass, m=0.0)
     @test bootstrap(p1, p2) == [2.0]
 
-    p1 = ProbabilityDistribution(Multivariate, SampleList, s=[[2.0]], w=[1.0])
-    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=mat(tiny))
+    p1 = Distribution(Multivariate, SampleList, s=[[2.0]], w=[1.0])
+    p2 = Distribution(MatrixVariate, PointMass, m=mat(tiny))
     @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
 
-    p1 = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.0)
-    p2 = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0])
+    p1 = Distribution(Univariate, GaussianMeanVariance, m=2.0, v=0.0)
+    p2 = Distribution(Univariate, SampleList, s=[0.0], w=[1.0])
     @test bootstrap(p1, p2) == [2.0]
 
-    p1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
-    p2 = ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
+    p1 = Distribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
+    p2 = Distribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
     @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
 end
 
@@ -105,11 +105,11 @@ end
 @testset "VBSampleListOut" begin
     @test VBSampleListOut <: NaiveVariationalRule{SampleList}
     @test outboundType(VBSampleListOut) == Message{SampleList}
-    @test isApplicable(VBSampleListOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test isApplicable(VBSampleListOut, [Nothing, Distribution, Distribution])
 
-    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[0.0,2.0,5.2]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.5,0.1])) == Message(Univariate, SampleList, s=[0.0,2.0,5.2], w=[0.4,0.5,0.1])
-    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[[0.0,2.0],[5.2,-0.6]]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(Multivariate, SampleList, s=[[0.0,2.0],[5.2,-0.6]], w=[0.4,0.6])
-    @test ruleVBSampleListOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[eye(2),eye(2)]), ProbabilityDistribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(MatrixVariate, SampleList, s=[eye(2),eye(2)], w=[0.4,0.6])
+    @test ruleVBSampleListOut(nothing, Distribution(Multivariate, PointMass, m=[0.0,2.0,5.2]), Distribution(Multivariate, PointMass, m=[0.4,0.5,0.1])) == Message(Univariate, SampleList, s=[0.0,2.0,5.2], w=[0.4,0.5,0.1])
+    @test ruleVBSampleListOut(nothing, Distribution(Multivariate, PointMass, m=[[0.0,2.0],[5.2,-0.6]]), Distribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(Multivariate, SampleList, s=[[0.0,2.0],[5.2,-0.6]], w=[0.4,0.6])
+    @test ruleVBSampleListOut(nothing, Distribution(Multivariate, PointMass, m=[eye(2),eye(2)]), Distribution(Multivariate, PointMass, m=[0.4,0.6])) == Message(MatrixVariate, SampleList, s=[eye(2),eye(2)], w=[0.4,0.6])
 end
 
 
@@ -152,7 +152,7 @@ end
     # Execute the algorithm code
     marginals = step!(Dict())
 
-    @test marginals[:y] == ProbabilityDistribution(Univariate, SampleList, s=collect(1.0:4.0), w=ones(4)/4)
+    @test marginals[:y] == Distribution(Univariate, SampleList, s=collect(1.0:4.0), w=ones(4)/4)
 end
 
 @testset "Differential Entropy estimate" begin

@@ -50,10 +50,10 @@
 
 @naiveVariationalRule(:node_type     => GaussianMeanVariance,
                       :outbound_type => Message{GaussianMeanVariance},
-                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
+                      :inbound_types => (Distribution, Nothing, Distribution),
                       :name          => VBGaussianMeanVarianceM)
 
 @naiveVariationalRule(:node_type     => GaussianMeanVariance,
                       :outbound_type => Message{GaussianMeanVariance},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBGaussianMeanVarianceOut)

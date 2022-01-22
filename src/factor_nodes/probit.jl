@@ -43,7 +43,7 @@ function breakerParameters(interface::Interface, partner_interface::Interface, p
 end
 
 # Average energy functional
-function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate, Bernoulli}, marg_in1::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
+function averageEnergy(::Type{Probit}, marg_out::Distribution{Univariate, Bernoulli}, marg_in1::Distribution{Univariate, F}) where F<:Gaussian
 
     # extract parameters
     (m, v) = unsafeMeanCov(marg_in1)
@@ -53,15 +53,15 @@ function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univari
     gaussianQuadrature(h, m=m, v=v)
 end
 
-function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate, PointMass}, marg_in1::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
+function averageEnergy(::Type{Probit}, marg_out::Distribution{Univariate, PointMass}, marg_in1::Distribution{Univariate, F}) where F<:Gaussian
     p = marg_out.params[:m]
     isnan(p) && (p = 0.5)
     (0.0 <= p <= 1.0) || error("Binary input $p must be between 0 and 1")
 
-    return averageEnergy(Probit, ProbabilityDistribution(Univariate, Bernoulli, p=p), marg_in1)
+    return averageEnergy(Probit, Distribution(Univariate, Bernoulli, p=p), marg_in1)
 end
 
-function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate,PointMass}, marg_in1::ProbabilityDistribution{Univariate,SampleList})
+function averageEnergy(::Type{Probit}, marg_out::Distribution{Univariate,PointMass}, marg_in1::Distribution{Univariate,SampleList})
     samples = marg_in1.params[:s]
     weights = marg_in1.params[:w]
     p = marg_out.params[:m]

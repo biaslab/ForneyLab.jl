@@ -111,7 +111,7 @@ The last step is to execute the message-passing algorithm. In order to do this, 
 # Create a marginals dictionary, and initialize hyperparameters
 a = 2.0
 b = 7.0
-marginals = Dict(:θ => ProbabilityDistribution(Beta, a=a, b=b))
+marginals = Dict(:θ => Distribution(Beta, a=a, b=b))
 
 for i in 1:N
     # Feed in datapoints 1 at a time

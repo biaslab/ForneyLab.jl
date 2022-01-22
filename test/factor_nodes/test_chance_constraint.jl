@@ -32,7 +32,7 @@ end
 end
 
 @testset "averageEnergy" begin
-    @test averageEnergy(ChanceConstraint, ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+    @test averageEnergy(ChanceConstraint, Distribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
 end
 
 

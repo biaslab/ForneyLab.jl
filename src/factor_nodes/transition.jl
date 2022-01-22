@@ -40,10 +40,10 @@ end
 slug(::Type{Transition}) = "T"
 
 # Average energy functional
-function averageEnergy(::Type{Transition}, marg_out::ProbabilityDistribution, marg_in1::ProbabilityDistribution, marg_a::ProbabilityDistribution{MatrixVariate})
+function averageEnergy(::Type{Transition}, marg_out::Distribution, marg_in1::Distribution, marg_a::Distribution{MatrixVariate})
     -unsafeMeanVector(marg_out)'*unsafeLogMean(marg_a)*unsafeMeanVector(marg_in1)
 end
 
-function averageEnergy(::Type{Transition}, marg_out_in1::ProbabilityDistribution{Multivariate, Contingency}, marg_a::ProbabilityDistribution{MatrixVariate})
+function averageEnergy(::Type{Transition}, marg_out_in1::Distribution{Multivariate, Contingency}, marg_a::Distribution{MatrixVariate})
     -tr(marg_out_in1.params[:p]'*unsafeLogMean(marg_a))
 end

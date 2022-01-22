@@ -119,7 +119,7 @@ end
     data = Dict(:y => 1.0)
     step!(marginals, data)
 
-    @test marginals[:x] == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)
+    @test marginals[:x] == Distribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)
 end
 
 # Composite node definition without custom rule

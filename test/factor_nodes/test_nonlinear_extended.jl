@@ -130,8 +130,8 @@ end
     @test MNonlinearEInGX <: MarginalRule{Nonlinear{Extended}}
     @test isApplicable(MNonlinearEInGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    @test ruleMNonlinearEInGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.6, 4.85], v=[0.20000000000000007 0.19999999999999998; 0.19999999999999998 0.95])
-    @test ruleMNonlinearEInGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.6, 4.85], v=[0.20000000000000007 0.19999999999999998; 0.19999999999999998 0.95])
+    @test ruleMNonlinearEInGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Distribution(Multivariate, GaussianMeanVariance, m=[2.6, 4.85], v=[0.20000000000000007 0.19999999999999998; 0.19999999999999998 0.95])
+    @test ruleMNonlinearEInGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Distribution(Multivariate, GaussianMeanVariance, m=[2.6, 4.85], v=[0.20000000000000007 0.19999999999999998; 0.19999999999999998 0.95])
 end
 
 

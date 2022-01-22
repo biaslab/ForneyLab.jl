@@ -191,7 +191,7 @@ function collectAverageEnergyInbounds(node::FactorNode)
 
         if isClamped(inbound_interface)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Distribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif !(current_region in encountered_regions)
             # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
             target = local_edge_to_region[node_interface.edge]

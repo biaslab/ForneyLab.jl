@@ -36,28 +36,28 @@ end
 
 slug(::Type{Poisson}) = "Poisson"
 
-format(dist::ProbabilityDistribution{Univariate, Poisson}) = "$(slug(Poisson))(l=$(format(dist.params[:l])))"
+format(dist::Distribution{Univariate, Poisson}) = "$(slug(Poisson))(l=$(format(dist.params[:l])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
-ProbabilityDistribution(::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
+Distribution(::Type{Univariate}, ::Type{Poisson}; l=1.0) = Distribution{Univariate, Poisson}(Dict(:l=>l))
+Distribution(::Type{Poisson}; l=1.0) = Distribution{Univariate, Poisson}(Dict(:l=>l))
 
-dims(dist::ProbabilityDistribution{Univariate, Poisson}) = ()
+dims(dist::Distribution{Univariate, Poisson}) = ()
 
-vague(::Type{Poisson}) = ProbabilityDistribution(Univariate, Poisson, l=huge)
+vague(::Type{Poisson}) = Distribution(Univariate, Poisson, l=huge)
 
-isProper(dist::ProbabilityDistribution{Univariate, Poisson}) = (0 < dist.params[:l] < huge)
+isProper(dist::Distribution{Univariate, Poisson}) = (0 < dist.params[:l] < huge)
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.params[:l])
+unsafeMean(dist::Distribution{Univariate, Poisson}) = Float64(dist.params[:l])
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.params[:l])
+unsafeVar(dist::Distribution{Univariate, Poisson}) = Float64(dist.params[:l])
 
-logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, x) = x*log(dist.params[:l]) - dist.params[:l] - logfactorial(x)
+logPdf(dist::Distribution{Univariate, Poisson}, x) = x*log(dist.params[:l]) - dist.params[:l] - logfactorial(x)
 
-sample(dist::ProbabilityDistribution{Univariate, Poisson}) = poisinvcdf(dist.params[:l], rand())
+sample(dist::Distribution{Univariate, Poisson}) = poisinvcdf(dist.params[:l], rand())
 
-naturalParams(dist::ProbabilityDistribution{Univariate, Poisson}) = [log(dist.params[:l])]
+naturalParams(dist::Distribution{Univariate, Poisson}) = [log(dist.params[:l])]
 
-standardDistribution(V::Type{Univariate}, F::Type{Poisson}; η::Vector) = ProbabilityDistribution(V, F, l=exp(η[1]))
+standardDistribution(V::Type{Univariate}, F::Type{Poisson}; η::Vector) = Distribution(V, F, l=exp(η[1]))
 
 logNormalizer(::Type{Univariate}, ::Type{Poisson}; η::Vector) = exp(η[1])
 
@@ -72,13 +72,13 @@ end
 
 # Entropy functional
 # @ref https://en.wikipedia.org/wiki/Poisson_distribution
-function differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
+function differentialEntropy(dist::Distribution{Univariate, Poisson})
     l = clamp(dist.params[:l], tiny, huge)
     l*(1-log(l)) + exp(-l)*apprSum(l)
 end
 
 # Average energy functional
-function averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{Poisson}, marg_out::Distribution{Univariate}, marg_l::Distribution{Univariate})
     unsafeMean(marg_l) -
     unsafeMean(marg_out)*unsafeLogMean(marg_l) +
     exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))

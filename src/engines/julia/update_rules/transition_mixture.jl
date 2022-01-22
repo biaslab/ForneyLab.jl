@@ -55,7 +55,7 @@ end
 function ruleSVBTransitionMixtureOutNCCDX(msg_out::Any,
                                           msg_in1::Message{Categorical},
                                           msg_switch::Message{Categorical},
-                                          dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+                                          dist_factors::Vararg{Distribution{MatrixVariate}})
     z_bar = msg_switch.dist.params[:p]
     n_factors = length(dist_factors)
     d = dims(dist_factors[1])[1] # Dimensionality of output
@@ -70,7 +70,7 @@ end
 function ruleSVBTransitionMixtureIn1CNCDX(msg_out::Message{Categorical},
                                           msg_in1::Any,
                                           msg_switch::Message{Categorical},
-                                          dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+                                          dist_factors::Vararg{Distribution{MatrixVariate}})
     z_bar = msg_switch.dist.params[:p]
     n_factors = length(dist_factors)
     d = dims(dist_factors[1])[2] # Dimensionality of input
@@ -85,7 +85,7 @@ end
 function ruleSVBTransitionMixtureZCCNDX(msg_out::Message{Categorical},
                                         msg_in1::Message{Categorical},
                                         msg_switch::Any,
-                                        dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+                                        dist_factors::Vararg{Distribution{MatrixVariate}})
     n_factors = length(dist_factors)
     a = zeros(n_factors)
     for k=1:n_factors
@@ -95,8 +95,8 @@ function ruleSVBTransitionMixtureZCCNDX(msg_out::Message{Categorical},
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleSVBTransitionMixtureA(dist_out_in1_switch::ProbabilityDistribution{Multivariate, Contingency},
-                                   dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{MatrixVariate}}})
+function ruleSVBTransitionMixtureA(dist_out_in1_switch::Distribution{Multivariate, Contingency},
+                                   dist_factors::Vararg{Union{Nothing, Distribution{MatrixVariate}}})
     
     k = findfirst(dist_factors .== nothing) # Find factor
     
@@ -106,7 +106,7 @@ end
 function ruleMTransitionMixtureCCCDX(msg_out::Message{Categorical, Univariate},
                                      msg_in1::Message{Categorical, Univariate},
                                      msg_switch::Message{Categorical, Univariate},
-                                     dist_factors::Vararg{ProbabilityDistribution{MatrixVariate}})
+                                     dist_factors::Vararg{Distribution{MatrixVariate}})
     n_factors = length(dist_factors)    
     z_bar = msg_switch.dist.params[:p]
     B = Vector{Matrix}(undef, n_factors)
@@ -114,7 +114,7 @@ function ruleMTransitionMixtureCCCDX(msg_out::Message{Categorical, Univariate},
         B[k] = z_bar[k]*Diagonal(msg_out.dist.params[:p])*clamp.(exp.(unsafeLogMean(dist_factors[k])), tiny, Inf)*Diagonal(msg_in1.dist.params[:p])
     end
 
-    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(sum(B)))
+    Distribution(Multivariate, Contingency, p=B./sum(sum(B)))
 end
 
 function ruleMTransitionMixtureCCCNX(msg_out::Message{Categorical, Univariate},
@@ -128,5 +128,5 @@ function ruleMTransitionMixtureCCCNX(msg_out::Message{Categorical, Univariate},
         B[k] = z_bar[k]*Diagonal(msg_out.dist.params[:p])*msg_factors[k].dist.params[:m]*Diagonal(msg_in1.dist.params[:p])
     end
 
-    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(sum(B)))
+    Distribution(Multivariate, Contingency, p=B./sum(sum(B)))
 end

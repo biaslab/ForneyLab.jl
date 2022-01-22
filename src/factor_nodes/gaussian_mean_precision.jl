@@ -36,54 +36,54 @@ end
 
 slug(::Type{GaussianMeanPrecision}) = "𝒩"
 
-format(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = "$(slug(GaussianMeanPrecision))(m=$(format(dist.params[:m])), w=$(format(dist.params[:w])))"
+format(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = "$(slug(GaussianMeanPrecision))(m=$(format(dist.params[:m])), w=$(format(dist.params[:w])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
-ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
-ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=transpose([1.0])) = ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
+Distribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = Distribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
+Distribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = Distribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
+Distribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=transpose([1.0])) = Distribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
 
-dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = size(dist.params[:m])
+dims(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = size(dist.params[:m])
 
-vague(::Type{GaussianMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-vague(::Type{GaussianMeanPrecision}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims[1]))
+vague(::Type{GaussianMeanPrecision}) = Distribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
+vague(::Type{GaussianMeanPrecision}, dims::Tuple{Int64}) = Distribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims[1]))
 
-unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
+unsafeMean(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
 
-unsafeMode(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mode
+unsafeMode(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mode
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe variance
-unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = diag(cholinv(dist.params[:w]))
+unsafeVar(dist::Distribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe variance
+unsafeVar(dist::Distribution{Multivariate, GaussianMeanPrecision}) = diag(cholinv(dist.params[:w]))
 
-unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = cholinv(dist.params[:w])
+unsafeCov(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = cholinv(dist.params[:w])
 
-unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), cholinv(dist.params[:w]))
+unsafeMeanCov(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), cholinv(dist.params[:w]))
 
-unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = dist.params[:w]*dist.params[:m] # unsafe weighted mean
+unsafeWeightedMean(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = dist.params[:w]*dist.params[:m] # unsafe weighted mean
 
-unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:w]) # unsafe precision
+unsafePrecision(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:w]) # unsafe precision
 
-unsafeMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), deepcopy(dist.params[:w]))
+unsafeMeanPrecision(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), deepcopy(dist.params[:w]))
 
-unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (dist.params[:w]*dist.params[:m], deepcopy(dist.params[:w]))
+unsafeWeightedMeanPrecision(dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType = (dist.params[:w]*dist.params[:m], deepcopy(dist.params[:w]))
 
-logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}, x) = -0.5*(log(2pi) - log(dist.params[:w]) + (x-dist.params[:m])^2*dist.params[:w])
-logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, x) = -0.5*(dims(dist)[1]*log(2pi) - logdet(dist.params[:w]) + transpose(x-dist.params[:m])*dist.params[:w]*(x-dist.params[:m]))
+logPdf(dist::Distribution{Univariate, GaussianMeanPrecision}, x) = -0.5*(log(2pi) - log(dist.params[:w]) + (x-dist.params[:m])^2*dist.params[:w])
+logPdf(dist::Distribution{Multivariate, GaussianMeanPrecision}, x) = -0.5*(dims(dist)[1]*log(2pi) - logdet(dist.params[:w]) + transpose(x-dist.params[:m])*dist.params[:w]*(x-dist.params[:m]))
 
-isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
-isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
+isProper(dist::Distribution{Univariate, GaussianMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
+isProper(dist::Distribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
 
-function ==(t::ProbabilityDistribution{V, GaussianMeanPrecision}, u::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+function ==(t::Distribution{V, GaussianMeanPrecision}, u::Distribution{V, GaussianMeanPrecision}) where V<:VariateType
     (t === u) && return true
     isApproxEqual(t.params[:m], u.params[:m]) && isApproxEqual(t.params[:w], u.params[:w])
 end
 
-function ==(t::ProbabilityDistribution{V, GaussianMeanPrecision}, u::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:Gaussian}
+function ==(t::Distribution{V, GaussianMeanPrecision}, u::Distribution{V, F}) where {V<:VariateType, F<:Gaussian}
     (t === u) && return true
     isApproxEqual(t.params[:m], unsafeMean(u)) && isApproxEqual(t.params[:w], unsafePrecision(u))
 end
 
 # Average energy functional
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_prec::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::Distribution{Univariate}, marg_mean::Distribution{Univariate}, marg_prec::Distribution{Univariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
     (m_out, v_out) = unsafeMeanCov(marg_out)
 
@@ -92,7 +92,7 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
     0.5*unsafeMean(marg_prec)*(v_out + v_mean + (m_out - m_mean)^2)
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Multivariate}, marg_mean::ProbabilityDistribution{Multivariate}, marg_prec::ProbabilityDistribution{MatrixVariate})
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::Distribution{Multivariate}, marg_mean::Distribution{Multivariate}, marg_prec::Distribution{MatrixVariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
     (m_out, v_out) = unsafeMeanCov(marg_out)
 
@@ -101,7 +101,7 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
     0.5*tr( unsafeMean(marg_prec)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)' ))
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_prec::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Distribution{Multivariate, <:Gaussian}, marg_prec::Distribution{Univariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
 
     0.5*log(2*pi) -
@@ -109,7 +109,7 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Probability
     0.5*unsafeMean(marg_prec)*( V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2 )
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, marg_prec::ProbabilityDistribution{MatrixVariate})
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Distribution{Multivariate, <:Gaussian}, marg_prec::Distribution{MatrixVariate})
     (m, V) = unsafeMeanCov(marg_out_mean)
     d = Int64(dims(marg_out_mean)[1]/2)
 

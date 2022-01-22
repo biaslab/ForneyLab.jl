@@ -50,19 +50,19 @@ end
 
 slug(::Type{Contingency}) = "Con"
 
-format(dist::ProbabilityDistribution{Multivariate, Contingency}) = "$(slug(Contingency))(p=$(format(dist.params[:p])))"
+format(dist::Distribution{Multivariate, Contingency}) = "$(slug(Contingency))(p=$(format(dist.params[:p])))"
 
-ProbabilityDistribution(::Type{Multivariate}, ::Type{Contingency}; p=1/9*ones(3,3)) = ProbabilityDistribution{Multivariate, Contingency}(Dict(:p=>p))
-ProbabilityDistribution(::Type{Contingency}; p=1/9*ones(3,3)) = ProbabilityDistribution{Multivariate, Contingency}(Dict(:p=>p))
+Distribution(::Type{Multivariate}, ::Type{Contingency}; p=1/9*ones(3,3)) = Distribution{Multivariate, Contingency}(Dict(:p=>p))
+Distribution(::Type{Contingency}; p=1/9*ones(3,3)) = Distribution{Multivariate, Contingency}(Dict(:p=>p))
 
-dims(dist::ProbabilityDistribution{Multivariate, Contingency}) = (length(size(dist.params[:p])),)
+dims(dist::Distribution{Multivariate, Contingency}) = (length(size(dist.params[:p])),)
 
-vague(::Type{Contingency}, n_factors::Tuple{Int64, Int64}=(3,3)) = ProbabilityDistribution(Multivariate, Contingency, p=(1/prod(n_factors))*ones(n_factors))
+vague(::Type{Contingency}, n_factors::Tuple{Int64, Int64}=(3,3)) = Distribution(Multivariate, Contingency, p=(1/prod(n_factors))*ones(n_factors))
 
-isProper(dist::ProbabilityDistribution{Multivariate, Contingency}) = (abs(sum(dist.params[:p])-1.) < 1e-6)
+isProper(dist::Distribution{Multivariate, Contingency}) = (abs(sum(dist.params[:p])-1.) < 1e-6)
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Contingency})
+function differentialEntropy(dist::Distribution{Multivariate, Contingency})
     B = dist.params[:p]
     if isa(B, Vector{<:Matrix}) # Contingency tensor
         H = 0.0

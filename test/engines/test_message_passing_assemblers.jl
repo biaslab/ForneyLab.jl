@@ -7,8 +7,8 @@ using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, 
 @testset "assembleClamp!" begin
     g = FactorGraph()
     nd = Clamp(Variable(), 1.0)
-    assembleClamp!(nd, ProbabilityDistribution)    
-    @test nd.dist_or_msg == ProbabilityDistribution
+    assembleClamp!(nd, Distribution)    
+    @test nd.dist_or_msg == Distribution
 end
 
 @testset "assembleBreaker!" begin

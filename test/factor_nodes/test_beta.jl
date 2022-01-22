@@ -6,44 +6,44 @@ using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, u
 using ForneyLab: SPBetaOutNPP, SPBetaAMNM, SPBetaBMMN, SPBetaOutNMM, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
-@testset "Beta ProbabilityDistribution and Message construction" begin
-    @test ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))
-    @test_throws Exception ProbabilityDistribution(Multivariate, Beta)
-    @test ProbabilityDistribution(Beta, a=2.0, b=3.0) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))
-    @test ProbabilityDistribution(Beta) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0))
-    @test Message(Beta) == Message{Beta, Univariate}(ProbabilityDistribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0)))
-    @test Message(Univariate, Beta) == Message{Beta, Univariate}(ProbabilityDistribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0)))
+@testset "Beta Distribution and Message construction" begin
+    @test Distribution(Univariate, Beta, a=2.0, b=3.0) == Distribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))
+    @test_throws Exception Distribution(Multivariate, Beta)
+    @test Distribution(Beta, a=2.0, b=3.0) == Distribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))
+    @test Distribution(Beta) == Distribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0))
+    @test Message(Beta) == Message{Beta, Univariate}(Distribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0)))
+    @test Message(Univariate, Beta) == Message{Beta, Univariate}(Distribution{Univariate, Beta}(Dict(:a=>1.0, :b=>1.0)))
     @test_throws Exception Message(Multivariate, Beta)
 end
 
 @testset "dims" begin
-    @test dims(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == ()
+    @test dims(Distribution(Beta, a=2.0, b=2.0)) == ()
 end
 
 @testset "vague" begin
-    @test vague(Beta) == ProbabilityDistribution(Beta, a=1.0, b=1.0)
+    @test vague(Beta) == Distribution(Beta, a=1.0, b=1.0)
 end
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == 0.5
-    @test unsafeLogMean(ProbabilityDistribution(Beta, a=2.0, b=3.0)) == digamma(2.0) - digamma(5.0)
-    @test unsafeMirroredLogMean(ProbabilityDistribution(Beta, a=2.0, b=3.0)) == digamma(3.0) - digamma(5.0)
-    @test unsafeVar(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == 0.05
+    @test unsafeMean(Distribution(Beta, a=2.0, b=2.0)) == 0.5
+    @test unsafeLogMean(Distribution(Beta, a=2.0, b=3.0)) == digamma(2.0) - digamma(5.0)
+    @test unsafeMirroredLogMean(Distribution(Beta, a=2.0, b=3.0)) == digamma(3.0) - digamma(5.0)
+    @test unsafeVar(Distribution(Beta, a=2.0, b=2.0)) == 0.05
 end
 
 @testset "log pdf" begin
-    @test isapprox(logPdf(ProbabilityDistribution(Beta, a=2.0, b=2.0),0.3), 0.2311117209633866)
+    @test isapprox(logPdf(Distribution(Beta, a=2.0, b=2.0),0.3), 0.2311117209633866)
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Beta, a=2.0, b=2.0) * ProbabilityDistribution(Beta, a=2.0, b=3.0) == ProbabilityDistribution(Beta, a=3.0, b=4.0)
-    @test ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0) * ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution(Univariate, PointMass, m=0.2)
-    @test ProbabilityDistribution(Univariate, PointMass, m=0.2) * ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0) == ProbabilityDistribution(Univariate, PointMass, m=0.2)
-    @test_throws Exception ProbabilityDistribution(Univariate, PointMass, m=-1.0) * ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0)
+    @test Distribution(Beta, a=2.0, b=2.0) * Distribution(Beta, a=2.0, b=3.0) == Distribution(Beta, a=3.0, b=4.0)
+    @test Distribution(Univariate, Beta, a=1.0, b=2.0) * Distribution(Univariate, PointMass, m=0.2) == Distribution(Univariate, PointMass, m=0.2)
+    @test Distribution(Univariate, PointMass, m=0.2) * Distribution(Univariate, Beta, a=1.0, b=2.0) == Distribution(Univariate, PointMass, m=0.2)
+    @test_throws Exception Distribution(Univariate, PointMass, m=-1.0) * Distribution(Univariate, Beta, a=1.0, b=2.0)
 end
 
 @testset "natural parameters" begin
-    d = ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0)
+    d = Distribution(Univariate, Beta, a=2.0, b=3.0)
     η = naturalParams(d)
     s = standardDistribution(Univariate, Beta, η=η)
     @test d.params[:a] == s.params[:a] # Test conversion consistency
@@ -96,25 +96,25 @@ end
 @testset "VBBetaOut" begin
     @test VBBetaOut <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaOut) == Message{Beta}
-    @test isApplicable(VBBetaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test isApplicable(VBBetaOut, [Nothing, Distribution, Distribution])
 
-    @test ruleVBBetaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    @test ruleVBBetaOut(nothing, Distribution(Univariate, PointMass, m=2.0), Distribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end
 
 @testset "VBBetaA" begin
     @test VBBetaA <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaA) == Message{Function}
-    @test isApplicable(VBBetaA, [ProbabilityDistribution, Nothing, ProbabilityDistribution])
+    @test isApplicable(VBBetaA, [Distribution, Nothing, Distribution])
 end
 
 @testset "VBBetaB" begin
     @test VBBetaB <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaB) == Message{Function}
-    @test isApplicable(VBBetaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
+    @test isApplicable(VBBetaB, [Distribution, Distribution, Nothing])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test isapprox(differentialEntropy(ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0)), averageEnergy(Beta, ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0), ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)))
+    @test isapprox(differentialEntropy(Distribution(Univariate, Beta, a=2.0, b=3.0)), averageEnergy(Beta, Distribution(Univariate, Beta, a=2.0, b=3.0), Distribution(Univariate, PointMass, m=2.0), Distribution(Univariate, PointMass, m=3.0)))
 end
 
 end # module

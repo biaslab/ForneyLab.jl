@@ -39,7 +39,7 @@ end
 end
 
 @testset "averageEnergy" begin
-    @test averageEnergy(MomentConstraint, ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+    @test averageEnergy(MomentConstraint, Distribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
 end
 
 

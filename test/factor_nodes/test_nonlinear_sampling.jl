@@ -69,7 +69,7 @@ end
     @test isApplicable(SPNonlinearSIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
 
     log_pdf(x) = ruleSPNonlinearSIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing, n_samples=0).dist.params[:log_pdf](x)
-    @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
+    @test log_pdf(1.5) == logPdf(Distribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 
 @testset "SPNonlinearSInGX" begin
@@ -89,8 +89,8 @@ end
 end
 
 @testset "prod!" begin
-    d = prod!(ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s), ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s))
-    @test isa(d, ProbabilityDistribution{Multivariate,Function})
+    d = prod!(Distribution(Multivariate, Function, log_pdf=(s)->s), Distribution(Multivariate, Function, log_pdf=(s)->s))
+    @test isa(d, Distribution{Multivariate,Function})
     @test d.params[:log_pdf](1) == 2
 end
 
@@ -126,7 +126,7 @@ end
     @test !isApplicable(MNonlinearSInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
 
     dist = ruleMNonlinearSInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
-    @test dist == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[1.0, 2.0], w=[11.0 10.0; 10.0 10.5])
+    @test dist == Distribution(Multivariate, GaussianMeanPrecision, m=[1.0, 2.0], w=[11.0 10.0; 10.0 10.5])
 end
 
 

@@ -49,7 +49,7 @@ function collectInboundTypes(   entry::ScheduleEntry,
             push!(inbound_types, Nothing)
         else
             # Edge is external, accept marginal
-            push!(inbound_types, ProbabilityDistribution)
+            push!(inbound_types, Distribution)
         end
     end
 
@@ -139,7 +139,7 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
             push!(inbounds, nothing)
         elseif isClamped(inbound_interface)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
+            push!(inbounds, assembleClamp!(inbound_interface.node, Distribution))
         else
             # Collect entry from marginal schedule
             push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])

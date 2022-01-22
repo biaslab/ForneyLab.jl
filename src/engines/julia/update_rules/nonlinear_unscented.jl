@@ -244,7 +244,7 @@ function ruleMNonlinearUTInGX(g::Function,
     # Compute joint marginal on in's
     (m_in, V_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
 end
 
 
@@ -327,7 +327,7 @@ function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
 
         if isClamped(inbound_interface)
             # Edge is clamped, hard-code marginal of constant node
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Distribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])

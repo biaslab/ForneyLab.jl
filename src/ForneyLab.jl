@@ -32,7 +32,7 @@ abstract type AbstractVariable <: Region end
 # Low-level internals
 include("factor_node.jl")
 include("interface.jl")
-include("probability_distribution.jl")
+include("distribution.jl")
 include("edge.jl")
 include("variable.jl")
 
@@ -129,7 +129,7 @@ include("update_rules/nonlinear_extended.jl")
 include("update_rules/nonlinear_conjugate.jl")
 include("update_rules/sample_list.jl")
 
-*(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
+*(x::Distribution, y::Distribution) = prod!(x, y) # * operator for probability distributions
 
 # include("docstrings.jl")
 

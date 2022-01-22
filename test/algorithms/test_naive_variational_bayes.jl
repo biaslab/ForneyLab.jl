@@ -26,13 +26,13 @@ end
 
 @naiveVariationalRule(:node_type     => MockNode,
                       :outbound_type => Message{PointMass},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBMockOut)
 
 @testset "@naiveVariationalRule" begin
     @test VBMockOut <: NaiveVariationalRule{MockNode}
-    @test isApplicable(VBMockOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
-    @test !isApplicable(VBMockOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution])    
+    @test isApplicable(VBMockOut, [Nothing, Distribution, Distribution])
+    @test !isApplicable(VBMockOut, [Nothing, Distribution, Distribution, Distribution])    
 end
 
 @testset "inferUpdateRule!" begin
