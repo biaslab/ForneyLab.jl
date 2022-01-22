@@ -174,7 +174,7 @@ isProper(dist::Distribution{<:VariateType, SampleList}) = abs(sum(dist.params[:w
     return z
 end
 
-# Disambiguate beteen SampleList product and nonlinear product of any distribution with a Gaussian
+# Disambiguate beteen SampleList product and product of any distribution with a Gaussian
 # Following two definitions must be parameterized on separate Univariate and Multivariate types
 @symmetrical function prod!(
     x::Distribution{Univariate, <:Gaussian},

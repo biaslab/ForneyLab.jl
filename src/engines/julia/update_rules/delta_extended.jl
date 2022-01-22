@@ -1,11 +1,11 @@
 import Base: vec
 
 export
-ruleSPNonlinearEOutNG,
-ruleSPNonlinearEOutNGX,
-ruleSPNonlinearEIn1GG,
-ruleSPNonlinearEInGX,
-ruleMNonlinearEInGX
+ruleSPDeltaEOutNG,
+ruleSPDeltaEOutNGX,
+ruleSPDeltaEIn1GG,
+ruleSPDeltaEInGX,
+ruleMDeltaEInGX
 
 """
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
@@ -21,7 +21,7 @@ ForneyLab.vec(d::Float64) = [d] # Extend vectorization to Float
 
 """
 Return local linearization of g around expansion point x_hat
-for Nonlinear node with single input interface
+for Delta node with single input interface
 """
 function localLinearizationSingleIn(g::Function, x_hat::Float64)
     a = ForwardDiff.derivative(g, x_hat)
@@ -39,7 +39,7 @@ end
 
 """
 Return local linearization of g around expansion point x_hat
-for Nonlinear node with multiple input interfaces
+for Delta node with multiple input interfaces
 """
 function localLinearizationMultiIn(g::Function, x_hat::Vector{Float64})
     g_unpacked(x::Vector) = g(x...)
@@ -64,7 +64,7 @@ end
 #-----------------------
 
 # Forward rule
-function ruleSPNonlinearEOutNG(g::Function,
+function ruleSPDeltaEOutNG(g::Function,
                                msg_out::Nothing,
                                msg_in1::Message{<:Gaussian})
     
@@ -77,7 +77,7 @@ function ruleSPNonlinearEOutNG(g::Function,
 end
 
 # Multi-argument forward rule
-function ruleSPNonlinearEOutNGX(g::Function, # Needs to be in front of Vararg
+function ruleSPDeltaEOutNGX(g::Function, # Needs to be in front of Vararg
                                 msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian}})
 
@@ -91,7 +91,7 @@ function ruleSPNonlinearEOutNGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Backward rule with given inverse
-function ruleSPNonlinearEIn1GG(g::Function,
+function ruleSPDeltaEIn1GG(g::Function,
                                g_inv::Function,
                                msg_out::Message{<:Gaussian},
                                msg_in1::Nothing)
@@ -105,7 +105,7 @@ function ruleSPNonlinearEIn1GG(g::Function,
 end
 
 # Multi-argument backward rule with given inverse
-function ruleSPNonlinearEInGX(g::Function, # Needs to be in front of Vararg
+function ruleSPDeltaEInGX(g::Function, # Needs to be in front of Vararg
                               g_inv::Function,
                               msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}})
@@ -120,7 +120,7 @@ function ruleSPNonlinearEInGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Backward rule with unknown inverse
-function ruleSPNonlinearEIn1GG(g::Function,
+function ruleSPDeltaEIn1GG(g::Function,
                                msg_out::Message{<:Gaussian},
                                msg_in1::Message{<:Gaussian})
 
@@ -134,7 +134,7 @@ function ruleSPNonlinearEIn1GG(g::Function,
 end
 
 # Multi-argument backward rule with unknown inverse
-function ruleSPNonlinearEInGX(g::Function,
+function ruleSPDeltaEInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Message{<:Gaussian}})
@@ -165,7 +165,7 @@ function ruleSPNonlinearEInGX(g::Function,
     return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleMNonlinearEInGX(g::Function,
+function ruleMDeltaEInGX(g::Function,
                              msg_out::Message{<:Gaussian},
                              msgs_in::Vararg{Message{<:Gaussian}})
 

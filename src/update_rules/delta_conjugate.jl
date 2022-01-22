@@ -1,16 +1,16 @@
-@sumProductRule(:node_type     => Nonlinear{Conjugate},
+@sumProductRule(:node_type     => Delta{Conjugate},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message),
-                :name          => SPNonlinearCOutNM)
+                :name          => SPDeltaCOutNM)
 
-@sumProductRule(:node_type     => Nonlinear{Conjugate},
+@sumProductRule(:node_type     => Delta{Conjugate},
                 :outbound_type => Message{FactorNode},
                 :inbound_types => (Message, Nothing),
-                :name          => SPNonlinearCIn1MN)
+                :name          => SPDeltaCIn1MN)
 
-mutable struct SPNonlinearCInGX <: SumProductRule{Nonlinear{Conjugate}} end
-outboundType(::Type{SPNonlinearCInGX}) = Message{GaussianWeightedMeanPrecision}
-function isApplicable(::Type{SPNonlinearCInGX}, input_types::Vector{<:Type})
+mutable struct SPDeltaCInGX <: SumProductRule{Delta{Conjugate}} end
+outboundType(::Type{SPDeltaCInGX}) = Message{GaussianWeightedMeanPrecision}
+function isApplicable(::Type{SPDeltaCInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false # Require any message on out
@@ -28,9 +28,9 @@ function isApplicable(::Type{SPNonlinearCInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs - 2)
 end
 
-mutable struct SPNonlinearCOutNMX <: SumProductRule{Nonlinear{Conjugate}} end
-outboundType(::Type{SPNonlinearCOutNMX}) = Message{SampleList}
-function isApplicable(::Type{SPNonlinearCOutNMX}, input_types::Vector{<:Type})
+mutable struct SPDeltaCOutNMX <: SumProductRule{Delta{Conjugate}} end
+outboundType(::Type{SPDeltaCOutNMX}) = Message{SampleList}
+function isApplicable(::Type{SPDeltaCOutNMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
@@ -42,9 +42,9 @@ function isApplicable(::Type{SPNonlinearCOutNMX}, input_types::Vector{<:Type})
     return true
 end
 
-mutable struct SPNonlinearCInMX <: SumProductRule{Nonlinear{Conjugate}} end
-outboundType(::Type{SPNonlinearCInMX}) = Message{FactorNode}
-function isApplicable(::Type{SPNonlinearCInMX}, input_types::Vector{<:Type})
+mutable struct SPDeltaCInMX <: SumProductRule{Delta{Conjugate}} end
+outboundType(::Type{SPDeltaCInMX}) = Message{FactorNode}
+function isApplicable(::Type{SPDeltaCInMX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false
@@ -62,8 +62,8 @@ function isApplicable(::Type{SPNonlinearCInMX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs != total_inputs - 2) # Rule does not apply if all inbounds are Gaussian
 end
 
-mutable struct MNonlinearCInMGX <: MarginalRule{Nonlinear{Conjugate}} end
-function isApplicable(::Type{MNonlinearCInMGX}, input_types::Vector{<:Type})
+mutable struct MDeltaCInMGX <: MarginalRule{Delta{Conjugate}} end
+function isApplicable(::Type{MDeltaCInMGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable

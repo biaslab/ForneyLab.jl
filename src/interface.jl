@@ -40,7 +40,7 @@ name(::Nothing) = ""
 """
 Determines whether interface must be initialized with a breaker message;
 i.e. for EP sites, loopy belief propagation, or situations where outbound
-messages depend on inbound messages, such as a Nonlinear update without
+messages depend on inbound messages, such as a Delta update without
 a given inverse (RTS smoothing).
 """
 function requiresBreaker(interface::Interface)

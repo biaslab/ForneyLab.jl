@@ -1,11 +1,11 @@
 import Base: split
 
 export
-ruleSPNonlinearUTOutNG,
-ruleSPNonlinearUTOutNGX,
-ruleSPNonlinearUTIn1GG,
-ruleSPNonlinearUTInGX,
-ruleMNonlinearUTInGX
+ruleSPDeltaUTOutNG,
+ruleSPDeltaUTOutNGX,
+ruleSPDeltaUTIn1GG,
+ruleSPDeltaUTInGX,
+ruleMDeltaUTInGX
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -116,7 +116,7 @@ function smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out,
 end
 
 """
-RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 """
 function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     P = cholinv(V_tilde + V_bw_out)
@@ -135,7 +135,7 @@ end
 #-----------------------
 
 # Forward rule (unscented transform)
-function ruleSPNonlinearUTOutNG(g::Function,
+function ruleSPDeltaUTOutNG(g::Function,
                                 msg_out::Nothing,
                                 msg_in1::Message{<:Gaussian};
                                 alpha::Float64=default_alpha)
@@ -147,7 +147,7 @@ function ruleSPNonlinearUTOutNG(g::Function,
 end
 
 # Multi-argument forward rule (unscented transform)
-function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
+function ruleSPDeltaUTOutNGX(g::Function, # Needs to be in front of Vararg
                                  msg_out::Nothing,
                                  msgs_in::Vararg{Message{<:Gaussian}};
                                  alpha::Float64=default_alpha)
@@ -159,7 +159,7 @@ function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Backward rule with given inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(g::Function,
+function ruleSPDeltaUTIn1GG(g::Function,
                                 g_inv::Function,
                                 msg_out::Message{<:Gaussian},
                                 msg_in1::Nothing;
@@ -172,7 +172,7 @@ function ruleSPNonlinearUTIn1GG(g::Function,
 end
 
 # Multi-argument backward rule with given inverse (unscented transform)
-function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
+function ruleSPDeltaUTInGX(g::Function, # Needs to be in front of Vararg
                                g_inv::Function,
                                msg_out::Message{<:Gaussian},
                                msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
@@ -185,7 +185,7 @@ function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(g::Function,
+function ruleSPDeltaUTIn1GG(g::Function,
                                 msg_out::Message{<:Gaussian},
                                 msg_in1::Message{<:Gaussian};
                                 alpha::Float64=default_alpha)
@@ -201,7 +201,7 @@ function ruleSPNonlinearUTIn1GG(g::Function,
 end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTInGX(g::Function,
+function ruleSPDeltaUTInGX(g::Function,
                                inx::Int64, # Index of inbound interface inx
                                msg_out::Message{<:Gaussian},
                                msgs_in::Vararg{Message{<:Gaussian}};
@@ -229,7 +229,7 @@ function ruleSPNonlinearUTInGX(g::Function,
     return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleMNonlinearUTInGX(g::Function,
+function ruleMDeltaUTInGX(g::Function,
                               msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Message{<:Gaussian}};
                               alpha::Float64=default_alpha)
@@ -253,7 +253,7 @@ end
 #---------------------------
 
 # Unscented transform and extended approximation
-function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
+function collectSumProductNodeInbounds(node::Delta{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -261,7 +261,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(node) # Boolean to indicate a Delta node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     undefined_inverse = (node.g_inv === nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] === nothing))
 
@@ -283,7 +283,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1]) && undefined_inverse
             # Collect the breaker message for a backward update without given inverse
-            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The Delta node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
@@ -306,7 +306,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     return inbounds
 end
 
-function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Delta, entry::MarginalEntry)
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature

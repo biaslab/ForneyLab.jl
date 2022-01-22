@@ -1,10 +1,10 @@
 export
-ruleSPNonlinearSOutNM,
-ruleSPNonlinearSIn1MN,
-ruleSPNonlinearSInGX,
-ruleSPNonlinearSOutNMX,
-ruleSPNonlinearSInMX,
-ruleMNonlinearSInMGX,
+ruleSPDeltaSOutNM,
+ruleSPDeltaSIn1MN,
+ruleSPDeltaSInGX,
+ruleSPDeltaSOutNMX,
+ruleSPDeltaSInMX,
+ruleMDeltaSInMGX,
 prod!
 
 const default_n_samples = 1000 # Default value for the number of samples
@@ -14,7 +14,7 @@ const default_n_samples = 1000 # Default value for the number of samples
 # Sampling Update Rules
 #----------------------
 
-function ruleSPNonlinearSOutNM(g::Function,
+function ruleSPDeltaSOutNM(g::Function,
                                msg_out::Nothing,
                                msg_in1::Message; # Applies to any message except SampleList
                                dims::Any=nothing,
@@ -26,7 +26,7 @@ function ruleSPNonlinearSOutNM(g::Function,
     return Message(variateType(dims), SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSOutNM(g::Function,
+function ruleSPDeltaSOutNM(g::Function,
                                msg_out::Nothing,
                                msg_in1::Message{SampleList}; # Special case for SampleList
                                dims::Any=nothing,
@@ -38,7 +38,7 @@ function ruleSPNonlinearSOutNM(g::Function,
     return Message(variateType(dims), SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSIn1MN(g::Function,
+function ruleSPDeltaSIn1MN(g::Function,
                                msg_out::Message,
                                msg_in1::Nothing;
                                dims::Any=nothing,
@@ -47,7 +47,7 @@ function ruleSPNonlinearSIn1MN(g::Function,
     return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
-function ruleSPNonlinearSInGX(g::Function,
+function ruleSPDeltaSInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}};
@@ -79,7 +79,7 @@ function ruleSPNonlinearSInGX(g::Function,
     return Message(variateType(dims), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleSPNonlinearSOutNMX(g::Function,
+function ruleSPDeltaSOutNMX(g::Function,
                                 msg_out::Nothing,
                                 msgs_in::Vararg{Message};
                                 dims::Any=nothing,
@@ -92,7 +92,7 @@ function ruleSPNonlinearSOutNMX(g::Function,
     return Message(variateType(dims), SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSInMX(g::Function,
+function ruleSPDeltaSInMX(g::Function,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message,
                               msgs_in::Vararg{Message};
@@ -117,7 +117,7 @@ function ruleSPNonlinearSInMX(g::Function,
 end
 
 # Special case for two inputs with one PointMass (no inx required)
-function ruleSPNonlinearSInMX(g::Function,
+function ruleSPDeltaSInMX(g::Function,
                               msg_out::Message,
                               msg_in1::Message{PointMass},
                               msg_in2::Nothing;
@@ -130,7 +130,7 @@ function ruleSPNonlinearSInMX(g::Function,
 end
 
 # Special case for two inputs with one PointMass (no inx required)
-function ruleSPNonlinearSInMX(g::Function,
+function ruleSPDeltaSInMX(g::Function,
                               msg_out::Message,
                               msg_in1::Nothing,
                               msg_in2::Message{PointMass};
@@ -142,7 +142,7 @@ function ruleSPNonlinearSInMX(g::Function,
     return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(z, m_in2)))                          
 end
 
-function ruleMNonlinearSInMGX(g::Function,
+function ruleMDeltaSInMGX(g::Function,
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}})
 
@@ -167,7 +167,7 @@ end
 #---------------------------
 
 # Sampling approximation
-function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Delta{Sampling}, entry::ScheduleEntry)
     inbounds = Any[]
 
     # Push function to calling signature
@@ -175,7 +175,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(node) # Boolean to indicate a Delta node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     
     if (inx > 0) && multi_in # Multi-inbound backward rule
@@ -188,7 +188,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1]) && multi_in
             # Collect the breaker message for a backward rule with multiple inbounds
-            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The Delta node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface

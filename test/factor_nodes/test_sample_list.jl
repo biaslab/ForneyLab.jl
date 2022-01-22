@@ -125,7 +125,7 @@ g(x) = x
     N = 4
     @RV s ~ SampleList(collect(1.0:N), ones(N)/N)
     @RV x ~ GaussianMeanVariance(s, 0.0)
-    @RV y ~ Nonlinear{Sampling}(x, g=g)
+    @RV y ~ Delta{Sampling}(x, g=g)
 
     # Define an algorithm
     pfz = PosteriorFactorization(fg)
@@ -134,14 +134,14 @@ g(x) = x
 
     @test occursin("ruleSPSampleListOutNPP", code)
     @test occursin("ruleSPGaussianMeanVarianceOutNSP", code)
-    @test occursin("ruleSPNonlinearSOutNM", code)
+    @test occursin("ruleSPDeltaSOutNM", code)
 end
 
 # Generated algorithm code
 function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 3))
     messages[1] = ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[1.0, 2.0, 3.0, 4.0]), Message(Multivariate, PointMass, m=[0.25, 0.25, 0.25, 0.25]))
     messages[2] = ruleSPGaussianMeanVarianceOutNSP(nothing, messages[1], Message(Univariate, PointMass, m=0.0))
-    messages[3] = ruleSPNonlinearSOutNM(g, nothing, messages[2])
+    messages[3] = ruleSPDeltaSOutNM(g, nothing, messages[2])
 
     marginals[:y] = messages[3].dist
 
@@ -159,12 +159,12 @@ end
     fg = FactorGraph()
 
     @RV x ~ Gamma(3.4, 1.2)
-    @RV s1 ~ Nonlinear{Sampling}(x, g=g)
+    @RV s1 ~ Delta{Sampling}(x, g=g)
     @RV y1 ~ Poisson(s1)
     @RV y2 ~ Poisson(x)
 
     @RV z ~ Gamma(3.4, 1.2)
-    @RV s2 ~ Nonlinear{Sampling}(z, g=g)
+    @RV s2 ~ Delta{Sampling}(z, g=g)
     @RV y3 ~ Poisson(z)
     @RV y4 ~ Poisson(s2)
 

@@ -4,12 +4,12 @@
 # Bayesian Inference"
 
 export
-ruleSPNonlinearCOutNM,
-ruleSPNonlinearCIn1MN,
-ruleSPNonlinearCOutNMX,
-ruleSPNonlinearCInMX,
-ruleSPNonlinearCInGX,
-ruleMNonlinearCInMGX
+ruleSPDeltaCOutNM,
+ruleSPDeltaCIn1MN,
+ruleSPDeltaCOutNMX,
+ruleSPDeltaCInMX,
+ruleSPDeltaCInGX,
+ruleMDeltaCInMGX
 
 const default_optimizer = ForgetDelayDescent(200.0, 0.6) # Default optimizer
 const default_n_iterations = 1000 # Default number of iterations for gradient descent
@@ -19,16 +19,16 @@ const default_n_iterations = 1000 # Default number of iterations for gradient de
 # Conjugate Update Rules
 #-----------------------
 
-ruleSPNonlinearCOutNM(g::Function,
+ruleSPDeltaCOutNM(g::Function,
                       msg_out::Nothing,
                       msg_in1::Message;
                       dims::Any=nothing,
                       n_samples=default_n_samples,
                       n_iterations=default_n_iterations,
                       optimizer=default_optimizer) =
-    ruleSPNonlinearSOutNM(g, nothing, msg_in1; dims=dims, n_samples=n_samples) # Reuse sampling update
+    ruleSPDeltaSOutNM(g, nothing, msg_in1; dims=dims, n_samples=n_samples) # Reuse sampling update
 
-function ruleSPNonlinearCIn1MN(g::Function,
+function ruleSPDeltaCIn1MN(g::Function,
                                msg_out::Message,
                                msg_in1::Message{F, V};
                                dims::Any=nothing,
@@ -36,23 +36,23 @@ function ruleSPNonlinearCIn1MN(g::Function,
                                n_iterations=default_n_iterations,
                                optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
 
-    msg_s = ruleSPNonlinearSIn1MN(g, msg_out, nothing; dims=dims, n_samples=n_samples) # Returns Message{Function}
+    msg_s = ruleSPDeltaSIn1MN(g, msg_out, nothing; dims=dims, n_samples=n_samples) # Returns Message{Function}
     η = naturalParams(msg_in1.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in1)
 
     return Message(standardDistribution(V, F, η=λ-η))
 end
 
-ruleSPNonlinearCOutNMX(g::Function,
+ruleSPDeltaCOutNMX(g::Function,
                        msg_out::Nothing,
                        msgs_in::Vararg{Message};
                        dims::Any=nothing,
                        n_samples=default_n_samples,
                        n_iterations=default_n_iterations,
                        optimizer=default_optimizer) =
-     ruleSPNonlinearSOutNMX(g, nothing, msgs_in...; dims=dims, n_samples=n_samples)                                 
+     ruleSPDeltaSOutNMX(g, nothing, msgs_in...; dims=dims, n_samples=n_samples)                                 
 
-function ruleSPNonlinearCInGX(g::Function,
+function ruleSPDeltaCInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}}; # Only Gaussian because of marginalization over inbounds
@@ -89,7 +89,7 @@ function ruleSPNonlinearCInGX(g::Function,
 end
 
 # Special case for two inputs with one PointMass (no inx required)
-function ruleSPNonlinearCInMX(g::Function,
+function ruleSPDeltaCInMX(g::Function,
                               msg_out::Message,
                               msg_in1::Message{F, V},
                               msg_in2::Message{PointMass};
@@ -98,7 +98,7 @@ function ruleSPNonlinearCInMX(g::Function,
                               n_iterations=default_n_iterations,
                               optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
-    msg_s = ruleSPNonlinearSInMX(g, msg_out, nothing, msg_in2; dims=dims, n_samples=n_samples)
+    msg_s = ruleSPDeltaSInMX(g, msg_out, nothing, msg_in2; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in1.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in1)
 
@@ -106,7 +106,7 @@ function ruleSPNonlinearCInMX(g::Function,
 end
 
 # Special case for two inputs with one PointMass (no inx required)
-function ruleSPNonlinearCInMX(g::Function,
+function ruleSPDeltaCInMX(g::Function,
                               msg_out::Message,
                               msg_in1::Message{PointMass},
                               msg_in2::Message{F, V};
@@ -115,7 +115,7 @@ function ruleSPNonlinearCInMX(g::Function,
                               n_iterations=default_n_iterations,
                               optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
-    msg_s = ruleSPNonlinearSInMX(g, msg_out, msg_in1, nothing; dims=dims, n_samples=n_samples)
+    msg_s = ruleSPDeltaSInMX(g, msg_out, msg_in1, nothing; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in2.dist)
     λ = renderCVI(msg_s.dist.params[:log_pdf], n_iterations, optimizer, η, msg_in2)
 
@@ -123,7 +123,7 @@ function ruleSPNonlinearCInMX(g::Function,
 end
 
 # Joint marginal belief over inbounds
-function ruleMNonlinearCInMGX(g::Function,
+function ruleMDeltaCInMGX(g::Function,
                               msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian}}) # Only Gaussian because of marginalization over inbounds
     
@@ -147,7 +147,7 @@ end
 #---------------------------
 
 # Conjugate approximation
-function collectSumProductNodeInbounds(node::Nonlinear{Conjugate}, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Delta{Conjugate}, entry::ScheduleEntry)
     inbounds = Any[]
 
     # Push function to calling signature
@@ -155,7 +155,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Conjugate}, entry::Schedu
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(node) # Boolean to indicate a Delta node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     
     if (inx > 0) && multi_in # Multi-inbound backward rule
@@ -168,7 +168,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Conjugate}, entry::Schedu
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1])
             # Collect the breaker message for a backward rule
-            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The Delta node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface

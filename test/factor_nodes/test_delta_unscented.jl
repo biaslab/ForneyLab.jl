@@ -1,10 +1,10 @@
-module NonlinearUnscentedTest
+module DeltaUnscentedTest
 
 using Test
 using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, Unscented, requiresBreaker, breakerParameters
-using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, MNonlinearUTInGX
+using ForneyLab: SPDeltaUTOutNG, SPDeltaUTIn1GG, SPDeltaUTOutNGX, SPDeltaUTInGX, MDeltaUTInGX
 using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split, isMultiIn
 
 f(x) = x
@@ -115,7 +115,7 @@ end
     x = Variable()
     y = Variable()
     nd = GaussianMeanVariance(x, 0.0, 1.0)
-    Nonlinear{Unscented}(y, x, g=g)
+    Delta{Unscented}(y, x, g=g)
     
     @test requiresBreaker(nd.i[:out])
     @test_throws Exception breakerParameters(nd.i[:out].partner)
@@ -126,7 +126,7 @@ end
     x = Variable()
     y = Variable()
     nd = GaussianMeanVariance(x, 0.0, 1.0)
-    Nonlinear{Unscented}(y, x, g=g, g_inv=g)
+    Delta{Unscented}(y, x, g=g, g_inv=g)
     
     @test !requiresBreaker(nd.i[:out])
     @test_throws Exception breakerParameters(nd.i[:out])
@@ -137,7 +137,7 @@ end
     x = Variable()
     y = Variable()
     GaussianMeanVariance(x, 0.0, 1.0)
-    nd = Nonlinear{Unscented}(y, x, g=g)
+    nd = Delta{Unscented}(y, x, g=g)
     Clamp(y, 1.0)
     @test !isMultiIn(nd)
 
@@ -147,7 +147,7 @@ end
     z = Variable()
     GaussianMeanVariance(x, 0.0, 1.0)
     GaussianMeanVariance(z, 0.0, 1.0)
-    nd = Nonlinear{Unscented}(y, x, z, g=g)
+    nd = Delta{Unscented}(y, x, z, g=g)
     Clamp(y, 1.0)
     @test isMultiIn(nd)
 
@@ -157,7 +157,7 @@ end
     z = Variable()
     GaussianMeanVariance(x, 0.0, 1.0)
     Clamp(z, 1.0)
-    nd = Nonlinear{Unscented}(y, x, z, g=g)
+    nd = Delta{Unscented}(y, x, z, g=g)
     Clamp(y, 1.0)
     @test !isMultiIn(nd)
 end
@@ -167,68 +167,68 @@ end
 # Update rules
 #-------------
 
-@testset "SPNonlinearUTOutNG" begin
-    @test SPNonlinearUTOutNG <: SumProductRule{Nonlinear{Unscented}}
-    @test outboundType(SPNonlinearUTOutNG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{GaussianMeanVariance}]) 
+@testset "SPDeltaUTOutNG" begin
+    @test SPDeltaUTOutNG <: SumProductRule{Delta{Unscented}}
+    @test outboundType(SPDeltaUTOutNG) == Message{GaussianMeanVariance}
+    @test isApplicable(SPDeltaUTOutNG, [Nothing, Message{GaussianMeanVariance}]) 
 
-    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
-    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
-    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
-    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
+    @test ruleSPDeltaUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
+    @test ruleSPDeltaUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
+    @test ruleSPDeltaUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
+    @test ruleSPDeltaUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
 end
 
-@testset "SPNonlinearUTOutNGX" begin
-    @test SPNonlinearUTOutNGX <: SumProductRule{Nonlinear{Unscented}}
-    @test outboundType(SPNonlinearUTOutNGX) == Message{GaussianMeanVariance}
-    @test !isApplicable(SPNonlinearUTOutNGX, [Nothing, Message{Gaussian}]) 
-    @test isApplicable(SPNonlinearUTOutNGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
-    @test !isApplicable(SPNonlinearUTOutNGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
+@testset "SPDeltaUTOutNGX" begin
+    @test SPDeltaUTOutNGX <: SumProductRule{Delta{Unscented}}
+    @test outboundType(SPDeltaUTOutNGX) == Message{GaussianMeanVariance}
+    @test !isApplicable(SPDeltaUTOutNGX, [Nothing, Message{Gaussian}]) 
+    @test isApplicable(SPDeltaUTOutNGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
+    @test !isApplicable(SPDeltaUTOutNGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
 
-    @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.9999999997671694, v=67.00000899657607)
-    @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.9999999997671694], v=mat(67.00000899657607))
+    @test ruleSPDeltaUTOutNGX(h, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.9999999997671694, v=67.00000899657607)
+    @test ruleSPDeltaUTOutNGX(h, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.9999999997671694], v=mat(67.00000899657607))
 end
 
-@testset "SPNonlinearUTIn1GG" begin
-    @test SPNonlinearUTIn1GG <: SumProductRule{Nonlinear{Unscented}}
-    @test outboundType(SPNonlinearUTIn1GG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearUTIn1GG, [Message{Gaussian}, Nothing]) 
+@testset "SPDeltaUTIn1GG" begin
+    @test SPDeltaUTIn1GG <: SumProductRule{Delta{Unscented}}
+    @test outboundType(SPDeltaUTIn1GG) == Message{GaussianMeanVariance}
+    @test isApplicable(SPDeltaUTIn1GG, [Message{Gaussian}, Nothing]) 
 
     # Without given inverse
-    @test ruleSPNonlinearUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
-    @test ruleSPNonlinearUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
-    @test ruleSPNonlinearUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
-    @test ruleSPNonlinearUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
+    @test ruleSPDeltaUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
+    @test ruleSPDeltaUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
+    @test ruleSPDeltaUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
+    @test ruleSPDeltaUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
 
     # With given inverse
-    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
-    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
-    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
-    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
+    @test ruleSPDeltaUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
+    @test ruleSPDeltaUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
+    @test ruleSPDeltaUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
+    @test ruleSPDeltaUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
 end
 
-@testset "SPNonlinearUTInGX" begin
-    @test SPNonlinearUTInGX <: SumProductRule{Nonlinear{Unscented}}
-    @test outboundType(SPNonlinearUTInGX) == Message{Gaussian}
-    @test !isApplicable(SPNonlinearUTInGX, [Message{Gaussian}, Nothing]) 
-    @test !isApplicable(SPNonlinearUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
-    @test isApplicable(SPNonlinearUTInGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
+@testset "SPDeltaUTInGX" begin
+    @test SPDeltaUTInGX <: SumProductRule{Delta{Unscented}}
+    @test outboundType(SPDeltaUTInGX) == Message{Gaussian}
+    @test !isApplicable(SPDeltaUTInGX, [Message{Gaussian}, Nothing]) 
+    @test !isApplicable(SPDeltaUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
+    @test isApplicable(SPDeltaUTInGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
 
     # Without given inverse
-    @test ruleSPNonlinearUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=6.666665554127903, w=2.6666662216903676)
-    @test ruleSPNonlinearUTInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[6.666665554127903], w=mat(2.666666221690368))
+    @test ruleSPDeltaUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=6.666665554127903, w=2.6666662216903676)
+    @test ruleSPDeltaUTInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[6.666665554127903], w=mat(2.666666221690368))
 
     # With given inverse
-    @test ruleSPNonlinearUTInGX(h, h_inv_x, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.6187538476660848, v=0.14431487274498522)
-    @test ruleSPNonlinearUTInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.6187538476660848], v=mat(0.14431487274475785))
+    @test ruleSPDeltaUTInGX(h, h_inv_x, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.6187538476660848, v=0.14431487274498522)
+    @test ruleSPDeltaUTInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.6187538476660848], v=mat(0.14431487274475785))
 end
 
-@testset "MNonlinearUTInGX" begin
-    @test MNonlinearUTInGX <: MarginalRule{Nonlinear{Unscented}}
-    @test isApplicable(MNonlinearUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
+@testset "MDeltaUTInGX" begin
+    @test MDeltaUTInGX <: MarginalRule{Delta{Unscented}}
+    @test isApplicable(MDeltaUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    @test ruleMNonlinearUTInGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Distribution(Multivariate, GaussianMeanVariance, m=[2.3636363470614055, 4.9090909132334355], v=[0.2727273058237252 0.1818181735464949; 0.18181817354649488 0.9545454566127697])
-    @test ruleMNonlinearUTInGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Distribution(Multivariate, GaussianMeanVariance, m=[2.3636363470609245, 4.909090913233555], v=[0.2727273058246874 0.18181817354625435; 0.18181817354625435 0.9545454566128299])
+    @test ruleMDeltaUTInGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Distribution(Multivariate, GaussianMeanVariance, m=[2.3636363470614055, 4.9090909132334355], v=[0.2727273058237252 0.1818181735464949; 0.18181817354649488 0.9545454566127697])
+    @test ruleMDeltaUTInGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Distribution(Multivariate, GaussianMeanVariance, m=[2.3636363470609245, 4.909090913233555], v=[0.2727273058246874 0.18181817354625435; 0.18181817354625435 0.9545454566128299])
 end
 
 
@@ -236,85 +236,85 @@ end
 # Integration
 #------------
 
-@testset "Nonlinear integration via UT with given inverse" begin
+@testset "Delta integration via UT with given inverse" begin
     fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{Unscented}(y, x, g=g, g_inv=g_inv)
+    n = Delta{Unscented}(y, x, g=g, g_inv=g_inv)
     
-    @test isa(n, Nonlinear{Unscented})
+    @test isa(n, Delta{Unscented})
     
     # Forward; g_inv should not be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", code)
+    @test occursin("ruleSPDeltaUTOutNG(g, nothing, messages[2])", code)
     @test !occursin("g_inv", code)
 
     # Backward; g_inv should be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(x)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(g, g_inv, messages[2], nothing)", code)
+    @test occursin("ruleSPDeltaUTIn1GG(g, g_inv, messages[2], nothing)", code)
 end
 
-@testset "Multi-argument nonlinear integration via UT" begin
+@testset "Multi-argument integration via UT" begin
     fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     @RV z ~ GaussianMeanVariance(5.0, 1.0)
-    n = Nonlinear{Unscented}(y, x, z, g=h, g_inv=[h_inv_x, nothing])
+    n = Delta{Unscented}(y, x, z, g=h, g_inv=[h_inv_x, nothing])
     
     # Forward; h_inv_x should not be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNGX(h, nothing, messages[3], messages[1])", code)
+    @test occursin("ruleSPDeltaUTOutNGX(h, nothing, messages[3], messages[1])", code)
     @test !occursin("h_inv_x", code)
 
     # Backward with given inverse; h_inv_x should be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(x)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTInGX(h, h_inv_x, messages[3], nothing, messages[1])", code)
+    @test occursin("ruleSPDeltaUTInGX(h, h_inv_x, messages[3], nothing, messages[1])", code)
 
     # Backward without given inverse
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(z)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTInGX(h, 2, messages[3], messages[2], messages[1])", code)
+    @test occursin("ruleSPDeltaUTInGX(h, 2, messages[3], messages[2], messages[1])", code)
     @test !occursin("h_inv_x", code)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", code)
 end
 
-@testset "Nonlinear integration via UT with given alpha" begin
+@testset "Delta integration via UT with given alpha" begin
     fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{Unscented}(y, x, g=g, alpha=1.0)
+    n = Delta{Unscented}(y, x, g=g, alpha=1.0)
     
     # Forward; alpha should be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1], alpha=1.0)", code)
+    @test occursin("ruleSPDeltaUTOutNG(g, nothing, messages[1], alpha=1.0)", code)
 end
 
-@testset "Nonlinear integration via UT without given inverse" begin
+@testset "Delta integration via UT without given inverse" begin
     fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{Unscented}(y, x, g=g)
+    n = Delta{Unscented}(y, x, g=g)
 
     # Forward; g_inv should not be present in call
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1])", code)
+    @test occursin("ruleSPDeltaUTOutNG(g, nothing, messages[1])", code)
     @test !occursin("g_inv", code)
 
     # Backward; g_inv should not be present in call, 
@@ -322,7 +322,7 @@ end
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(x)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(g, messages[2], messages[1])", code)
+    @test occursin("ruleSPDeltaUTIn1GG(g, messages[2], messages[1])", code)
     @test !occursin("g_inv", code)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", code)
 end

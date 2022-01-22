@@ -1,4 +1,4 @@
-export Nonlinear, Unscented, Sampling, Extended, Conjugate
+export Delta, Unscented, Sampling, Extended, Conjugate
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
@@ -9,9 +9,9 @@ abstract type Conjugate <: ApproximationMethod end
 """
 Description:
 
-    Nonlinear node modeling a nonlinear relation. Updates for
-    the nonlinear node are computed through the unscented transform (by default), 
-    importance sampling, or local linear approximation.
+    Delta node modeling a custom deterministic relation. Updates for
+    the Delta node are computed through the unscented transform (by default), 
+    importance sampling, conjugate approximation, or local linear approximation.
 
     For more details see "On Approximate Nonlinear Gaussian Message Passing on
     Factor Graphs", Petersen et al. 2018.
@@ -25,15 +25,15 @@ Interfaces:
 
 Construction:
 
-    Nonlinear{T}(out, in1; g=g, id=:my_node)
-    Nonlinear{T}(out, in1; g=g, g_inv=g_inv, id=:my_node)
-    Nonlinear{T}(out, in1, in2, ...; g=g, id=:my_node)
-    Nonlinear{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
-    Nonlinear{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, nothing, ...), id=:my_node)
+    Delta{T}(out, in1; g=g, id=:my_node)
+    Delta{T}(out, in1; g=g, g_inv=g_inv, id=:my_node)
+    Delta{T}(out, in1, in2, ...; g=g, id=:my_node)
+    Delta{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
+    Delta{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, nothing, ...), id=:my_node)
 
     where T encodes the approximation method: Unscented, Sampling, or Extended.
 """
-mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
+mutable struct Delta{T<:ApproximationMethod} <: DeltaFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -46,7 +46,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     n_iterations::Union{Int64, Nothing} # Number of iterations for nonconjugate inference
     optimizer::Any # Optimizer for nonconjugate inference
 
-    function Nonlinear{T}(id::Symbol,
+    function Delta{T}(id::Symbol,
                           g::Function,
                           g_inv::Union{Function, Nothing, Vector},
                           alpha::Union{Float64, Nothing},
@@ -72,46 +72,46 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     end
 end
 
-function Nonlinear{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Unscented}))
-    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
+function Delta{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=nothing, id=ForneyLab.generateId(Delta{Unscented}))
+    return Delta{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
 end
 
-function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
-    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, nothing, nothing, out, args...)
+function Delta{Sampling}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, id=ForneyLab.generateId(Delta{Sampling}))
+    return Delta{Sampling}(id, g, nothing, nothing, dims, n_samples, nothing, nothing, out, args...)
 end
 
-function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Extended}))
-    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, nothing, nothing, out, args...)
+function Delta{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=nothing, id=ForneyLab.generateId(Delta{Extended}))
+    return Delta{Extended}(id, g, g_inv, nothing, dims, nothing, nothing, nothing, out, args...)
 end
 
-function Nonlinear{Conjugate}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, n_iterations=nothing, optimizer=nothing, id=ForneyLab.generateId(Nonlinear{Conjugate}))
-    return Nonlinear{Conjugate}(id, g, nothing, nothing, dims, n_samples, n_iterations, optimizer, out, args...)
+function Delta{Conjugate}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, n_iterations=nothing, optimizer=nothing, id=ForneyLab.generateId(Delta{Conjugate}))
+    return Delta{Conjugate}(id, g, nothing, nothing, dims, n_samples, n_iterations, optimizer, out, args...)
 end
 
-# A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
-function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Sampling})
+# A breaker message is required if interface is partnered with a Delta{Sampling} inbound and there are multiple inbounds
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Delta{Sampling})
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
-    multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(partner_node) # Boolean to indicate a Delta node with multiple stochastic inbounds
 
     return backward && multi_in
 end
 
-# A breaker message is always required if interface is partnered with a Nonlinear{Conjugate} inbound
-function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Conjugate})
+# A breaker message is always required if interface is partnered with a Delta{Conjugate} inbound
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Delta{Conjugate})
     return (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
 end
 
-# A breaker message is required if interface is partnered with a Nonlinear{Unscented/Extended} inbound and no inverse is available
-function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{T}) where T<:Union{Unscented, Extended}
+# A breaker message is required if interface is partnered with a Delta{Unscented/Extended} inbound and no inverse is available
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Delta{T}) where T<:Union{Unscented, Extended}
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
-    multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(partner_node) # Boolean to indicate a Delta node with multiple stochastic inbounds
     inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     undefined_inverse = (partner_node.g_inv === nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] === nothing)) # (Inbound-specific) inverse is undefined
 
     return backward && undefined_inverse
 end
 
-function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Nonlinear)
+function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Delta)
     requiresBreaker(interface, partner_interface, partner_node) || error("Breaker dimensions requested for non-breaker interface: $(interface)")
 
     if partner_node.dims === nothing
@@ -124,12 +124,12 @@ function breakerParameters(interface::Interface, partner_interface::Interface, p
     return (Message{GaussianMeanVariance, variateType(dims)}, dims)
 end
 
-slug(::Type{Nonlinear{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"
+slug(::Type{Delta{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"
 
 """
 Determine whether there are multiple stochastic inbound edges
 """
-function isMultiIn(node::Nonlinear)
+function isMultiIn(node::Delta)
     stochastic_in_count = 0
     for iface in node.interfaces[2:end]
         if !isDeltaConstrained(iface.partner)
