@@ -1,4 +1,69 @@
-export Gaussian, prod!, convert
+export Gaussian, Moments, Precision, Canonical, prod!, convert
+
+abstract type GaussianParameterization end
+abstract type Moments <: GaussianParameterization end
+abstract type Precision <: GaussianParameterization end
+abstract type Canonical <: GaussianParameterization end
+
+"""
+Description:
+
+    A Gaussian with moments, precision or canonical parameterization:
+
+    f(out,l,s) = 𝒩(out|l,s)
+
+Interfaces:
+
+    1. out
+    2. m, xi
+    3. v, w
+
+Construction:
+
+    Gaussian(out, m, v, id=:some_id)
+    Gaussian{Moments}(out, m, v, id=:some_id)
+    Gaussian{Precision}(out, m, w, id=:some_id)
+    Gaussian{Canonical}(out, xi, w, id=:some_id)
+"""
+mutable struct Gaussian{T<:GaussianParameterization} <: SoftFactor
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
+
+    # Default moments parameterization
+    function Gaussian(out, m, v; id=generateId(Gaussian{Moments}))
+        @ensureVariables(out, m, v)
+        self = new{Moments}(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)
+        self.i[:v] = self.interfaces[3] = associate!(Interface(self), v)
+
+        return self
+    end
+
+    # User-defined parameterization
+    function Gaussian{T}(out, l, s; id=generateId(Gaussian{T})) where T<:GaussianParameterization
+        @ensureVariables(out, l, s)
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        if T == Moments
+            self.i[:m] = self.interfaces[2] = associate!(Interface(self), l)
+            self.i[:v] = self.interfaces[3] = associate!(Interface(self), s)
+        elseif T == Precision
+            self.i[:m] = self.interfaces[2] = associate!(Interface(self), l)
+            self.i[:w] = self.interfaces[3] = associate!(Interface(self), s)
+        elseif T == Canonical
+            self.i[:xi] = self.interfaces[2] = associate!(Interface(self), l)
+            self.i[:w] = self.interfaces[3] = associate!(Interface(self), s)
+        end
+
+        return self
+    end
+end
+
+slug(::Type{<:Gaussian}) = "𝒩"
 
 # Convert parameterizations
 function convert(::Type{Distribution{V, GaussianMeanPrecision}}, dist::Distribution{V, GaussianMeanVariance}) where V<:VariateType

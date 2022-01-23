@@ -47,15 +47,15 @@ mutable struct Delta{T<:ApproximationMethod} <: DeltaFactor
     optimizer::Any # Optimizer for nonconjugate inference
 
     function Delta{T}(id::Symbol,
-                          g::Function,
-                          g_inv::Union{Function, Nothing, Vector},
-                          alpha::Union{Float64, Nothing},
-                          dims::Union{Vector, Nothing},
-                          n_samples::Union{Int64, Nothing},
-                          n_iterations::Union{Int64, Nothing},
-                          optimizer::Any,
-                          out::Variable,
-                          args::Vararg) where T<:ApproximationMethod
+                      g::Function,
+                      g_inv::Union{Function, Nothing, Vector},
+                      alpha::Union{Float64, Nothing},
+                      dims::Union{Vector, Nothing},
+                      n_samples::Union{Int64, Nothing},
+                      n_iterations::Union{Int64, Nothing},
+                      optimizer::Any,
+                      out::Variable,
+                      args::Vararg) where T<:ApproximationMethod
         
         n_args = length(args)
         for i=1:n_args
