@@ -45,7 +45,7 @@ a given inverse (RTS smoothing).
 """
 function requiresBreaker(interface::Interface)
     partner_interface = ultimatePartner(interface)
-    (partner_interface == nothing) && return false # Dangling edge
+    (partner_interface === nothing) && return false # Dangling edge
     
     return requiresBreaker(interface, partner_interface, partner_interface.node) # Dispatch to overloaded methods
 end

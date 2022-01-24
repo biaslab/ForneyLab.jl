@@ -9,7 +9,7 @@
                 :name          => SPDeltaSIn1MN)
 
 mutable struct SPDeltaSInGX <: SumProductRule{Delta{Sampling}} end
-outboundType(::Type{SPDeltaSInGX}) = Message{GaussianWeightedMeanPrecision}
+outboundType(::Type{SPDeltaSInGX}) = Message{Gaussian{Canonical}}
 function isApplicable(::Type{SPDeltaSInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false

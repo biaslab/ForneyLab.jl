@@ -43,7 +43,7 @@ slug(::Type{MomentConstraint}) = "E"
 # A breaker message is required if interface is partnered with a moment constraint
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = true
 
-breakerParameters(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+breakerParameters(interface::Interface, partner_interface::Interface, partner_node::MomentConstraint) = (Message{Gaussian{Moments}, Univariate}, ()) # Univariate only
 
 # Constraints do not contribute to average energy
 averageEnergy(::Type{MomentConstraint}, marg_out::Distribution) = 0.0

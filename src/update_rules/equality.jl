@@ -14,7 +14,7 @@ function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
 end
 
 mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGaussian}) = Message{GaussianWeightedMeanPrecision}
+outboundType(::Type{SPEqualityGaussian}) = Message{Gaussian{Canonical}}
 isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Gaussian})
 
 mutable struct SPEqualityGammaWishart <: SumProductRule{Equality} end
@@ -61,7 +61,7 @@ outboundType(::Type{SPEqualityFn}) = Message{Function}
 isApplicable(::Type{SPEqualityFn}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Function})
 
 mutable struct SPEqualityFnG <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityFnG}) = Message{GaussianMeanVariance}
+outboundType(::Type{SPEqualityFnG}) = Message{Gaussian{Moments}}
 function isApplicable(::Type{SPEqualityFnG}, input_types::Vector{Type})
     nothing_inputs = 0
     function_inputs = 0
@@ -103,7 +103,7 @@ function isApplicable(::Type{SPEqualityFnFactor}, input_types::Vector{Type})
 end
 
 mutable struct SPEqualityGFactor <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGFactor}) = Message{GaussianMeanVariance}
+outboundType(::Type{SPEqualityGFactor}) = Message{Gaussian{Moments}}
 function isApplicable(::Type{SPEqualityGFactor}, input_types::Vector{Type})
     nothing_inputs = 0
     factor_inputs = 0

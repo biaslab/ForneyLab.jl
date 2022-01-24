@@ -4,7 +4,7 @@
                       :name          => VBLogitOut)
 
 @naiveVariationalRule(:node_type     => Logit,
-                      :outbound_type => Message{GaussianWeightedMeanPrecision},
+                      :outbound_type => Message{Gaussian{Canonical}},
                       :inbound_types => (Distribution, Nothing, Distribution),
                       :name          => VBLogitIn1)
 

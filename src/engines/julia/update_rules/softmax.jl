@@ -27,7 +27,7 @@ function ruleVBSoftmaxIn1(marg_out::Distribution,
     xi = mu_plus.*diag(gam) + (gam - Diagonal(diag(gam)))'*mu_min
     W = Diagonal(vec(sum(gam, dims=1)))
 
-    return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=W)
+    return Message(Multivariate, Gaussian{Canonical}, xi=xi, w=W)
 end
 
 function ruleVBSoftmaxXi(marg_out::Distribution, 

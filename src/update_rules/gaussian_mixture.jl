@@ -42,7 +42,7 @@ function matchPVInputs(input_types::Vector{<:Type})
 end
 
 mutable struct VBGaussianMixtureM <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureM}) = Message{GaussianMeanPrecision}
+outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian{Precision}}
 function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
@@ -80,7 +80,7 @@ function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{<:Type})
 end
 
 mutable struct VBGaussianMixtureOut <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureOut}) = Message{GaussianWeightedMeanPrecision}
+outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian{Canonical}}
 function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{<:Type})
     iseven(length(input_types)) || return false
     for (i, input_type) in enumerate(input_types)

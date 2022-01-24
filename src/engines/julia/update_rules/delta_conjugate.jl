@@ -64,7 +64,7 @@ function ruleSPDeltaCInGX(g::Function,
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
-    msg_fw_in = Message(Multivariate, GaussianMeanVariance, m=m_fw_in, v=V_fw_in) # Joint forward message
+    msg_fw_in = Message(Multivariate, Gaussian{Moments}, m=m_fw_in, v=V_fw_in) # Joint forward message
 
     # log-pdf of joint backward message over inbounds
     log_pdf_s(z) = logPdf(msg_out.dist, g(split(z, ds)...))
@@ -72,7 +72,7 @@ function ruleSPDeltaCInGX(g::Function,
     # Compute joint marginal belief
     η = naturalParams(msg_fw_in.dist)
     λ = renderCVI(log_pdf_s, n_iterations, optimizer, η, msg_fw_in)
-    d_marg = standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
+    d_marg = standardDistribution(Multivariate, Gaussian{Moments}, η=λ)
     (m_in, V_in) = unsafeMeanCov(d_marg)
     
     # Marginalize joint belief on in's
@@ -85,7 +85,7 @@ function ruleSPDeltaCInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(dims), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(dims), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 # Special case for two inputs with one PointMass (no inx required)
@@ -130,7 +130,7 @@ function ruleMDeltaCInMGX(g::Function,
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
-    msg_fw_in = Message(Multivariate, GaussianMeanVariance, m=m_fw_in, v=V_fw_in) # Joint forward message
+    msg_fw_in = Message(Multivariate, Gaussian{Moments}, m=m_fw_in, v=V_fw_in) # Joint forward message
 
     # log-pdf of joint backward message over inbounds
     log_pdf_s(z) = logPdf(msg_out.dist, g(split(z, ds)...))
@@ -138,7 +138,7 @@ function ruleMDeltaCInMGX(g::Function,
     η = naturalParams(msg_fw_in.dist)
     λ = renderCVI(log_pdf_s, default_n_iterations, default_optimizer, η, msg_fw_in) # Natural statistics of marginal
 
-    return standardDistribution(Multivariate, GaussianMeanVariance, η=λ)
+    return standardDistribution(Multivariate, Gaussian{Moments}, η=λ)
 end
 
 

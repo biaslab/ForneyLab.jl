@@ -39,7 +39,7 @@ slug(::Type{Probit}) = "Φ"
 function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Probit)
     (partner_interface == partner_node.i[:in1]) || error("Breaker initialization requested for non-breaker interface: $(interface)")
 
-    return (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+    return (Message{Gaussian{Moments}, Univariate}, ()) # Univariate only
 end
 
 # Average energy functional

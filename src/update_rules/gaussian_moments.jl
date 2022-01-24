@@ -1,59 +1,59 @@
-@sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Moments},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceOutNPP)
+                :name          => SPGaussianMomentsOutNPP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Moments},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Message{PointMass}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceMPNP)
+                :name          => SPGaussianMomentsMPNP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Moments},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceOutNGP)
+                :name          => SPGaussianMomentsOutNGP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Moments},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceMGNP)
+                :name          => SPGaussianMomentsMGNP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing),
-                :name          => SPGaussianMeanVarianceVGGN)
+                :name          => SPGaussianMomentsVGGN)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{PointMass}, Message{Gaussian}, Nothing),
-                :name          => SPGaussianMeanVarianceVPGN)
+                :name          => SPGaussianMomentsVPGN)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{SampleList}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceOutNSP)
+                :name          => SPGaussianMomentsOutNSP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Message{SampleList},Nothing,Message{PointMass}),
-                :name          => SPGaussianMeanVarianceMSNP)
+                :name          => SPGaussianMomentsMSNP)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Gaussian},Message{SampleList}),
-                :name          => SPGaussianMeanVarianceOutNGS)
+                :name          => SPGaussianMomentsOutNGS)
 
-@sumProductRule(:node_type     => GaussianMeanVariance,
+@sumProductRule(:node_type     => Gaussian{Moments},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Message{Gaussian}, Nothing,Message{SampleList}),
-                :name          => SPGaussianMeanVarianceMGNS)
+                :name          => SPGaussianMomentsMGNS)
 
-@naiveVariationalRule(:node_type     => GaussianMeanVariance,
-                      :outbound_type => Message{GaussianMeanVariance},
+@naiveVariationalRule(:node_type     => Gaussian{Moments},
+                      :outbound_type => Message{Gaussian{Moments}},
                       :inbound_types => (Distribution, Nothing, Distribution),
-                      :name          => VBGaussianMeanVarianceM)
+                      :name          => VBGaussianMomentsM)
 
-@naiveVariationalRule(:node_type     => GaussianMeanVariance,
-                      :outbound_type => Message{GaussianMeanVariance},
+@naiveVariationalRule(:node_type     => Gaussian{Moments},
+                      :outbound_type => Message{Gaussian{Moments}},
                       :inbound_types => (Nothing, Distribution, Distribution),
-                      :name          => VBGaussianMeanVarianceOut)
+                      :name          => VBGaussianMomentsOut)

@@ -73,7 +73,7 @@ function ruleSPDeltaEOutNG(g::Function,
     m = A*m_in1 + b
     V = A*V_in1*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Multi-argument forward rule
@@ -87,7 +87,7 @@ function ruleSPDeltaEOutNGX(g::Function, # Needs to be in front of Vararg
     m = A*m_fw_in + b
     V = A*V_fw_in*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Backward rule with given inverse
@@ -101,7 +101,7 @@ function ruleSPDeltaEIn1GG(g::Function,
     m = A*m_out + b
     V = A*V_out*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Multi-argument backward rule with given inverse
@@ -116,7 +116,7 @@ function ruleSPDeltaEInGX(g::Function, # Needs to be in front of Vararg
     m = A*mc + b
     V = A*Vc*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Backward rule with unknown inverse
@@ -130,7 +130,7 @@ function ruleSPDeltaEIn1GG(g::Function,
     xi = A'*W_out*(m_out - b)
     W = A'*W_out*A
 
-    return Message(variateType(xi), GaussianWeightedMeanPrecision, xi=xi, w=W)
+    return Message(variateType(xi), Gaussian{Canonical}, xi=xi, w=W)
 end
 
 # Multi-argument backward rule with unknown inverse
@@ -162,7 +162,7 @@ function ruleSPDeltaEInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(xi_bw_inx), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleMDeltaEInGX(g::Function,
@@ -182,5 +182,5 @@ function ruleMDeltaEInGX(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_in, V_in) = smoothRTS(m_fw_out, V_fw_out, C_fw, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return Distribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, Gaussian{Moments}, m=m_in, v=V_in)
 end

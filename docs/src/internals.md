@@ -70,10 +70,10 @@ The name of an update rule is composed of several parts:
     - `[I]`: first letter of the message's probability distribution
 
 
-###### Example 1: `ruleSPGaussianMeanPrecisionMPNP`
+###### Example 1: `ruleSPGaussianPrecisionMPNP`
 1. `rule` : update rule
 2. `SP` : sum-product algorithm
-3. `GaussianMeanPrecision`: Gaussian mean precision factor node
+3. `Gaussian{Precision}`: Gaussian mean precision factor node
 4. `M`: outgoing message through 'Mean' interface
 5. `PNP`: incoming message types are: point mass, Nothing and point mass
 

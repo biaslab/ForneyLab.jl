@@ -29,7 +29,7 @@ end
 end
 
 @testset "Univariate SampleList prod!" begin
-    dist_gaussian = Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    dist_gaussian = Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
     dist_prod = dist_gaussian * Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])
     dist_true_prod = Distribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
 
@@ -39,7 +39,7 @@ end
 end
 
 @testset "Multivariate SampleList prod!" begin
-    dist_gaussian = Distribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
+    dist_gaussian = Distribution(Multivariate, Gaussian{Moments}, m=[0.0], v=mat(1.0))
     dist_prod = dist_gaussian * Distribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])
     dist_true_prod = Distribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
 
@@ -78,11 +78,11 @@ end
     p2 = Distribution(MatrixVariate, PointMass, m=mat(tiny))
     @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
 
-    p1 = Distribution(Univariate, GaussianMeanVariance, m=2.0, v=0.0)
+    p1 = Distribution(Univariate, Gaussian{Moments}, m=2.0, v=0.0)
     p2 = Distribution(Univariate, SampleList, s=[0.0], w=[1.0])
     @test bootstrap(p1, p2) == [2.0]
 
-    p1 = Distribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
+    p1 = Distribution(Multivariate, Gaussian{Moments}, m=[2.0], v=mat(0.0))
     p2 = Distribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
     @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
 end
@@ -124,7 +124,7 @@ g(x) = x
     fg = FactorGraph()
     N = 4
     @RV s ~ SampleList(collect(1.0:N), ones(N)/N)
-    @RV x ~ GaussianMeanVariance(s, 0.0)
+    @RV x ~ Gaussian{Moments}(s, 0.0)
     @RV y ~ Delta{Sampling}(x, g=g)
 
     # Define an algorithm
@@ -133,14 +133,14 @@ g(x) = x
     code = algorithmSourceCode(algo)
 
     @test occursin("ruleSPSampleListOutNPP", code)
-    @test occursin("ruleSPGaussianMeanVarianceOutNSP", code)
+    @test occursin("ruleSPGaussianMomentsOutNSP", code)
     @test occursin("ruleSPDeltaSOutNM", code)
 end
 
 # Generated algorithm code
 function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 3))
     messages[1] = ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[1.0, 2.0, 3.0, 4.0]), Message(Multivariate, PointMass, m=[0.25, 0.25, 0.25, 0.25]))
-    messages[2] = ruleSPGaussianMeanVarianceOutNSP(nothing, messages[1], Message(Univariate, PointMass, m=0.0))
+    messages[2] = ruleSPGaussianMomentsOutNSP(nothing, messages[1], Message(Univariate, PointMass, m=0.0))
     messages[3] = ruleSPDeltaSOutNM(g, nothing, messages[2])
 
     marginals[:y] = messages[3].dist

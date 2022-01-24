@@ -21,7 +21,7 @@ end
     
     # Stochastic
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(0.0, 1.0)
+    @RV x ~ Gaussian{Moments}(0.0, 1.0)
     @test !isDeterministic(fg.nodes[:gaussianmeanvariance_1].i[:out], Dict{Interface, Bool}())
 
     # Equality
@@ -47,8 +47,8 @@ end
 @testset "deterministicEdgeSet and deterministicEdges" begin
     fg = FactorGraph()
     
-    @RV x ~ GaussianMeanVariance(0.0, 1.0)
-    @RV y ~ GaussianMeanVariance(0.0, 1.0)
+    @RV x ~ Gaussian{Moments}(0.0, 1.0)
+    @RV y ~ Gaussian{Moments}(0.0, 1.0)
     @RV w = x + y
     @RV a = constant(1.0)
     @RV z = a*w
@@ -71,7 +71,7 @@ end
 @testset "deterministicEdges for graph with dangling edge" begin
     fg = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance(1.0, 1.0)
+    @RV x ~ Gaussian{Moments}(1.0, 1.0)
     @RV y = 4.0 * x
 
     e_1 = fg.nodes[:clamp_1].i[:out].edge

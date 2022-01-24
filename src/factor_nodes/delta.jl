@@ -121,7 +121,7 @@ function breakerParameters(interface::Interface, partner_interface::Interface, p
         dims = partner_node.dims[inx] # Extract dimensionality from node.dims vector
     end
 
-    return (Message{GaussianMeanVariance, variateType(dims)}, dims)
+    return (Message{Gaussian{Moments}, variateType(dims)}, dims)
 end
 
 slug(::Type{Delta{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"

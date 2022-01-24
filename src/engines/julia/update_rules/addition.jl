@@ -24,10 +24,10 @@ function ruleSPAdditionOutNGG(
     msg_in1::Message{F1, V},
     msg_in2::Message{F2, V}) where {F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}
 
-    d_in1 = convert(Distribution{V, GaussianMeanVariance}, msg_in1.dist)
-    d_in2 = convert(Distribution{V, GaussianMeanVariance}, msg_in2.dist)
+    d_in1 = convert(Distribution{V, Gaussian{Moments}}, msg_in1.dist)
+    d_in2 = convert(Distribution{V, Gaussian{Moments}}, msg_in2.dist)
 
-    Message(V, GaussianMeanVariance, m=d_in1.params[:m] + d_in2.params[:m], v=d_in1.params[:v] + d_in2.params[:v])
+    Message(V, Gaussian{Moments}, m=d_in1.params[:m] + d_in2.params[:m], v=d_in1.params[:v] + d_in2.params[:v])
 end
 
 function ruleSPAdditionIn2GGN(
@@ -35,10 +35,10 @@ function ruleSPAdditionIn2GGN(
     msg_in1::Message{F2, V},
     msg_in2::Nothing) where {F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}
 
-    d_in1 = convert(Distribution{V, GaussianMeanVariance}, msg_in1.dist)
-    d_out = convert(Distribution{V, GaussianMeanVariance}, msg_out.dist)
+    d_in1 = convert(Distribution{V, Gaussian{Moments}}, msg_in1.dist)
+    d_out = convert(Distribution{V, Gaussian{Moments}}, msg_out.dist)
 
-    Message(V, GaussianMeanVariance, m=d_out.params[:m] - d_in1.params[:m], v=d_out.params[:v] + d_in1.params[:v])
+    Message(V, Gaussian{Moments}, m=d_out.params[:m] - d_in1.params[:m], v=d_out.params[:v] + d_in1.params[:v])
 end
 
 function ruleSPAdditionIn1GNG(
@@ -54,9 +54,9 @@ function ruleSPAdditionOutNGP(
     msg_in1::Message{F, V},
     msg_in2::Message{PointMass, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
 
-    d_in1 = convert(Distribution{V, GaussianMeanVariance}, msg_in1.dist)
+    d_in1 = convert(Distribution{V, Gaussian{Moments}}, msg_in1.dist)
 
-    Message(V, GaussianMeanVariance, m=d_in1.params[:m] + msg_in2.dist.params[:m], v=d_in1.params[:v])
+    Message(V, Gaussian{Moments}, m=d_in1.params[:m] + msg_in2.dist.params[:m], v=d_in1.params[:v])
 end
 
 function ruleSPAdditionOutNPG(
@@ -72,9 +72,9 @@ function ruleSPAdditionIn1PNG(
     msg_in1::Nothing,
     msg_in2::Message{F, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
 
-    d_in2 = convert(Distribution{V, GaussianMeanVariance}, msg_in2.dist)
+    d_in2 = convert(Distribution{V, Gaussian{Moments}}, msg_in2.dist)
 
-    Message(V, GaussianMeanVariance, m=msg_out.dist.params[:m] - d_in2.params[:m], v=d_in2.params[:v])
+    Message(V, Gaussian{Moments}, m=msg_out.dist.params[:m] - d_in2.params[:m], v=d_in2.params[:v])
 end
 
 function ruleSPAdditionIn2PGN(
@@ -90,9 +90,9 @@ function ruleSPAdditionIn1GNP(
     msg_in1::Nothing,
     msg_in2::Message{PointMass, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
 
-    d_out = convert(Distribution{V, GaussianMeanVariance}, msg_out.dist)
+    d_out = convert(Distribution{V, Gaussian{Moments}}, msg_out.dist)
 
-    Message(V, GaussianMeanVariance, m=d_out.params[:m] - msg_in2.dist.params[:m], v=d_out.params[:v])
+    Message(V, Gaussian{Moments}, m=d_out.params[:m] - msg_in2.dist.params[:m], v=d_out.params[:v])
 end
 
 function ruleSPAdditionIn2GPN(
@@ -216,9 +216,9 @@ function ruleMAdditionNGG(
     msg_in1::Message{<:Gaussian, V}, 
     msg_in2::Message{<:Gaussian, V}) where V<:Union{Univariate, Multivariate}
 
-    d_out = convert(Distribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
-    d_in1 = convert(Distribution{V, GaussianWeightedMeanPrecision}, msg_in1.dist)
-    d_in2 = convert(Distribution{V, GaussianWeightedMeanPrecision}, msg_in2.dist)
+    d_out = convert(Distribution{V, Gaussian{Canonical}}, msg_out.dist)
+    d_in1 = convert(Distribution{V, Gaussian{Canonical}}, msg_in1.dist)
+    d_in2 = convert(Distribution{V, Gaussian{Canonical}}, msg_in2.dist)
 
     xi_out = d_out.params[:xi]
     W_out = d_out.params[:w]
@@ -227,5 +227,5 @@ function ruleMAdditionNGG(
     xi_in2 = d_in2.params[:xi]
     W_in2 = d_in2.params[:w]
 
-    return Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_in1+xi_out; xi_in2+xi_out], w=[W_in1+W_out W_out; W_out W_in2+W_out])
+    return Distribution(Multivariate, Gaussian{Canonical}, xi=[xi_in1+xi_out; xi_in2+xi_out], w=[W_in1+W_out W_out; W_out W_in2+W_out])
 end

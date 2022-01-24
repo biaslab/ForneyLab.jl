@@ -14,7 +14,7 @@ function ruleVBGaussianMixtureM(dist_out::Distribution,
     k = findfirst(dist_means .== nothing) # Find factor
     z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
-    return Message(Univariate, GaussianMeanPrecision, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
+    return Message(Univariate, Gaussian{Precision}, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
 
 function ruleVBGaussianMixtureM(dist_out::Distribution,
@@ -26,7 +26,7 @@ function ruleVBGaussianMixtureM(dist_out::Distribution,
     k = findfirst(dist_means .== nothing) # Find factor
     z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
-    return Message(Multivariate, GaussianMeanPrecision, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
+    return Message(Multivariate, Gaussian{Precision}, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
 
 function ruleVBGaussianMixtureW(dist_out::Distribution,
@@ -76,8 +76,8 @@ function ruleVBGaussianMixtureZBer( dist_out::Distribution,
                                     dist_w2::Distribution)
     # Uni- and Multivariate update
     U = Vector{Float64}(undef, 2)
-    U[1] = averageEnergy(GaussianMeanPrecision, dist_out, dist_m1, dist_w1)
-    U[2] = averageEnergy(GaussianMeanPrecision, dist_out, dist_m2, dist_w2)
+    U[1] = averageEnergy(Gaussian{Precision}, dist_out, dist_m1, dist_w1)
+    U[2] = averageEnergy(Gaussian{Precision}, dist_out, dist_m2, dist_w2)
 
     return Message(Univariate, Bernoulli, p=softmax(-U)[1])
 end
@@ -92,7 +92,7 @@ function ruleVBGaussianMixtureZCat( dist_out::Distribution,
     n_factors = length(dist_means)
     U = Vector{Float64}(undef, n_factors)
     for k = 1:n_factors
-        U[k] = averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])
+        U[k] = averageEnergy(Gaussian{Precision}, dist_out, dist_means[k], dist_precs[k])
     end
 
     return Message(Univariate, Categorical, p=softmax(-U))
@@ -113,7 +113,7 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
         xi += unsafeMean(dist_precs[k])*unsafeMean(dist_means[k])*z_bar[k]
     end
 
-    return Message(Univariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
+    return Message(Univariate, Gaussian{Canonical}, xi=xi, w=w)
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
@@ -132,5 +132,5 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
         xi += unsafeMean(dist_precs[k])*unsafeMean(dist_means[k])*z_bar[k]
     end
 
-    return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
+    return Message(Multivariate, Gaussian{Canonical}, xi=xi, w=w)
 end    

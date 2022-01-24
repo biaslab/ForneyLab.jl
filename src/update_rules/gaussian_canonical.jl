@@ -1,9 +1,9 @@
-@sumProductRule(:node_type     => GaussianWeightedMeanPrecision,
-                :outbound_type => Message{GaussianWeightedMeanPrecision},
+@sumProductRule(:node_type     => Gaussian{Canonical},
+                :outbound_type => Message{Gaussian{Canonical}},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianWeightedMeanPrecisionOutNPP)
+                :name          => SPGaussianCanonicalOutNPP)
 
-@naiveVariationalRule(:node_type     => GaussianWeightedMeanPrecision,
-                      :outbound_type => Message{GaussianWeightedMeanPrecision},
+@naiveVariationalRule(:node_type     => Gaussian{Canonical},
+                      :outbound_type => Message{Gaussian{Canonical}},
                       :inbound_types => (Nothing, Distribution, Distribution),
-                      :name          => VBGaussianWeightedMeanPrecisionOut)
+                      :name          => VBGaussianCanonicalOut)

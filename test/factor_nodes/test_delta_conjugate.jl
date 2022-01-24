@@ -15,13 +15,13 @@ h(x, y) = x + y
     opt = ForgetDelayDescent(1.0, 1.0)
     
     # Multivariate Gaussian
-    μ_fw = Message(Multivariate, GaussianMeanVariance, m=[1.0, 2.0], v=[2.0 1.0; 1.0 3.0])
+    μ_fw = Message(Multivariate, Gaussian{Moments}, m=[1.0, 2.0], v=[2.0 1.0; 1.0 3.0])
     η = naturalParams(μ_fw.dist)
     λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
     @test length(λ) == 6
 
     # Univariate Gaussian
-    μ_fw = Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)
+    μ_fw = Message(Univariate, Gaussian{Moments}, m=1.0, v=2.0)
     η = naturalParams(μ_fw.dist)
     λ = renderCVI(log_μ_bw, 1, opt, η, μ_fw)
     @test length(λ) == 2
@@ -43,24 +43,24 @@ end
     fg = FactorGraph()
     x = Variable()
     y = Variable()
-    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    nd = Gaussian{Moments}(x, 0.0, 1.0)
     Delta{Conjugate}(y, x, g=g)
 
     @test requiresBreaker(nd.i[:out]) # Single-input Delta{Conjugate} requires breaker
     @test_throws Exception breakerParameters(nd.i[:out].partner)
-    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
+    @test breakerParameters(nd.i[:out]) == (Message{Gaussian{Moments}, Univariate}, ())
 
     fg = FactorGraph()
     x = Variable()
     z = Variable()
     y = Variable()
-    GaussianMeanVariance(z, 0.0, 1.0)
-    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    Gaussian{Moments}(z, 0.0, 1.0)
+    nd = Gaussian{Moments}(x, 0.0, 1.0)
     Delta{Conjugate}(y, x, z, g=h)
 
     @test requiresBreaker(nd.i[:out]) # Multi-input Delta{Conjugate} requires breaker
     @test_throws Exception breakerParameters(nd.i[:out].partner)
-    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
+    @test breakerParameters(nd.i[:out]) == (Message{Gaussian{Moments}, Univariate}, ())
 end
 
 
@@ -74,10 +74,10 @@ end
     @test isApplicable(SPDeltaCOutNM, [Nothing, Message{Gaussian}])
     @test isApplicable(SPDeltaCOutNM, [Nothing, Message{Bernoulli}])
 
-    msg = ruleSPDeltaCOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=tiny), n_samples=1)
+    msg = ruleSPDeltaCOutNM(f, nothing, Message(Univariate, Gaussian{Moments}, m=2.0, v=tiny), n_samples=1)
     @test isapprox(msg.dist.params[:s][1], 2.0, atol=1e-4)
     @test msg.dist.params[:w] == [1.0]
-    msg = ruleSPDeltaCOutNM(f, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(tiny)), n_samples=1)
+    msg = ruleSPDeltaCOutNM(f, nothing, Message(Multivariate, Gaussian{Moments}, m=[2.0], v=mat(tiny)), n_samples=1)
     @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
     @test msg.dist.params[:w] == [1.0]
 end
@@ -87,19 +87,19 @@ end
     @test outboundType(SPDeltaCIn1MN) == Message{FactorNode}
     @test isApplicable(SPDeltaCIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
 
-    msg = ruleSPDeltaCIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=0.1), n_samples=0)
-    @test typeof(msg) == Message{GaussianWeightedMeanPrecision, Univariate}
+    msg = ruleSPDeltaCIn1MN(f, Message(Univariate, Gaussian{Moments}, m=2.0, v=1.0), Message(Univariate, Gaussian{Moments}, m=2.0, v=0.1), n_samples=0)
+    @test typeof(msg) == Message{Gaussian{Canonical}, Univariate}
 end
 
 @testset "SPDeltaCInGX" begin
     @test SPDeltaCInGX <: SumProductRule{Delta{Conjugate}}
-    @test outboundType(SPDeltaCInGX) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPDeltaCInGX) == Message{Gaussian{Canonical}}
     @test !isApplicable(SPDeltaCInGX, [Nothing, Message{Gamma}])
     @test isApplicable(SPDeltaCInGX, [Message{Gaussian}, Message{Gaussian}, Nothing])
 
-    msg_out = Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)
-    msg_in1 = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    msg_in2 = Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0)
+    msg_out = Message(Univariate, Gaussian{Moments}, m=2.0, v=1.0)
+    msg_in1 = Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    msg_in2 = Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0)
 
     res = ruleSPDeltaCInGX(h, 1, msg_out, msg_in1, msg_in2, n_samples=1000)
 
@@ -114,7 +114,7 @@ end
     @test isApplicable(SPDeltaCOutNMX, [Nothing, Message{Gaussian}, Message{Gamma}])
     @test isApplicable(SPDeltaCOutNMX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    msg = ruleSPDeltaCOutNMX(h, nothing, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0), n_samples=1)
+    msg = ruleSPDeltaCOutNMX(h, nothing, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=2.0, v=2.0), n_samples=1)
     @test typeof(msg) == Message{SampleList, Univariate}
 end
 
@@ -126,8 +126,8 @@ end
     @test isApplicable(SPDeltaCInMX, [Message, Nothing, Message{PointMass}])
     @test isApplicable(SPDeltaCInMX, [Message, Message{PointMass}, Nothing])
 
-    msg = ruleSPDeltaCInMX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0))
-    @test typeof(msg) == Message{GaussianWeightedMeanPrecision, Univariate}
+    msg = ruleSPDeltaCInMX(h, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0))
+    @test typeof(msg) == Message{Gaussian{Canonical}, Univariate}
 end
 
 @testset "MDeltaCInMGX" begin
@@ -136,8 +136,8 @@ end
     @test !isApplicable(MDeltaCInMGX, [Nothing, Message{Gaussian}])
     @test !isApplicable(MDeltaCInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
 
-    dist = ruleMDeltaCInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
-    @test typeof(dist) == Distribution{Multivariate, GaussianWeightedMeanPrecision}
+    dist = ruleMDeltaCInMGX(h, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0), Message(Univariate, Gaussian{Moments}, m=2.0, v=2.0))
+    @test typeof(dist) == Distribution{Multivariate, Gaussian{Canonical}}
 end
 
 end # module

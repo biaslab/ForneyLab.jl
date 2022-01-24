@@ -84,7 +84,7 @@ end
 
     # @RV should construct a new variable
     x = constant(0.0)
-    @RV y ~ GaussianMeanVariance(x, constant(1.0))
+    @RV y ~ Gaussian{Moments}(x, constant(1.0))
     @test length(g.variables) == 3 # including constants
     @test y.id == :y # automatically assigned id based on variable name in code
     @test haskey(g.variables, y.id)
@@ -92,7 +92,7 @@ end
 
     # @RV ~ should reuse existing variable and handle keyword agruments
     y_old = y
-    @RV y ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:g_node)
+    @RV y ~ Gaussian{Moments}(constant(0.0), constant(1.0); id=:g_node)
     @test length(g.variables) == 5 # including constants
     @test haskey(g.nodes, :g_node)
     @test y === y_old
@@ -101,18 +101,18 @@ end
     g = FactorGraph()
     vars = Vector{Variable}(undef, 2)
     i = 1
-    @RV [id=:v*i] vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
+    @RV [id=:v*i] vars[1] ~ Gaussian{Moments}(constant(0.0), constant(1.0); id=:tst1) # new Variable
     @test length(g.variables) == 3 # including constants
     @test vars[1].id == :v1
-    @RV vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst2) # existing Variable
+    @RV vars[1] ~ Gaussian{Moments}(constant(0.0), constant(1.0); id=:tst2) # existing Variable
     @test length(g.variables) == 5 # including constants
-    @RV vars[2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV vars[2*i] ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @test vars[2*i].id == :vars_2
     varmatrix = Matrix{Variable}(undef,2,2)
-    @RV varmatrix[1,2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV varmatrix[1,2*i] ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @test varmatrix[1,2*i].id == :varmatrix_1_2
     vardict = Dict{Int,Variable}()
-    @RV vardict[3*i+1] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV vardict[3*i+1] ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @test vardict[3*i+1].id == :vardict_4
 
     # @RV should work with '= syntax'

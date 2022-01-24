@@ -22,7 +22,7 @@ end
 
 @testset "removePrefix" begin
     # initial check
-    @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
+    @test removePrefix(ForneyLab.SPGaussianPrecisionOutNPP) == "SPGaussianPrecisionOutNPP"
 
     # initialize structures
     baz = Foo.Baz(1)
@@ -99,16 +99,16 @@ end
 
 @testset "vagueSourceCode" begin
     entry = ScheduleEntry()
-    entry.family = GaussianMeanPrecision
+    entry.family = Gaussian{Precision}
     entry.dimensionality = ()
     entry_code = vagueSourceCode(entry)
-    @test entry_code == "vague(GaussianMeanPrecision)"
+    @test entry_code == "vague(Gaussian{Precision})"
 
     entry = ScheduleEntry()
-    entry.family = GaussianMeanPrecision
+    entry.family = Gaussian{Precision}
     entry.dimensionality = (1,)
     entry_code = vagueSourceCode(entry)
-    @test entry_code == "vague(GaussianMeanPrecision, (1,))"
+    @test entry_code == "vague(Gaussian{Precision}, (1,))"
 end
 
 @testset "marginalTableSourceCode" begin
@@ -129,14 +129,14 @@ end
     marginal_table[2].inbounds = inbounds
     marginal_table[3] = MarginalEntry()
     marginal_table[3].marginal_id = :z
-    marginal_table[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
+    marginal_table[3].marginal_update_rule = ForneyLab.MGaussian{Precision}GGD
     marginal_table[3].inbounds = inbounds
 
     marginal_table_code = marginalTableSourceCode(marginal_table)
 
     @test occursin("marginals[:x] = messages[1].dist", marginal_table_code)
     @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_table_code)
-    @test occursin("marginals[:z] = ruleMGaussianMeanPrecisionGGD(messages[1], messages[2])", marginal_table_code)
+    @test occursin("marginals[:z] = ruleMGaussian{Precision}GGD(messages[1], messages[2])", marginal_table_code)
 end
 
 @testset "scheduleSourceCode" begin
@@ -146,12 +146,12 @@ end
     schedule[1].message_update_rule = Nothing
     schedule[1].inbounds = []
     schedule[2] = ScheduleEntry()
-    schedule[2].message_update_rule = ForneyLab.SPGaussianMeanPrecisionOutNPP
+    schedule[2].message_update_rule = ForneyLab.SPGaussianPrecisionOutNPP
     schedule[2].schedule_index = 2
     schedule[2].inbounds = [schedule[1]]
 
     schedule_code = scheduleSourceCode(schedule)
-    @test occursin("messages[2] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_code)
+    @test occursin("messages[2] = ruleSPGaussianPrecisionOutNPP(messages[1])", schedule_code)
 end
 
 @testset "entropiesSourceCode" begin
@@ -176,11 +176,11 @@ end
     inbound = MarginalEntry()
     inbound.marginal_id = :x
     energies_vect = [Dict(:counting_number => 1,
-                          :node            => GaussianMeanPrecision,
+                          :node            => Gaussian{Precision},
                           :inbounds        => [inbound])]
     energies_code = energiesSourceCode(energies_vect)
 
-    @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_code)
+    @test occursin("F += averageEnergy(Gaussian{Precision}, marginals[:x])", energies_code)
 end
 
 @testset "initializationSourceCode" begin
@@ -193,13 +193,13 @@ end
     entry = ScheduleEntry()
     entry.schedule_index = 1
     entry.initialize = true
-    entry.family = GaussianMeanPrecision
+    entry.family = Gaussian{Precision}
     entry.dimensionality = ()
     pf.schedule = [entry]
 
     pf_code = initializationSourceCode(pf)
     @test occursin("function initX()", pf_code)
-    @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", pf_code)
+    @test occursin("messages[1] = Message(vague(Gaussian{Precision}))", pf_code)
 end
 
 @testset "optimizeSourceCode" begin

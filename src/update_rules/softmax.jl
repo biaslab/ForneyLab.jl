@@ -4,7 +4,7 @@
                       :name          => VBSoftmaxOut)
 
 @naiveVariationalRule(:node_type     => Softmax,
-                      :outbound_type => Message{GaussianWeightedMeanPrecision},
+                      :outbound_type => Message{Gaussian{Canonical}},
                       :inbound_types => (Distribution, Nothing, Distribution, Distribution),
                       :name          => VBSoftmaxIn1)
 

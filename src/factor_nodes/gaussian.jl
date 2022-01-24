@@ -5,12 +5,18 @@ abstract type Moments <: GaussianParameterization end
 abstract type Precision <: GaussianParameterization end
 abstract type Canonical <: GaussianParameterization end
 
+interfaceHandles(::Type{Moments}) = (:m, :v)
+interfaceHandles(::Type{Precision}) = (:m, :w)
+interfaceHandles(::Type{Canonical}) = (:xi, :w)
+
 """
 Description:
 
     A Gaussian with moments, precision or canonical parameterization:
 
-    f(out,l,s) = 𝒩(out|l,s)
+    f(out, m, v) = 𝒩(out | m, v)
+    f(out, m, w) = 𝒩(out | m, w^{-1})
+    f(out, xi, w) = 𝒩(out | w^{-1}*xi, w^{-1})
 
 Interfaces:
 
@@ -30,7 +36,7 @@ mutable struct Gaussian{T<:GaussianParameterization} <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    # Default moments parameterization
+    # Default to Moments parameterization
     function Gaussian(out, m, v; id=generateId(Gaussian{Moments}))
         @ensureVariables(out, m, v)
         self = new{Moments}(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
@@ -43,21 +49,14 @@ mutable struct Gaussian{T<:GaussianParameterization} <: SoftFactor
     end
 
     # User-defined parameterization
-    function Gaussian{T}(out, l, s; id=generateId(Gaussian{T})) where T<:GaussianParameterization
-        @ensureVariables(out, l, s)
+    function Gaussian{T}(out, in1, in2; id=generateId(Gaussian{T})) where T<:GaussianParameterization
+        @ensureVariables(out, in1, in2)
         self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
-        if T == Moments
-            self.i[:m] = self.interfaces[2] = associate!(Interface(self), l)
-            self.i[:v] = self.interfaces[3] = associate!(Interface(self), s)
-        elseif T == Precision
-            self.i[:m] = self.interfaces[2] = associate!(Interface(self), l)
-            self.i[:w] = self.interfaces[3] = associate!(Interface(self), s)
-        elseif T == Canonical
-            self.i[:xi] = self.interfaces[2] = associate!(Interface(self), l)
-            self.i[:w] = self.interfaces[3] = associate!(Interface(self), s)
-        end
+        h = interfaceHandles(T) # Extract interface handle symbols from approximation type
+        self.i[h[1]] = self.interfaces[2] = associate!(Interface(self), in1)
+        self.i[h[2]] = self.interfaces[3] = associate!(Interface(self), in2)
 
         return self
     end
@@ -66,60 +65,60 @@ end
 slug(::Type{<:Gaussian}) = "𝒩"
 
 # Convert parameterizations
-function convert(::Type{Distribution{V, GaussianMeanPrecision}}, dist::Distribution{V, GaussianMeanVariance}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Precision}}}, dist::Distribution{V, Gaussian{Moments}}) where V<:VariateType
     w = cholinv(dist.params[:v])
     m = deepcopy(dist.params[:m])
 
-    return Distribution(V, GaussianMeanPrecision, m=m, w=w)
+    return Distribution(V, Gaussian{Precision}, m=m, w=w)
 end
 
-function convert(::Type{Distribution{V, GaussianMeanPrecision}}, dist::Distribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Precision}}}, dist::Distribution{V, Gaussian{Canonical}}) where V<:VariateType
     w = deepcopy(dist.params[:w])
     m = cholinv(w)*dist.params[:xi]
 
-    return Distribution(V, GaussianMeanPrecision, m=m, w=w)
+    return Distribution(V, Gaussian{Precision}, m=m, w=w)
 end
 
-function convert(::Type{Distribution{V, GaussianMeanVariance}}, dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Moments}}}, dist::Distribution{V, Gaussian{Precision}}) where V<:VariateType
     v = cholinv(dist.params[:w])
     m = deepcopy(dist.params[:m])
 
-    return Distribution(V, GaussianMeanVariance, m=m, v=v)
+    return Distribution(V, Gaussian{Moments}, m=m, v=v)
 end
 
-function convert(::Type{Distribution{V, GaussianMeanVariance}}, dist::Distribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Moments}}}, dist::Distribution{V, Gaussian{Canonical}}) where V<:VariateType
     v = cholinv(dist.params[:w])
     m = v*dist.params[:xi]
 
-    return Distribution(V, GaussianMeanVariance, m=m, v=v)
+    return Distribution(V, Gaussian{Moments}, m=m, v=v)
 end
 
-function convert(::Type{Distribution{V, GaussianWeightedMeanPrecision}}, dist::Distribution{V, GaussianMeanPrecision}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Canonical}}}, dist::Distribution{V, Gaussian{Precision}}) where V<:VariateType
     w = deepcopy(dist.params[:w])
     xi = w*dist.params[:m]
 
-    return Distribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
+    return Distribution(V, Gaussian{Canonical}, xi=xi, w=w)
 end
 
-function convert(::Type{Distribution{V, GaussianWeightedMeanPrecision}}, dist::Distribution{V, GaussianMeanVariance}) where V<:VariateType
+function convert(::Type{Distribution{V, Gaussian{Canonical}}}, dist::Distribution{V, Gaussian{Moments}}) where V<:VariateType
     w = cholinv(dist.params[:v])
     xi = w*dist.params[:m]
 
-    return Distribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
+    return Distribution(V, Gaussian{Canonical}, xi=xi, w=w)
 end
 
 # Convert VariateTypes
-convert(::Type{Distribution{Multivariate, GaussianMeanVariance}}, dist::Distribution{Univariate, GaussianMeanVariance}) =
-    Distribution(Multivariate, GaussianMeanVariance, m=[dist.params[:m]], v=mat(dist.params[:v]))
-convert(::Type{Distribution{Multivariate, GaussianMeanPrecision}}, dist::Distribution{Univariate, GaussianMeanPrecision}) =
-    Distribution(Multivariate, GaussianMeanPrecision, m=[dist.params[:m]], w=mat(dist.params[:w]))
-convert(::Type{Distribution{Multivariate, GaussianWeightedMeanPrecision}}, dist::Distribution{Univariate, GaussianWeightedMeanPrecision}) =
-    Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=[dist.params[:xi]], w=mat(dist.params[:w]))
+convert(::Type{Distribution{Multivariate, Gaussian{Moments}}}, dist::Distribution{Univariate, Gaussian{Moments}}) =
+    Distribution(Multivariate, Gaussian{Moments}, m=[dist.params[:m]], v=mat(dist.params[:v]))
+convert(::Type{Distribution{Multivariate, Gaussian{Precision}}}, dist::Distribution{Univariate, Gaussian{Precision}}) =
+    Distribution(Multivariate, Gaussian{Precision}, m=[dist.params[:m]], w=mat(dist.params[:w]))
+convert(::Type{Distribution{Multivariate, Gaussian{Canonical}}}, dist::Distribution{Univariate, Gaussian{Canonical}}) =
+    Distribution(Multivariate, Gaussian{Canonical}, xi=[dist.params[:xi]], w=mat(dist.params[:w]))
 
 function prod!(
     x::Distribution{Univariate, <:Gaussian},
     y::Distribution{Univariate, <:Gaussian},
-    z::Distribution{Univariate, GaussianWeightedMeanPrecision}=Distribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0))
+    z::Distribution{Univariate, Gaussian{Canonical}}=Distribution(Univariate, Gaussian{Canonical}, xi=0.0, w=1.0))
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
@@ -139,7 +138,7 @@ end
 function prod!(
     x::Distribution{Multivariate, <:Gaussian},
     y::Distribution{Multivariate, <:Gaussian},
-    z::Distribution{Multivariate, GaussianWeightedMeanPrecision}=Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN])))
+    z::Distribution{Multivariate, Gaussian{Canonical}}=Distribution(Multivariate, Gaussian{Canonical}, xi=[NaN], w=transpose([NaN])))
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
@@ -190,12 +189,12 @@ function naturalParams(dist::Distribution{<:VariateType, <:Gaussian})
     return vcat(xi, -0.5*vec(w))
 end
 
-standardDistribution(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = Distribution(Univariate, GaussianWeightedMeanPrecision, xi=η[1], w=-2*η[2])
+standardDistribution(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = Distribution(Univariate, Gaussian{Canonical}, xi=η[1], w=-2*η[2])
 function standardDistribution(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector)
     d = Int(-0.5 + 0.5*sqrt(1 + 4*length(η))) # Extract dimensionality
     η_1 = η[1:d]
     η_2 = reshape(η[d+1:end], d, d)
-    return Distribution(Multivariate, GaussianWeightedMeanPrecision, xi=η_1, w=-2.0*η_2)
+    return Distribution(Multivariate, Gaussian{Canonical}, xi=η_1, w=-2.0*η_2)
 end
 
 logNormalizer(::Type{Univariate}, ::Type{<:Gaussian}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])

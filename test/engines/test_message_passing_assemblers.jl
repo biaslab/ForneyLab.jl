@@ -13,8 +13,8 @@ end
 
 @testset "assembleBreaker!" begin
     breaker_entry = ScheduleEntry()
-    assembleBreaker!(breaker_entry, GaussianMeanPrecision, ())
-    @test breaker_entry.family == GaussianMeanPrecision
+    assembleBreaker!(breaker_entry, Gaussian{Precision}, ())
+    @test breaker_entry.family == Gaussian{Precision}
     @test breaker_entry.initialize == true
     @test breaker_entry.dimensionality == ()
 
@@ -27,8 +27,8 @@ end
 
 @testset "assembleSchedule!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    GaussianMeanPrecision(x, 0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    Gaussian{Precision}(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
@@ -37,14 +37,14 @@ end
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
-    @test pf.schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test pf.schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[3].message_update_rule == ForneyLab.SPGaussianPrecisionOutNPP
+    @test pf.schedule[6].message_update_rule == ForneyLab.SPGaussianPrecisionOutNPP
 end
 
 @testset "assembleInitialization!" begin
     # Expectation propagation
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
     @RV y ~ Probit(x)
     placeholder(y, :y)
     pfz = PosteriorFactorization()
@@ -63,9 +63,9 @@ end
     # Delta
     f(z) = z
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
     @RV y ~ Delta{Unscented}(x, g=f)
-    GaussianMeanPrecision(y, 0.0, 1.0)
+    Gaussian{Precision}(y, 0.0, 1.0)
     
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
@@ -81,7 +81,7 @@ end
 
     # Optimize
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
     placeholder(x, :x)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
@@ -98,7 +98,7 @@ end
 @testset "assembleMarginalTable!" begin
     # Nothing rule
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
@@ -114,8 +114,8 @@ end
 
     # Product rule
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    GaussianMeanPrecision(x, 0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    Gaussian{Precision}(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
@@ -131,9 +131,9 @@ end
 
     # Marginal rule
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(x, 1.0)
-    GaussianMeanPrecision(y, 0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(x, 1.0)
+    Gaussian{Precision}(y, 0.0, 1.0)
     pfz = PosteriorFactorization([x,y], ids=[:XY])
     pf = pfz.posterior_factors[:XY]
     setTargets!(pf, pfz, external_targets=true)
@@ -143,15 +143,15 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assembleMarginalTable!(pf)
-    @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
+    @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussian{Precision}GGD
     @test pf.marginal_table[3].marginal_id == :y_x
     @test length(pf.marginal_table[3].inbounds) == 3
 end
 
 @testset "assemblePosteriorFactor!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    GaussianMeanPrecision(x, 0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    Gaussian{Precision}(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
@@ -163,10 +163,10 @@ end
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assemblePosteriorFactor!(pf)
     @test pf.schedule[1].schedule_index == 1
-    @test pf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[1].message_update_rule == ForneyLab.SPGaussianPrecisionOutNPP
     @test pf.schedule[1].inbounds == [nothing, fg.nodes[:clamp_1], fg.nodes[:clamp_2]]
     @test pf.schedule[2].schedule_index == 2
-    @test pf.schedule[2].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[2].message_update_rule == ForneyLab.SPGaussianPrecisionOutNPP
     @test pf.schedule[2].inbounds == [nothing, fg.nodes[:clamp_3], fg.nodes[:clamp_4]]
     @test pf.marginal_table[1].marginal_id == :x
     @test pf.marginal_table[1].marginal_update_rule == ForneyLab.Product
@@ -175,8 +175,8 @@ end
 
 @testset "assembleInferenceAlgorithm!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    GaussianMeanPrecision(x, 0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    Gaussian{Precision}(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))

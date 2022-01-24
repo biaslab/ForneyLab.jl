@@ -61,7 +61,7 @@ We assign a probability distribution to a random variable using the `~` operator
 ```@example 1
 @RV m
 @RV v
-@RV y ~ GaussianMeanVariance(m, v)
+@RV y ~ Gaussian{Moments}(m, v)
 nothing # hide
 ```
 
@@ -76,7 +76,7 @@ Suppose we know that the variance of the random variable `y`, is fixed to a cert
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
-@RV y ~ GaussianMeanVariance(m, 1.0)
+@RV y ~ Gaussian{Moments}(m, 1.0)
 ForneyLab.draw(g)
 ```
 Here, the literal `1.0` creates a clamp node implicitly. Clamp nodes are visualized with a gray background.
@@ -86,7 +86,7 @@ Alternatively, if you want to assign a custom `id` to a `Clamp` factor node, the
 g = FactorGraph() # create a new factor graph
 @RV m
 @RV v ~ Clamp(1.0)
-@RV y ~ GaussianMeanVariance(m, v)
+@RV y ~ Gaussian{Moments}(m, v)
 ForneyLab.draw(g)
 ```
 
@@ -96,7 +96,7 @@ Placeholders are `Clamp` factors that act as entry points for data. They associa
 g = FactorGraph() # create a new factor graph
 @RV m
 @RV v ~ Clamp(1.0)
-@RV y ~ GaussianMeanVariance(m, v)
+@RV y ~ Gaussian{Moments}(m, v)
 placeholder(y, :y)
 ForneyLab.draw(g)
 ```
@@ -120,8 +120,8 @@ ForneyLab supports the use of the `+`, `-` and `*` operators between random vari
 
 ```@example 1
 g = FactorGraph() # create a new factor graph
-@RV x ~ GaussianMeanVariance(0.0, 1.0)
-@RV y ~ GaussianMeanVariance(2.0, 3.0)
+@RV x ~ Gaussian{Moments}(0.0, 1.0)
+@RV y ~ Gaussian{Moments}(2.0, 3.0)
 @RV z = x + y
 placeholder(z, :z)
 ForneyLab.draw(g)
@@ -135,8 +135,8 @@ Let's take a look at an example in order to contrast it with its offline counter
 g = FactorGraph() # create a new factor graph
 m = placeholder(:m)
 v = placeholder(:v)
-@RV x ~ GaussianMeanVariance(m, v)
-@RV y ~ GaussianMeanVariance(x, 1.0)
+@RV x ~ Gaussian{Moments}(m, v)
+@RV y ~ Gaussian{Moments}(x, 1.0)
 placeholder(y, :y)
 ForneyLab.draw(g)
 ```
@@ -147,9 +147,9 @@ Offline learning, on the other hand, involves feeding and processing a batch of 
 g = FactorGraph()   # create a new factor graph
 N = 3               # number of observations
 y = Vector{Variable}(undef, N)
-@RV x ~ GaussianMeanVariance(0.0, 1.0)
+@RV x ~ Gaussian{Moments}(0.0, 1.0)
 for i = 1:N
-    @RV y[i] ~ GaussianMeanVariance(x, 1.0)
+    @RV y[i] ~ Gaussian{Moments}(x, 1.0)
     placeholder(y[i], :y, index=i)
 end
 ForneyLab.draw(g)
@@ -171,9 +171,9 @@ Whereas belief propagation computes exact inference for the random variables of 
 The way to instruct ForneyLab to generate a belief propagation algorithm (also known as a sum-product algorithm) is by using the `messagePassingAlgorithm` function. This function takes as argument(s) the random variable(s) for which we want to infer the posterior distribution. As an example, consider the following hierarchical model in which the mean of a Gaussian distribution is represented by another Gaussian distribution whose mean is modelled by another Gaussian distribution.  
 ```@example 1
 g = FactorGraph() # create a new factor graph
-@RV m2 ~ GaussianMeanVariance(0.0, 1.0)
-@RV m1 ~ GaussianMeanVariance(m2, 1.0)
-@RV y ~ GaussianMeanVariance(m1, 1.0)
+@RV m2 ~ Gaussian{Moments}(0.0, 1.0)
+@RV m1 ~ Gaussian{Moments}(m2, 1.0)
+@RV y ~ Gaussian{Moments}(m1, 1.0)
 placeholder(y, :y)
 ForneyLab.draw(g)
 ```
@@ -198,13 +198,13 @@ nothing # hide
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 4))
       #= none:3 =#
-      messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
+      messages[1] = ruleSPGaussianMomentsOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
       #= none:4 =#
-      messages[2] = ruleSPGaussianMeanVarianceOutNGP(nothing, messages[1], Message(Univariate, PointMass, m=1.0))
+      messages[2] = ruleSPGaussianMomentsOutNGP(nothing, messages[1], Message(Univariate, PointMass, m=1.0))
       #= none:5 =#
-      messages[3] = ruleSPGaussianMeanVarianceMPNP(Message(Univariate, PointMass, m=data[:y]), nothing, Message(Univariate, PointMass, m=1.0))
+      messages[3] = ruleSPGaussianMomentsMPNP(Message(Univariate, PointMass, m=data[:y]), nothing, Message(Univariate, PointMass, m=1.0))
       #= none:6 =#
-      messages[4] = ruleSPGaussianMeanVarianceMGNP(messages[3], nothing, Message(Univariate, PointMass, m=1.0))
+      messages[4] = ruleSPGaussianMomentsMGNP(messages[3], nothing, Message(Univariate, PointMass, m=1.0))
       #= none:8 =#
       marginals[:m1] = (messages[2]).dist * (messages[3]).dist
       #= none:9 =#
@@ -225,9 +225,9 @@ At this point a new function named `step!` becomes available in the current scop
 Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `PosteriorFactorization` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
 ```@example 1
 g = FactorGraph() # create a new factor graph
-@RV m ~ GaussianMeanVariance(0, 10)
+@RV m ~ Gaussian{Moments}(0, 10)
 @RV w ~ Gamma(0.1, 0.1)
-@RV y ~ GaussianMeanPrecision(m, w)
+@RV y ~ Gaussian{Precision}(m, w)
 placeholder(y, :y)
 draw(g)
 ```
@@ -256,9 +256,9 @@ Meta.parse(algo) = quote
     #= none:3 =#
     function stepM!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 2))
         #= none:5 =#
-        messages[1] = ruleVBGaussianMeanVarianceOut(nothing, Distribution(Univariate, PointMass, m=0), Distribution(Univariate, PointMass, m=10))
+        messages[1] = ruleVBGaussianMomentsOut(nothing, Distribution(Univariate, PointMass, m=0), Distribution(Univariate, PointMass, m=10))
         #= none:6 =#
-        messages[2] = ruleVBGaussianMeanPrecisionM(Distribution(Univariate, PointMass, m=data[:y]), nothing, marginals[:w])
+        messages[2] = ruleVBGaussianPrecisionM(Distribution(Univariate, PointMass, m=data[:y]), nothing, marginals[:w])
         #= none:8 =#
         marginals[:m] = (messages[1]).dist * (messages[2]).dist
         #= none:10 =#
@@ -269,7 +269,7 @@ Meta.parse(algo) = quote
         #= none:16 =#
         messages[1] = ruleVBGammaOut(nothing, Distribution(Univariate, PointMass, m=0.1), Distribution(Univariate, PointMass, m=0.1))
         #= none:17 =#
-        messages[2] = ruleVBGaussianMeanPrecisionW(Distribution(Univariate, PointMass, m=data[:y]), marginals[:m], nothing)
+        messages[2] = ruleVBGaussianPrecisionW(Distribution(Univariate, PointMass, m=data[:y]), marginals[:m], nothing)
         #= none:19 =#
         marginals[:w] = (messages[1]).dist * (messages[2]).dist
         #= none:21 =#
@@ -292,8 +292,8 @@ The expectation step of the expectation maximization (EM) algorithm can be execu
 ```@example 1
 g = FactorGraph()
 v = placeholder(:v) # parameter of interest
-@RV m ~ GaussianMeanVariance(0.0, 1.0)
-@RV y ~ GaussianMeanVariance(m, v)
+@RV m ~ Gaussian{Moments}(0.0, 1.0)
+@RV y ~ Gaussian{Moments}(m, v)
 placeholder(y, :y)
 nothing # hide
 ```
@@ -328,8 +328,8 @@ pfz = PosteriorFactorization() # hide
 
 m = placeholder(:m)
 v = placeholder(:v)
-@RV x ~ GaussianMeanVariance(m, v)
-@RV y ~ GaussianMeanVariance(x, 1.0)
+@RV x ~ Gaussian{Moments}(m, v)
+@RV y ~ Gaussian{Moments}(x, 1.0)
 placeholder(y, :y)
 
 algo = messagePassingAlgorithm(x)
@@ -376,9 +376,9 @@ g = FactorGraph()   # create a new factor graph
 pfz = PosteriorFactorization() # hide
 N = 30              # number of observations
 y = Vector{Variable}(undef, N)
-@RV x ~ GaussianMeanVariance(0.0, 1.0)
+@RV x ~ Gaussian{Moments}(0.0, 1.0)
 for i = 1:N
-    @RV y[i] ~ GaussianMeanVariance(x, 1.0)
+    @RV y[i] ~ Gaussian{Moments}(x, 1.0)
     placeholder(y[i], :y, index=i)
 end
 

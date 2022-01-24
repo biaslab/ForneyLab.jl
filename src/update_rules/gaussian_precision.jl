@@ -1,57 +1,57 @@
-@sumProductRule(:node_type     => GaussianMeanPrecision,
-                :outbound_type => Message{GaussianMeanPrecision},
+@sumProductRule(:node_type     => Gaussian{Precision},
+                :outbound_type => Message{Gaussian{Precision}},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionOutNPP)
+                :name          => SPGaussianPrecisionOutNPP)
 
-@sumProductRule(:node_type     => GaussianMeanPrecision,
-                :outbound_type => Message{GaussianMeanPrecision},
+@sumProductRule(:node_type     => Gaussian{Precision},
+                :outbound_type => Message{Gaussian{Precision}},
                 :inbound_types => (Message{PointMass}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionMPNP)
+                :name          => SPGaussianPrecisionMPNP)
 
-@sumProductRule(:node_type     => GaussianMeanPrecision,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Precision},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionOutNGP)
+                :name          => SPGaussianPrecisionOutNGP)
 
-@sumProductRule(:node_type     => GaussianMeanPrecision,
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Gaussian{Precision},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionMGNP)
+                :name          => SPGaussianPrecisionMGNP)
 
-@naiveVariationalRule(:node_type     => GaussianMeanPrecision,
-                      :outbound_type => Message{GaussianMeanPrecision},
+@naiveVariationalRule(:node_type     => Gaussian{Precision},
+                      :outbound_type => Message{Gaussian{Precision}},
                       :inbound_types => (Nothing, Distribution, Distribution),
-                      :name          => VBGaussianMeanPrecisionOut)
+                      :name          => VBGaussianPrecisionOut)
 
-@naiveVariationalRule(:node_type     => GaussianMeanPrecision,
-                      :outbound_type => Message{GaussianMeanPrecision},
+@naiveVariationalRule(:node_type     => Gaussian{Precision},
+                      :outbound_type => Message{Gaussian{Precision}},
                       :inbound_types => (Distribution, Nothing, Distribution),
-                      :name          => VBGaussianMeanPrecisionM)
+                      :name          => VBGaussianPrecisionM)
 
-@naiveVariationalRule(:node_type     => GaussianMeanPrecision,
+@naiveVariationalRule(:node_type     => Gaussian{Precision},
                       :outbound_type => Message{Union{Gamma, Wishart}},
                       :inbound_types => (Distribution, Distribution, Nothing),
-                      :name          => VBGaussianMeanPrecisionW)
+                      :name          => VBGaussianPrecisionW)
 
-@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
-                           :outbound_type => Message{GaussianMeanVariance},
+@structuredVariationalRule(:node_type     => Gaussian{Precision},
+                           :outbound_type => Message{Gaussian{Moments}},
                            :inbound_types => (Nothing, Message{Gaussian}, Distribution),
-                           :name          => SVBGaussianMeanPrecisionOutVGD)
+                           :name          => SVBGaussianPrecisionOutVGD)
 
-@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
-                           :outbound_type => Message{GaussianMeanVariance},
+@structuredVariationalRule(:node_type     => Gaussian{Precision},
+                           :outbound_type => Message{Gaussian{Moments}},
                            :inbound_types => (Message{Gaussian}, Nothing, Distribution),
-                           :name          => SVBGaussianMeanPrecisionMGVD)
+                           :name          => SVBGaussianPrecisionMGVD)
 
-@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+@structuredVariationalRule(:node_type     => Gaussian{Precision},
                            :outbound_type => Message{Union{Gamma, Wishart}},
                            :inbound_types => (Distribution, Nothing),
-                           :name          => SVBGaussianMeanPrecisionW)
+                           :name          => SVBGaussianPrecisionW)
 
-@marginalRule(:node_type => GaussianMeanPrecision,
+@marginalRule(:node_type => Gaussian{Precision},
               :inbound_types => (Message{Gaussian}, Message{Gaussian}, Distribution),
-              :name => MGaussianMeanPrecisionGGD)
+              :name => MGaussian{Precision}GGD)
 
-@marginalRule(:node_type => GaussianMeanPrecision,
+@marginalRule(:node_type => Gaussian{Precision},
               :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing), # Precision is marginalized out
-              :name => MGaussianMeanPrecisionGGN)
+              :name => MGaussian{Precision}GGN)

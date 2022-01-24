@@ -3,13 +3,13 @@ module CompositeTest
 using Test
 using ForneyLab
 using ForneyLab: @composite, outboundType, isApplicable, messagePassingSchedule
-using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!, setTargets!
+using ForneyLab: SPClamp, SPGaussianMomentsOutNPP, Product, condense, flatten, step!, setTargets!
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
 @composite StateTransition (y, x_prev, x) begin
-    @RV x ~ GaussianMeanVariance(x_prev, constant(1.0))
-    @RV y ~ GaussianMeanVariance(x, constant(1.0))
+    @RV x ~ Gaussian{Moments}(x_prev, constant(1.0))
+    @RV y ~ Gaussian{Moments}(x, constant(1.0))
 end
 
 @testset "@composite" begin
@@ -61,7 +61,7 @@ end
     fg = FactorGraph()
 
     x_prev = Variable(id=:x_prev)
-    nd = GaussianMeanVariance(x_prev, constant(0.0), constant(1.0))
+    nd = Gaussian{Moments}(x_prev, constant(0.0), constant(1.0))
     x = Variable(id=:x)
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
@@ -75,7 +75,7 @@ end
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule
-    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutNPP) in schedule
+    @test ScheduleEntry(nd.i[:out], SPGaussianMomentsOutNPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
     pf.schedule = condense(flatten(schedule))
@@ -93,21 +93,21 @@ end
     code = ForneyLab.algorithmSourceCode(algo)
 
     @test occursin("Array{Message}(undef, 2)", code)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", code)
+    @test occursin("messages[1] = ruleSPGaussianMomentsOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", code)
     @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", code)
     @test occursin("marginals[:x] = messages[2].dist", code)
 end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{F, Univariate}, ::Nothing) where F<:Gaussian = Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0) # Send some dummy message
+    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{F, Univariate}, ::Nothing) where F<:Gaussian = Message(Univariate, Gaussian{Moments}, m=2.0, v=3.0) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)
 
     messages = Array{Message}(undef, 2)
 
-    messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
+    messages[1] = ruleSPGaussianMomentsOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
     messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)
 
     marginals[:x] = messages[2].dist
@@ -119,20 +119,20 @@ end
     data = Dict(:y => 1.0)
     step!(marginals, data)
 
-    @test marginals[:x] == Distribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)
+    @test marginals[:x] == Distribution(Univariate, Gaussian{Moments}, m=2.0, v=3.0)
 end
 
 # Composite node definition without custom rule
 @composite StateTransition2 (y, x_prev, x) begin
-    @RV x ~ GaussianMeanVariance(x_prev, 1.0)
-    @RV y ~ GaussianMeanVariance(x, 1.0)
+    @RV x ~ Gaussian{Moments}(x_prev, 1.0)
+    @RV y ~ Gaussian{Moments}(x, 1.0)
 end
 
 @testset "Composite node algorithm compilation without custom rule" begin
     fg = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance(1.0, 0.0)    
-    @RV y ~ GaussianMeanVariance(1.0, 0.0)
+    @RV x ~ Gaussian{Moments}(1.0, 0.0)    
+    @RV y ~ Gaussian{Moments}(1.0, 0.0)
     @RV z ~ StateTransition2(x, y)
     placeholder(z, :z)
 

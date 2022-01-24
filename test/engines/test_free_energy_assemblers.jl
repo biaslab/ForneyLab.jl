@@ -6,10 +6,10 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
 
 @testset "assembleCountingNumbers!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(0.0, 1.0)
     @RV z = x + y
-    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    @RV w ~ Gaussian{Precision}(z, 1.0)
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()
@@ -35,8 +35,8 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
 
     # Regression test
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(placeholder(:mx), placeholder(:vx))
-    @RV y ~ GaussianMeanVariance(placeholder(:my), placeholder(:vy))
+    @RV x ~ Gaussian{Moments}(placeholder(:mx), placeholder(:vx))
+    @RV y ~ Gaussian{Moments}(placeholder(:my), placeholder(:vy))
     @RV z = dot(x, 1.0) + dot(y, 1.0)
     placeholder(z, :z)
 
@@ -62,10 +62,10 @@ end
 
 @testset "assembleFreeEnergy!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(0.0, 1.0)
     @RV z = x + y
-    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    @RV w ~ Gaussian{Precision}(z, 1.0)
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()

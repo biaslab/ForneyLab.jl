@@ -11,7 +11,7 @@ using ForneyLab: Cluster
     m = Variable(id=:m)
     v = Variable(id=:v)
     y = Variable(id=:y)
-    nd = GaussianMeanVariance(y, m, v)
+    nd = Gaussian{Moments}(y, m, v)
     em = nd.i[:m].edge
     ev = nd.i[:v].edge
 

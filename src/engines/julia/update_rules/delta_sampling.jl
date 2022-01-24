@@ -76,7 +76,7 @@ function ruleSPDeltaSInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(dims), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(dims), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleSPDeltaSOutNMX(g::Function,
@@ -158,7 +158,7 @@ function ruleMDeltaSInMGX(g::Function,
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
     W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
 
-    return Distribution(Multivariate, GaussianMeanPrecision, m=m_in, w=W_in)
+    return Distribution(Multivariate, Gaussian{Precision}, m=m_in, w=W_in)
 end
 
 
@@ -229,7 +229,7 @@ end
 @symmetrical function prod!(
     x::Distribution{Univariate}, # Includes function distributions
     y::Distribution{Univariate, <:Gaussian},
-    z::Distribution{Univariate, GaussianMeanPrecision}=Distribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0))
+    z::Distribution{Univariate, Gaussian{Precision}}=Distribution(Univariate, Gaussian{Precision}, m=0.0, w=1.0))
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
@@ -248,7 +248,7 @@ end
 @symmetrical function prod!(
     x::Distribution{Multivariate}, # Includes function distributions
     y::Distribution{Multivariate, <:Gaussian},
-    z::Distribution{Multivariate, GaussianMeanPrecision}=Distribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)))
+    z::Distribution{Multivariate, Gaussian{Precision}}=Distribution(Multivariate, Gaussian{Precision}, m=[0.0], w=mat(1.0)))
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)

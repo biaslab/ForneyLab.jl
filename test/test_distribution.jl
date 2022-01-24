@@ -7,22 +7,22 @@ using LinearAlgebra: Diagonal
 
 @testset "<<" begin
     @test <<(Distribution{Univariate, Gaussian}, Distribution)
-    @test <<(Distribution{Univariate, GaussianMeanVariance}, Distribution)
-    @test <<(Distribution{Multivariate, GaussianMeanVariance}, Distribution)
+    @test <<(Distribution{Univariate, Gaussian{Moments}}, Distribution)
+    @test <<(Distribution{Multivariate, Gaussian{Moments}}, Distribution)
     @test !<<(Nothing, Distribution)
 end
 
 @testset "sample" begin
-    dist = Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    dist = Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
     samples = sample(dist, 10)
     @test length(samples) == 10
 end
 
 @testset "Univariate" begin
     # Distribution should be parameterized on a node type (distribution family)
-    gaussian = Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    gaussian = Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
     @test isa(gaussian, Distribution{Univariate})
-    @test isa(gaussian, Distribution{Univariate, GaussianMeanVariance})
+    @test isa(gaussian, Distribution{Univariate, Gaussian{Moments}})
     @test !isa(gaussian, Distribution{Multivariate})
     @test !isa(gaussian, Distribution{MatrixVariate})
     @test gaussian.params[:m] == 0.0
@@ -40,14 +40,14 @@ end
     @test_throws Exception Distribution(Univariate, Equality)
     @test_throws Exception Distribution(Univariate, Clamp, m=0.0)
 
-    @test Distribution(Univariate, PointMass, m=0.0) != Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    @test Distribution(Univariate, PointMass, m=0.0) != Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
     @test Distribution(Univariate, PointMass, m=0.0) != Distribution(Univariate, PointMass, m=1.0)
 end
 
 @testset "Multivariate" begin
-    gaussian = Distribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
+    gaussian = Distribution(Multivariate, Gaussian{Moments}, m=[0.0], v=mat(1.0))
     @test isa(gaussian, Distribution{Multivariate})
-    @test isa(gaussian, Distribution{Multivariate, GaussianMeanVariance})
+    @test isa(gaussian, Distribution{Multivariate, Gaussian{Moments}})
     @test !isa(gaussian, Distribution{Univariate})
     @test !isa(gaussian, Distribution{MatrixVariate})
     @test gaussian.params[:m] == [0.0]

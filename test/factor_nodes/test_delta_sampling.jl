@@ -26,7 +26,7 @@ end
     fg = FactorGraph()
     x = Variable()
     y = Variable()
-    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    nd = Gaussian{Moments}(x, 0.0, 1.0)
     Delta{Sampling}(y, x, g=g)
 
     @test !requiresBreaker(nd.i[:out]) # Single-input Delta{Sampling} does not require breaker
@@ -35,13 +35,13 @@ end
     x = Variable()
     z = Variable()
     y = Variable()
-    GaussianMeanVariance(z, 0.0, 1.0)
-    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    Gaussian{Moments}(z, 0.0, 1.0)
+    nd = Gaussian{Moments}(x, 0.0, 1.0)
     Delta{Sampling}(y, x, z, g=h)
 
     @test requiresBreaker(nd.i[:out]) # Multi-input Delta{Sampling} requires breaker
     @test_throws Exception breakerParameters(nd.i[:out].partner)
-    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
+    @test breakerParameters(nd.i[:out]) == (Message{Gaussian{Moments}, Univariate}, ())
 end
 
 
@@ -55,10 +55,10 @@ end
     @test isApplicable(SPDeltaSOutNM, [Nothing, Message{Gaussian}])
     @test isApplicable(SPDeltaSOutNM, [Nothing, Message{Bernoulli}])
 
-    msg = ruleSPDeltaSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=tiny), n_samples=1)
+    msg = ruleSPDeltaSOutNM(f, nothing, Message(Univariate, Gaussian{Moments}, m=2.0, v=tiny), n_samples=1)
     @test isapprox(msg.dist.params[:s][1], 2.0, atol=1e-4)
     @test msg.dist.params[:w] == [1.0]
-    msg = ruleSPDeltaSOutNM(f, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(tiny)), n_samples=1)
+    msg = ruleSPDeltaSOutNM(f, nothing, Message(Multivariate, Gaussian{Moments}, m=[2.0], v=mat(tiny)), n_samples=1)
     @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
     @test msg.dist.params[:w] == [1.0]
 end
@@ -68,19 +68,19 @@ end
     @test outboundType(SPDeltaSIn1MN) == Message{Function}
     @test isApplicable(SPDeltaSIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
 
-    log_pdf(x) = ruleSPDeltaSIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing, n_samples=0).dist.params[:log_pdf](x)
-    @test log_pdf(1.5) == logPdf(Distribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
+    log_pdf(x) = ruleSPDeltaSIn1MN(f, Message(Univariate, Gaussian{Moments}, m=2.0, v=1.0), nothing, n_samples=0).dist.params[:log_pdf](x)
+    @test log_pdf(1.5) == logPdf(Distribution(Univariate, Gaussian{Moments}, m=2.0, v=1.0), 1.5)
 end
 
 @testset "SPDeltaSInGX" begin
     @test SPDeltaSInGX <: SumProductRule{Delta{Sampling}}
-    @test outboundType(SPDeltaSInGX) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPDeltaSInGX) == Message{Gaussian{Canonical}}
     @test !isApplicable(SPDeltaSInGX, [Nothing, Message{Gamma}])
     @test isApplicable(SPDeltaSInGX, [Message{Gaussian}, Message{Gaussian}, Nothing])
 
-    msg_out = Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)
-    msg_in1 = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    msg_in2 = Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0)
+    msg_out = Message(Univariate, Gaussian{Moments}, m=2.0, v=1.0)
+    msg_in1 = Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    msg_in2 = Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0)
 
     res = ruleSPDeltaSInGX(h, 1, msg_out, msg_in1, msg_in2, n_samples=1000)
 
@@ -101,7 +101,7 @@ end
     @test isApplicable(SPDeltaSOutNMX, [Nothing, Message{Gaussian}, Message{Gamma}])
     @test isApplicable(SPDeltaSOutNMX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    msg = ruleSPDeltaSOutNMX(h, nothing, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0), n_samples=1)
+    msg = ruleSPDeltaSOutNMX(h, nothing, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=2.0, v=2.0), n_samples=1)
     @test typeof(msg) == Message{SampleList, Univariate}
 end
 
@@ -113,9 +113,9 @@ end
     @test isApplicable(SPDeltaSInMX, [Message, Nothing, Message{PointMass}])
     @test isApplicable(SPDeltaSInMX, [Message, Message{PointMass}, Nothing])
 
-    msg = ruleSPDeltaSInMX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), nothing, Message(Univariate, PointMass, m=2.0))
+    msg = ruleSPDeltaSInMX(h, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), nothing, Message(Univariate, PointMass, m=2.0))
     @test msg.dist.params[:log_pdf](1.0) == 0.23235401329235006
-    msg = ruleSPDeltaSInMX(h, 1, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
+    msg = ruleSPDeltaSInMX(h, 1, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0), Message(Univariate, Gaussian{Moments}, m=2.0, v=2.0))
     @test typeof(msg.dist.params[:log_pdf](1.0)) == Float64
 end
 
@@ -125,8 +125,8 @@ end
     @test !isApplicable(MDeltaSInMGX, [Nothing, Message{Gaussian}])
     @test !isApplicable(MDeltaSInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
 
-    dist = ruleMDeltaSInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
-    @test dist == Distribution(Multivariate, GaussianMeanPrecision, m=[1.0, 2.0], w=[11.0 10.0; 10.0 10.5])
+    dist = ruleMDeltaSInMGX(h, Message(Univariate, Gaussian{Moments}, m=3.0, v=0.1), Message(Univariate, Gaussian{Moments}, m=1.0, v=1.0), Message(Univariate, Gaussian{Moments}, m=2.0, v=2.0))
+    @test dist == Distribution(Multivariate, Gaussian{Precision}, m=[1.0, 2.0], w=[11.0 10.0; 10.0 10.5])
 end
 
 
@@ -137,8 +137,8 @@ end
 @testset "Delta integration via sampling" begin
     fg = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance(2.0, 1.0)
-    @RV y ~ GaussianMeanVariance(2.0, 3.0)
+    @RV x ~ Gaussian{Moments}(2.0, 1.0)
+    @RV y ~ Gaussian{Moments}(2.0, 3.0)
     n = Delta{Sampling}(y, x, g=g, n_samples=2000)
 
     pfz = PosteriorFactorization(fg)
@@ -150,9 +150,9 @@ end
 @testset "Delta integration via sampling" begin
     fg = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance(2.0, 1.0)
-    @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    @RV z ~ GaussianMeanVariance(2.0, 3.0)
+    @RV x ~ Gaussian{Moments}(2.0, 1.0)
+    @RV y ~ Gaussian{Moments}(2.0, 3.0)
+    @RV z ~ Gaussian{Moments}(2.0, 3.0)
     n = Delta{Sampling}(z, x, y, g=g)
 
     # Forward; g_inv should not be present in call
@@ -166,9 +166,9 @@ end
 @testset "Delta integration via sampling with specified variate types" begin
     fg = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance([2.0], mat(1.0))
-    @RV y ~ GaussianMeanVariance([2.0], mat(3.0))
-    @RV z ~ GaussianMeanVariance([2.0], mat(3.0))
+    @RV x ~ Gaussian{Moments}([2.0], mat(1.0))
+    @RV y ~ Gaussian{Moments}([2.0], mat(3.0))
+    @RV z ~ Gaussian{Moments}([2.0], mat(3.0))
     n = Delta{Sampling}(z, x, y, g=g, dims=[(1,), (1,), (1,)])
 
     # Forward; g_inv should not be present in call

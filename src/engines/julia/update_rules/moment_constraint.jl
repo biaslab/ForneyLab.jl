@@ -38,7 +38,7 @@ function ruleSPMomentConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, g:
     W_tilde = inv(V_tilde)
     xi_tilde = W_tilde*m_tilde
 
-    return Message(Univariate, GaussianWeightedMeanPrecision, xi=xi_tilde-xi_bw, w=W_tilde-W_bw) # Compute forward message
+    return Message(Univariate, Gaussian{Canonical}, xi=xi_tilde-xi_bw, w=W_tilde-W_bw) # Compute forward message
 end
 
 

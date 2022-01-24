@@ -1,15 +1,15 @@
 @sumProductRule(:node_type     => Delta{Unscented},
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{Gaussian}),
                 :name          => SPDeltaUTOutNG)
 
 @sumProductRule(:node_type     => Delta{Unscented},
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Message{Gaussian}, Nothing),
                 :name          => SPDeltaUTIn1GG)
 
 mutable struct SPDeltaUTOutNGX <: SumProductRule{Delta{Unscented}} end
-outboundType(::Type{SPDeltaUTOutNGX}) = Message{GaussianMeanVariance}
+outboundType(::Type{SPDeltaUTOutNGX}) = Message{Gaussian{Moments}}
 function isApplicable(::Type{SPDeltaUTOutNGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false

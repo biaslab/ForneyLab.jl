@@ -143,7 +143,7 @@ function ruleSPDeltaUTOutNG(g::Function,
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument forward rule (unscented transform)
@@ -155,7 +155,7 @@ function ruleSPDeltaUTOutNGX(g::Function, # Needs to be in front of Vararg
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with given inverse (unscented transform)
@@ -168,7 +168,7 @@ function ruleSPDeltaUTIn1GG(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument backward rule with given inverse (unscented transform)
@@ -181,7 +181,7 @@ function ruleSPDeltaUTInGX(g::Function, # Needs to be in front of Vararg
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms, Vs, g_inv; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with unknown inverse (unscented transform)
@@ -197,7 +197,7 @@ function ruleSPDeltaUTIn1GG(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_bw_in1, V_bw_in1) = smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
 
-    return Message(variateType(m_bw_in1), GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+    return Message(variateType(m_bw_in1), Gaussian{Moments}, m=m_bw_in1, v=V_bw_in1)
 end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
@@ -226,7 +226,7 @@ function ruleSPDeltaUTInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(xi_bw_inx), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleMDeltaUTInGX(g::Function,
@@ -244,7 +244,7 @@ function ruleMDeltaUTInGX(g::Function,
     # Compute joint marginal on in's
     (m_in, V_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return Distribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, Gaussian{Moments}, m=m_in, v=V_in)
 end
 
 

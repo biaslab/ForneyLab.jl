@@ -62,7 +62,7 @@ function ForneyLab.averageEnergy(   ::Type{GaussianMixture},
 
     U = 0.0
     for k = 1:n_factors
-        U += z_bar[k]*averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])
+        U += z_bar[k]*averageEnergy(Gaussian{Precision}, dist_out, dist_means[k], dist_precs[k])
     end
 
     return U

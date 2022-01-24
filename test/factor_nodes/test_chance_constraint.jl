@@ -24,15 +24,15 @@ end
 
 @testset "SPChanceConstraintOutG" begin
     @test SPChanceConstraintOutG <: SumProductRule{ChanceConstraint}
-    @test outboundType(SPChanceConstraintOutG) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPChanceConstraintOutG) == Message{Gaussian{Canonical}}
     @test isApplicable(SPChanceConstraintOutG, [Nothing]) 
 
-    @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (0.0, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.9470311004635064, w=2.2101933871827293)
-    @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (-Inf, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
+    @test ruleSPChanceConstraintOutG(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), (0.0, Inf), 0.05) == Message(Univariate, Gaussian{Canonical}, xi=2.9470311004635064, w=2.2101933871827293)
+    @test ruleSPChanceConstraintOutG(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), (-Inf, Inf), 0.05) == Message(Univariate, Gaussian{Canonical}, xi=0.0, w=tiny)
 end
 
 @testset "averageEnergy" begin
-    @test averageEnergy(ChanceConstraint, Distribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+    @test averageEnergy(ChanceConstraint, Distribution(Gaussian{Moments}, m=0.0, v=1.0)) == 0.0
 end
 
 
@@ -42,7 +42,7 @@ end
 
 @testset "ChanceConstraint integration" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(0.0, 1.0)
+    @RV x ~ Gaussian{Moments}(0.0, 1.0)
     ChanceConstraint(x; G=(0.0, Inf), epsilon=0.05)
     
     pfz = PosteriorFactorization(fg)
