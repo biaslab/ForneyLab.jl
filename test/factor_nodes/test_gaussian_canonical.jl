@@ -1,4 +1,4 @@
-module Gaussian{Canonical}Test
+module GaussianCanonicalTest
 
 using Test
 using ForneyLab

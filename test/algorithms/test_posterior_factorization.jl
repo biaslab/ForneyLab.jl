@@ -22,7 +22,7 @@ end
     # Stochastic
     fg = FactorGraph()
     @RV x ~ Gaussian{Moments}(0.0, 1.0)
-    @test !isDeterministic(fg.nodes[:gaussianmeanvariance_1].i[:out], Dict{Interface, Bool}())
+    @test !isDeterministic(fg.nodes[:gaussian_1].i[:out], Dict{Interface, Bool}())
 
     # Equality
     fg = FactorGraph()

@@ -129,14 +129,14 @@ end
     marginal_table[2].inbounds = inbounds
     marginal_table[3] = MarginalEntry()
     marginal_table[3].marginal_id = :z
-    marginal_table[3].marginal_update_rule = ForneyLab.MGaussian{Precision}GGD
+    marginal_table[3].marginal_update_rule = ForneyLab.MGaussianPrecisionGGD
     marginal_table[3].inbounds = inbounds
 
     marginal_table_code = marginalTableSourceCode(marginal_table)
 
     @test occursin("marginals[:x] = messages[1].dist", marginal_table_code)
     @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_table_code)
-    @test occursin("marginals[:z] = ruleMGaussian{Precision}GGD(messages[1], messages[2])", marginal_table_code)
+    @test occursin("marginals[:z] = ruleMGaussianPrecisionGGD(messages[1], messages[2])", marginal_table_code)
 end
 
 @testset "scheduleSourceCode" begin

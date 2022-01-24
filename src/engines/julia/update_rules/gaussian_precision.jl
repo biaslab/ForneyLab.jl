@@ -9,8 +9,8 @@ ruleVBGaussianPrecisionOut,
 ruleSVBGaussianPrecisionOutVGD,
 ruleSVBGaussianPrecisionW,
 ruleSVBGaussianPrecisionMGVD,
-ruleMGaussian{Precision}GGD,
-ruleMGaussian{Precision}GGN
+ruleMGaussianPrecisionGGD,
+ruleMGaussianPrecisionGGN
 
 ruleSPGaussianPrecisionOutNPP(  msg_out::Nothing,
                                     msg_mean::Message{PointMass, V},
@@ -91,7 +91,7 @@ function ruleSVBGaussianPrecisionMGVD(  msg_out::Message{F, V},
     Message(V, Gaussian{Moments}, m=d_out.params[:m], v=d_out.params[:v] + cholinv(unsafeMean(dist_prec)))
 end
 
-function ruleMGaussian{Precision}GGD(
+function ruleMGaussianPrecisionGGD(
     msg_out::Message{<:Gaussian, V},
     msg_mean::Message{<:Gaussian, V},
     dist_prec::Distribution) where V<:VariateType
@@ -108,7 +108,7 @@ function ruleMGaussian{Precision}GGD(
     return Distribution(Multivariate, Gaussian{Canonical}, xi=[xi_y; xi_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
 end
 
-function ruleMGaussian{Precision}GGN(
+function ruleMGaussianPrecisionGGN(
     msg_out::Message{<:Gaussian, V},
     msg_mean::Message{<:Gaussian, V},
     msg_prec::Message{PointMass}) where V<:VariateType

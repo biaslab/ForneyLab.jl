@@ -1,9 +1,22 @@
-module Gaussian{Moments}Test
+module GaussianMomentsTest
 
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeMeanPrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 using ForneyLab: SPGaussianMomentsOutNGS, SPGaussianMomentsOutNPP,SPGaussianMomentsMSNP, SPGaussianMomentsMPNP, SPGaussianMomentsOutNGP, SPGaussianMomentsMGNP, SPGaussianMomentsVGGN, SPGaussianMomentsVPGN, SPGaussianMomentsOutNSP, VBGaussianMomentsM, VBGaussianMomentsOut, bootstrap
+
+@testset "default Gaussian{Moments} node definition" begin
+    fg = FactorGraph()
+    x = Variable()
+    nd = Gaussian(x, constant(0.0), constant(1.0))
+    @test isa(nd, Gaussian{Moments})
+end
+
+@testset "default Gaussian{Moments} Distribution definitions" begin
+    @test Distribution(Univariate, Gaussian; m=0.0, v=1.0) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    @test Distribution(Gaussian; m=0.0, v=1.0) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    @test Distribution(Multivariate, Gaussian; m=[0.0], v=mat(1.0)) == Distribution(Multivariate, Gaussian{Moments}, m=[0.0], v=mat(1.0))
+end
 
 @testset "dims" begin
     @test dims(Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)) == ()
@@ -13,6 +26,8 @@ end
 @testset "vague" begin
     @test vague(Gaussian{Moments}) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=huge)
     @test vague(Gaussian{Moments}, (2,)) == Distribution(Multivariate, Gaussian{Moments}, m=zeros(2), v=huge*eye(2))
+    @test vague(Gaussian) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=huge)
+    @test vague(Gaussian, (2,)) == Distribution(Multivariate, Gaussian{Moments}, m=zeros(2), v=huge*eye(2))
 end
 
 @testset "isProper" begin

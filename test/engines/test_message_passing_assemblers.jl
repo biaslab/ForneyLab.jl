@@ -143,7 +143,7 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assembleMarginalTable!(pf)
-    @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussian{Precision}GGD
+    @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianPrecisionGGD
     @test pf.marginal_table[3].marginal_id == :y_x
     @test length(pf.marginal_table[3].inbounds) == 3
 end
