@@ -395,4 +395,4 @@ plot(-10:0.01:10, normal(mean(marginals[:x]), var(marginals[:x])), fillalpha=0.3
 ```
 
 !!! note
-    ForneyLab is aimed at processing time-series data; batch processing does not perform well with large datasets at the moment. We are working on this issue.
+    ForneyLab is aimed at processing time-series data; batch processing does not perform well with large datasets at the moment.

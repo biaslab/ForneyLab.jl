@@ -65,8 +65,8 @@ end
 
 # Forward rule
 function ruleSPDeltaEOutNG(g::Function,
-                               msg_out::Nothing,
-                               msg_in1::Message{<:Gaussian})
+                           msg_out::Nothing,
+                           msg_in1::Message{<:Gaussian})
     
     (m_in1, V_in1) = unsafeMeanCov(msg_in1.dist)
     (A, b) = localLinearizationSingleIn(g, m_in1)
@@ -78,8 +78,8 @@ end
 
 # Multi-argument forward rule
 function ruleSPDeltaEOutNGX(g::Function, # Needs to be in front of Vararg
-                                msg_out::Nothing,
-                                msgs_in::Vararg{Message{<:Gaussian}})
+                            msg_out::Nothing,
+                            msgs_in::Vararg{Message{<:Gaussian}})
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(g, ms_fw_in)
@@ -92,9 +92,9 @@ end
 
 # Backward rule with given inverse
 function ruleSPDeltaEIn1GG(g::Function,
-                               g_inv::Function,
-                               msg_out::Message{<:Gaussian},
-                               msg_in1::Nothing)
+                           g_inv::Function,
+                           msg_out::Message{<:Gaussian},
+                           msg_in1::Nothing)
 
     (m_out, V_out) = unsafeMeanCov(msg_out.dist)
     (A, b) = localLinearizationSingleIn(g_inv, m_out)
@@ -106,9 +106,9 @@ end
 
 # Multi-argument backward rule with given inverse
 function ruleSPDeltaEInGX(g::Function, # Needs to be in front of Vararg
-                              g_inv::Function,
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}})
+                          g_inv::Function,
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}})
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(g_inv, ms)
@@ -121,8 +121,8 @@ end
 
 # Backward rule with unknown inverse
 function ruleSPDeltaEIn1GG(g::Function,
-                               msg_out::Message{<:Gaussian},
-                               msg_in1::Message{<:Gaussian})
+                           msg_out::Message{<:Gaussian},
+                           msg_in1::Message{<:Gaussian})
 
     m_in1 = unsafeMean(msg_in1.dist)
     (m_out, W_out) = unsafeMeanPrecision(msg_out.dist)
@@ -135,9 +135,9 @@ end
 
 # Multi-argument backward rule with unknown inverse
 function ruleSPDeltaEInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Message{<:Gaussian}})
+                          inx::Int64, # Index of inbound interface inx
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Message{<:Gaussian}})
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -166,8 +166,8 @@ function ruleSPDeltaEInGX(g::Function,
 end
 
 function ruleMDeltaEInGX(g::Function,
-                             msg_out::Message{<:Gaussian},
-                             msgs_in::Vararg{Message{<:Gaussian}})
+                         msg_out::Message{<:Gaussian},
+                         msgs_in::Vararg{Message{<:Gaussian}})
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances

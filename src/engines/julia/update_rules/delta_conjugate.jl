@@ -20,21 +20,21 @@ const default_n_iterations = 1000 # Default number of iterations for gradient de
 #-----------------------
 
 ruleSPDeltaCOutNM(g::Function,
-                      msg_out::Nothing,
-                      msg_in1::Message;
-                      dims::Any=nothing,
-                      n_samples=default_n_samples,
-                      n_iterations=default_n_iterations,
-                      optimizer=default_optimizer) =
+                  msg_out::Nothing,
+                  msg_in1::Message;
+                  dims::Any=nothing,
+                  n_samples=default_n_samples,
+                  n_iterations=default_n_iterations,
+                  optimizer=default_optimizer) =
     ruleSPDeltaSOutNM(g, nothing, msg_in1; dims=dims, n_samples=n_samples) # Reuse sampling update
 
 function ruleSPDeltaCIn1MN(g::Function,
-                               msg_out::Message,
-                               msg_in1::Message{F, V};
-                               dims::Any=nothing,
-                               n_samples=default_n_samples,
-                               n_iterations=default_n_iterations,
-                               optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
+                           msg_out::Message,
+                           msg_in1::Message{F, V};
+                           dims::Any=nothing,
+                           n_samples=default_n_samples,
+                           n_iterations=default_n_iterations,
+                           optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
 
     msg_s = ruleSPDeltaSIn1MN(g, msg_out, nothing; dims=dims, n_samples=n_samples) # Returns Message{Function}
     η = naturalParams(msg_in1.dist)
@@ -44,22 +44,22 @@ function ruleSPDeltaCIn1MN(g::Function,
 end
 
 ruleSPDeltaCOutNMX(g::Function,
-                       msg_out::Nothing,
-                       msgs_in::Vararg{Message};
-                       dims::Any=nothing,
-                       n_samples=default_n_samples,
-                       n_iterations=default_n_iterations,
-                       optimizer=default_optimizer) =
+                   msg_out::Nothing,
+                   msgs_in::Vararg{Message};
+                   dims::Any=nothing,
+                   n_samples=default_n_samples,
+                   n_iterations=default_n_iterations,
+                   optimizer=default_optimizer) =
      ruleSPDeltaSOutNMX(g, nothing, msgs_in...; dims=dims, n_samples=n_samples)                                 
 
 function ruleSPDeltaCInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message,
-                              msgs_in::Vararg{Message{<:Gaussian}}; # Only Gaussian because of marginalization over inbounds
-                              dims::Any=nothing,
-                              n_samples=default_n_samples,
-                              n_iterations=default_n_iterations,
-                              optimizer=default_optimizer)                                      
+                          inx::Int64, # Index of inbound interface inx
+                          msg_out::Message,
+                          msgs_in::Vararg{Message{<:Gaussian}}; # Only Gaussian because of marginalization over inbounds
+                          dims::Any=nothing,
+                          n_samples=default_n_samples,
+                          n_iterations=default_n_iterations,
+                          optimizer=default_optimizer)                                      
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
@@ -90,13 +90,13 @@ end
 
 # Special case for two inputs with one PointMass (no inx required)
 function ruleSPDeltaCInMX(g::Function,
-                              msg_out::Message,
-                              msg_in1::Message{F, V},
-                              msg_in2::Message{PointMass};
-                              dims::Any=nothing,
-                              n_samples=default_n_samples,
-                              n_iterations=default_n_iterations,
-                              optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
+                          msg_out::Message,
+                          msg_in1::Message{F, V},
+                          msg_in2::Message{PointMass};
+                          dims::Any=nothing,
+                          n_samples=default_n_samples,
+                          n_iterations=default_n_iterations,
+                          optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
     msg_s = ruleSPDeltaSInMX(g, msg_out, nothing, msg_in2; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in1.dist)
@@ -107,13 +107,13 @@ end
 
 # Special case for two inputs with one PointMass (no inx required)
 function ruleSPDeltaCInMX(g::Function,
-                              msg_out::Message,
-                              msg_in1::Message{PointMass},
-                              msg_in2::Message{F, V};
-                              dims::Any=nothing,
-                              n_samples=default_n_samples,
-                              n_iterations=default_n_iterations,
-                              optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
+                          msg_out::Message,
+                          msg_in1::Message{PointMass},
+                          msg_in2::Message{F, V};
+                          dims::Any=nothing,
+                          n_samples=default_n_samples,
+                          n_iterations=default_n_iterations,
+                          optimizer=default_optimizer) where {F<:FactorNode, V<:VariateType}
     
     msg_s = ruleSPDeltaSInMX(g, msg_out, msg_in1, nothing; dims=dims, n_samples=n_samples)
     η = naturalParams(msg_in2.dist)
@@ -124,8 +124,8 @@ end
 
 # Joint marginal belief over inbounds
 function ruleMDeltaCInMGX(g::Function,
-                              msg_out::Message,
-                              msgs_in::Vararg{Message{<:Gaussian}}) # Only Gaussian because of marginalization over inbounds
+                          msg_out::Message,
+                          msgs_in::Vararg{Message{<:Gaussian}}) # Only Gaussian because of marginalization over inbounds
     
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances

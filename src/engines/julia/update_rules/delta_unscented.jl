@@ -136,9 +136,9 @@ end
 
 # Forward rule (unscented transform)
 function ruleSPDeltaUTOutNG(g::Function,
-                                msg_out::Nothing,
-                                msg_in1::Message{<:Gaussian};
-                                alpha::Float64=default_alpha)
+                            msg_out::Nothing,
+                            msg_in1::Message{<:Gaussian};
+                            alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
@@ -148,9 +148,9 @@ end
 
 # Multi-argument forward rule (unscented transform)
 function ruleSPDeltaUTOutNGX(g::Function, # Needs to be in front of Vararg
-                                 msg_out::Nothing,
-                                 msgs_in::Vararg{Message{<:Gaussian}};
-                                 alpha::Float64=default_alpha)
+                             msg_out::Nothing,
+                             msgs_in::Vararg{Message{<:Gaussian}};
+                             alpha::Float64=default_alpha)
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
@@ -160,10 +160,10 @@ end
 
 # Backward rule with given inverse (unscented transform)
 function ruleSPDeltaUTIn1GG(g::Function,
-                                g_inv::Function,
-                                msg_out::Message{<:Gaussian},
-                                msg_in1::Nothing;
-                                alpha::Float64=default_alpha)
+                            g_inv::Function,
+                            msg_out::Message{<:Gaussian},
+                            msg_in1::Nothing;
+                            alpha::Float64=default_alpha)
 
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
@@ -173,10 +173,10 @@ end
 
 # Multi-argument backward rule with given inverse (unscented transform)
 function ruleSPDeltaUTInGX(g::Function, # Needs to be in front of Vararg
-                               g_inv::Function,
-                               msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
-                               alpha::Float64=default_alpha)
+                           g_inv::Function,
+                           msg_out::Message{<:Gaussian},
+                           msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
+                           alpha::Float64=default_alpha)
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms, Vs, g_inv; alpha=alpha)
@@ -186,9 +186,9 @@ end
 
 # Backward rule with unknown inverse (unscented transform)
 function ruleSPDeltaUTIn1GG(g::Function,
-                                msg_out::Message{<:Gaussian},
-                                msg_in1::Message{<:Gaussian};
-                                alpha::Float64=default_alpha)
+                            msg_out::Message{<:Gaussian},
+                            msg_in1::Message{<:Gaussian};
+                            alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
@@ -202,10 +202,10 @@ end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
 function ruleSPDeltaUTInGX(g::Function,
-                               inx::Int64, # Index of inbound interface inx
-                               msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Message{<:Gaussian}};
-                               alpha::Float64=default_alpha)
+                           inx::Int64, # Index of inbound interface inx
+                           msg_out::Message{<:Gaussian},
+                           msgs_in::Vararg{Message{<:Gaussian}};
+                           alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -230,9 +230,9 @@ function ruleSPDeltaUTInGX(g::Function,
 end
 
 function ruleMDeltaUTInGX(g::Function,
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Message{<:Gaussian}};
-                              alpha::Float64=default_alpha)
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Message{<:Gaussian}};
+                          alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances

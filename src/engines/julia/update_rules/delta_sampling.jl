@@ -15,10 +15,10 @@ const default_n_samples = 1000 # Default value for the number of samples
 #----------------------
 
 function ruleSPDeltaSOutNM(g::Function,
-                               msg_out::Nothing,
-                               msg_in1::Message; # Applies to any message except SampleList
-                               dims::Any=nothing,
-                               n_samples=default_n_samples)
+                           msg_out::Nothing,
+                           msg_in1::Message; # Applies to any message except SampleList
+                           dims::Any=nothing,
+                           n_samples=default_n_samples)
 
     samples = g.(sample(msg_in1.dist, n_samples))
     weights = ones(n_samples)/n_samples
@@ -27,10 +27,10 @@ function ruleSPDeltaSOutNM(g::Function,
 end
 
 function ruleSPDeltaSOutNM(g::Function,
-                               msg_out::Nothing,
-                               msg_in1::Message{SampleList}; # Special case for SampleList
-                               dims::Any=nothing,
-                               n_samples=default_n_samples)
+                           msg_out::Nothing,
+                           msg_in1::Message{SampleList}; # Special case for SampleList
+                           dims::Any=nothing,
+                           n_samples=default_n_samples)
 
     samples = g.(msg_in1.dist.params[:s])
     weights = msg_in1.dist.params[:w]
@@ -39,20 +39,20 @@ function ruleSPDeltaSOutNM(g::Function,
 end
 
 function ruleSPDeltaSIn1MN(g::Function,
-                               msg_out::Message,
-                               msg_in1::Nothing;
-                               dims::Any=nothing,
-                               n_samples=default_n_samples)
+                           msg_out::Message,
+                           msg_in1::Nothing;
+                           dims::Any=nothing,
+                           n_samples=default_n_samples)
 
     return Message(variateType(dims), Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
 function ruleSPDeltaSInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message,
-                              msgs_in::Vararg{Message{<:Gaussian}};
-                              dims::Any=nothing,
-                              n_samples=default_n_samples)
+                          inx::Int64, # Index of inbound interface inx
+                          msg_out::Message,
+                          msgs_in::Vararg{Message{<:Gaussian}};
+                          dims::Any=nothing,
+                          n_samples=default_n_samples)
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
@@ -80,10 +80,10 @@ function ruleSPDeltaSInGX(g::Function,
 end
 
 function ruleSPDeltaSOutNMX(g::Function,
-                                msg_out::Nothing,
-                                msgs_in::Vararg{Message};
-                                dims::Any=nothing,
-                                n_samples=default_n_samples)
+                            msg_out::Nothing,
+                            msgs_in::Vararg{Message};
+                            dims::Any=nothing,
+                            n_samples=default_n_samples)
                                      
     samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
     samples = g.(samples_in...)
@@ -93,11 +93,12 @@ function ruleSPDeltaSOutNMX(g::Function,
 end
 
 function ruleSPDeltaSInMX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message,
-                              msgs_in::Vararg{Message};
-                              dims::Any=nothing,
-                              n_samples=default_n_samples)
+                          inx::Int64, # Index of inbound interface inx
+                          msg_out::Message,
+                          msgs_in::Vararg{Message};
+                          dims::Any=nothing,
+                          n_samples=default_n_samples)
+
     arg_sample = (z) -> begin
         samples_in = []
         for i=1:length(msgs_in)
@@ -118,11 +119,11 @@ end
 
 # Special case for two inputs with one PointMass (no inx required)
 function ruleSPDeltaSInMX(g::Function,
-                              msg_out::Message,
-                              msg_in1::Message{PointMass},
-                              msg_in2::Nothing;
-                              dims::Any=nothing,
-                              n_samples=default_n_samples)
+                          msg_out::Message,
+                          msg_in1::Message{PointMass},
+                          msg_in2::Nothing;
+                          dims::Any=nothing,
+                          n_samples=default_n_samples)
 
     m_in1 = msg_in1.dist.params[:m]
 
@@ -131,11 +132,11 @@ end
 
 # Special case for two inputs with one PointMass (no inx required)
 function ruleSPDeltaSInMX(g::Function,
-                              msg_out::Message,
-                              msg_in1::Nothing,
-                              msg_in2::Message{PointMass};
-                              dims::Any=nothing,
-                              n_samples=default_n_samples)
+                          msg_out::Message,
+                          msg_in1::Nothing,
+                          msg_in2::Message{PointMass};
+                          dims::Any=nothing,
+                          n_samples=default_n_samples)
 
     m_in2 = msg_in2.dist.params[:m]
 
@@ -143,8 +144,8 @@ function ruleSPDeltaSInMX(g::Function,
 end
 
 function ruleMDeltaSInMGX(g::Function,
-                              msg_out::Message,
-                              msgs_in::Vararg{Message{<:Gaussian}})
+                          msg_out::Message,
+                          msgs_in::Vararg{Message{<:Gaussian}})
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances

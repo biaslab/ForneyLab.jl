@@ -73,7 +73,7 @@ The name of an update rule is composed of several parts:
 ###### Example 1: `ruleSPGaussianPrecisionMPNP`
 1. `rule` : update rule
 2. `SP` : sum-product algorithm
-3. `Gaussian{Precision}`: Gaussian mean precision factor node
+3. `GaussianPrecision`: Gaussian mean-precision parameterized factor node
 4. `M`: outgoing message through 'Mean' interface
 5. `PNP`: incoming message types are: point mass, Nothing and point mass
 

@@ -68,12 +68,12 @@ function softmax(v::Vector{Float64})
     exp.(r)./sum(exp.(r))
 end
 
-function ruleVBGaussianMixtureZBer( dist_out::Distribution,
-                                    dist_switch::Any,
-                                    dist_m1::Distribution,
-                                    dist_w1::Distribution,
-                                    dist_m2::Distribution,
-                                    dist_w2::Distribution)
+function ruleVBGaussianMixtureZBer(dist_out::Distribution,
+                                   dist_switch::Any,
+                                   dist_m1::Distribution,
+                                   dist_w1::Distribution,
+                                   dist_m2::Distribution,
+                                   dist_w2::Distribution)
     # Uni- and Multivariate update
     U = Vector{Float64}(undef, 2)
     U[1] = averageEnergy(Gaussian{Precision}, dist_out, dist_m1, dist_w1)
@@ -82,9 +82,9 @@ function ruleVBGaussianMixtureZBer( dist_out::Distribution,
     return Message(Univariate, Bernoulli, p=softmax(-U)[1])
 end
 
-function ruleVBGaussianMixtureZCat( dist_out::Distribution,
-                                    dist_switch::Any,
-                                    dist_factors::Vararg{Distribution})
+function ruleVBGaussianMixtureZCat(dist_out::Distribution,
+                                   dist_switch::Any,
+                                   dist_factors::Vararg{Distribution})
     # Uni- and Multivariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
@@ -98,9 +98,9 @@ function ruleVBGaussianMixtureZCat( dist_out::Distribution,
     return Message(Univariate, Categorical, p=softmax(-U))
 end
 
-function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_switch::Distribution,
-                                    dist_factors::Vararg{Distribution{Univariate}})
+function ruleVBGaussianMixtureOut(dist_out::Any,
+                                  dist_switch::Distribution,
+                                  dist_factors::Vararg{Distribution{Univariate}})
     # Univariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
@@ -116,9 +116,9 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
     return Message(Univariate, Gaussian{Canonical}, xi=xi, w=w)
 end
 
-function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_switch::Distribution,
-                                    dist_factors::Vararg{Union{Distribution{Multivariate}, Distribution{MatrixVariate}}})
+function ruleVBGaussianMixtureOut(dist_out::Any,
+                                  dist_switch::Distribution,
+                                  dist_factors::Vararg{Union{Distribution{Multivariate}, Distribution{MatrixVariate}}})
     # Multivariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
