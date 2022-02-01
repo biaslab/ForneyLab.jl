@@ -213,10 +213,10 @@ function renderCVI(log_μ_bw::Function,
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:FactorNode, V<:VariateType}
 
-    # Intialize natural parameters of forward message
+    # Natural parameters of forward message
     η = naturalParams(μ_fw.dist)                   
 
-    # Initialize Fisher information matrix
+    # Fisher information matrix
     A = λ -> logNormalizer(V, F, η=λ)
     Fisher = λ -> ForwardDiff.hessian(A, λ)
 
@@ -257,10 +257,10 @@ function renderCVI(log_μ_bw::Function,
                    λ_0::Vector,
                    μ_fw::Message{F, V}) where {F<:Gaussian, V<:VariateType}
 
-    # Intialize natural parameters of forward message
+    # Natural parameters of forward message
     η = naturalParams(μ_fw.dist)                   
 
-    # Intialize gradients/derivatives of Gaussian moments
+    # Gradients/derivatives of Gaussian moments
     if V == Univariate
         ∇m = s -> ForwardDiff.derivative(log_μ_bw, s)
         ∇v = s -> 0.5*ForwardDiff.derivative(∇m, s)
