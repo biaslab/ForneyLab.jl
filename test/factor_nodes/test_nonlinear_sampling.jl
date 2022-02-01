@@ -4,7 +4,7 @@ using Test
 using Random
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker, breakerParameters
-using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, SPNonlinearSOutNMX, SPNonlinearSInMX, MNonlinearSInMGX, gradientOptimization
+using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, SPNonlinearSOutNMX, SPNonlinearSInMX, MNonlinearSInMGX, gradientOptimization
 using ForwardDiff
 
 Random.seed!(1234)
@@ -72,17 +72,6 @@ end
     @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 
-@testset "SPNonlinearSOutNGX" begin
-    @test SPNonlinearSOutNGX <: SumProductRule{Nonlinear{Sampling}}
-    @test outboundType(SPNonlinearSOutNGX) == Message{SampleList}
-    @test !isApplicable(SPNonlinearSOutNGX, [Nothing, Message{Poisson}])
-    @test isApplicable(SPNonlinearSOutNGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
-
-    msg = ruleSPNonlinearSOutNGX(h, nothing, Message(GaussianMeanVariance, m=1.0, v=tiny), Message(GaussianMeanVariance, m=2.0, v=tiny), n_samples=1)
-    @test isapprox(msg.dist.params[:s][1], 3.0, atol=1e-4)
-    @test msg.dist.params[:w] == [1.0]
-end
-
 @testset "SPNonlinearSInGX" begin
     @test SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSInGX) == Message{GaussianWeightedMeanPrecision}
@@ -108,26 +97,36 @@ end
 @testset "SPNonlinearSOutNMX" begin
     @test SPNonlinearSOutNMX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSOutNMX) == Message{SampleList}
-    @test !isApplicable(SPNonlinearSOutNMX, [Nothing, Message{Gamma}])
-    @test !isApplicable(SPNonlinearSOutNMX, [Message{Gaussian}, Message{Gaussian}, Nothing])
-    @test !isApplicable(SPNonlinearSOutNMX, [Message{Gaussian}, Message{Gamma}, Nothing])
+    @test !isApplicable(SPNonlinearSOutNMX, [Nothing, Message{Gaussian}])
     @test isApplicable(SPNonlinearSOutNMX, [Nothing, Message{Gaussian}, Message{Gamma}])
+    @test isApplicable(SPNonlinearSOutNMX, [Nothing, Message{Gaussian}, Message{Gaussian}])
+
+    msg = ruleSPNonlinearSOutNMX(h, nothing, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0), n_samples=1)
+    @test typeof(msg) == Message{SampleList, Univariate}
 end
 
 @testset "SPNonlinearSInMX" begin
     @test SPNonlinearSInMX <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSInMX) == Message{Function}
-    @test !isApplicable(SPNonlinearSInMX, [Message{FactorFunction}, Message{Gamma}])
-    @test !isApplicable(SPNonlinearSInMX, [Message{Gaussian}, Message{Gaussian}, Nothing])
-    @test !isApplicable(SPNonlinearSInMX, [Nothing, Message{Gaussian}, Message{Gamma}])
-    @test isApplicable(SPNonlinearSInMX, [Message{FactorFunction}, Nothing, Message{Gaussian}, Message{Gamma}])
+    @test !isApplicable(SPNonlinearSInMX, [Message, Message{Gaussian}])
+    @test isApplicable(SPNonlinearSInMX, [Message, Nothing, Message{Gaussian}, Message{Gamma}])
+    @test isApplicable(SPNonlinearSInMX, [Message, Nothing, Message{PointMass}])
+    @test isApplicable(SPNonlinearSInMX, [Message, Message{PointMass}, Nothing])
+
+    msg = ruleSPNonlinearSInMX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), nothing, Message(Univariate, PointMass, m=2.0))
+    @test msg.dist.params[:log_pdf](1.0) == 0.23235401329235006
+    msg = ruleSPNonlinearSInMX(h, 1, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
+    @test typeof(msg.dist.params[:log_pdf](1.0)) == Float64
 end
 
 @testset "MNonlinearSInMGX" begin
     @test MNonlinearSInMGX <: MarginalRule{Nonlinear{Sampling}}
     @test isApplicable(MNonlinearSInMGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
     @test !isApplicable(MNonlinearSInMGX, [Nothing, Message{Gaussian}])
-    @test !isApplicable(MNonlinearSInMGX, [Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution])
+    @test !isApplicable(MNonlinearSInMGX, [Nothing, Message{Gaussian}, Message{Gamma}])
+
+    dist = ruleMNonlinearSInMGX(h, Message(Univariate, GaussianMeanVariance, m=3.0, v=0.1), Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=2.0))
+    @test dist == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[1.0, 2.0], w=[11.0 10.0; 10.0 10.5])
 end
 
 

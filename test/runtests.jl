@@ -46,6 +46,7 @@ using Test
     include("factor_nodes/test_nonlinear_unscented.jl")
     include("factor_nodes/test_nonlinear_sampling.jl")
     include("factor_nodes/test_nonlinear_extended.jl")
+    include("factor_nodes/test_nonlinear_conjugate.jl")
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")
     include("./test_marginals.jl")

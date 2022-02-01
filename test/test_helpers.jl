@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Test
-using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical
+using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical, ForgetDelayDescent, apply!
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
@@ -11,7 +11,7 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test ensureMatrix(Diagonal([1.0, 2.0])) == Diagonal([1.0, 2.0])
         @test ensureMatrix(Matrix(1.0I,2,2)) == Matrix(1.0I,2,2)
         @test ensureMatrix(1.0) == Matrix(1.0I,1,1)
-        @test ensureMatrix(nothing) == nothing
+        @test ensureMatrix(nothing) === nothing
     end
 
     @testset "isApproxEqual" begin
@@ -100,6 +100,15 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test Set(leaftypes(Integer)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8])
         @test Set(leaftypes(AbstractFloat)) == Set([BigFloat, Float16, Float32, Float64])
         @test Set(leaftypes(Union{Float64, Int64})) == Set([Float64, Int64])
+    end
+
+    @testset "ForgetDelayDescent" begin
+        opt = ForgetDelayDescent(1.,0.6)
+        x_test, grad_test = zeros(2), [1,-1]
+        x_test -= apply!(opt, x_test, grad_test)
+        @test x_test[1] < 0
+        @test x_test[2] > 0
+        @test opt.iteration_num == 2 
     end
 end
 

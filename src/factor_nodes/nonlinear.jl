@@ -1,9 +1,10 @@
-export Nonlinear, Unscented, Sampling, Extended
+export Nonlinear, Unscented, Sampling, Extended, Conjugate
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
 abstract type Sampling <: ApproximationMethod end
 abstract type Extended <: ApproximationMethod end
+abstract type Conjugate <: ApproximationMethod end
 
 """
 Description:
@@ -41,7 +42,9 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     g_inv::Union{Function, Nothing, Vector} # Inverse of g with respect to individual inbounds (optional)
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Union{Vector, Nothing} # Dimensions of messages on (all) interfaces
-    n_samples::Union{Int64, Nothing} # Number of samples for sampling
+    n_samples::Union{Int64, Nothing} # Number of samples
+    n_iterations::Union{Int64, Nothing} # Number of iterations for nonconjugate inference
+    optimizer::Any # Optimizer for nonconjugate inference
 
     function Nonlinear{T}(id::Symbol,
                           g::Function,
@@ -49,6 +52,8 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
                           alpha::Union{Float64, Nothing},
                           dims::Union{Vector, Nothing},
                           n_samples::Union{Int64, Nothing},
+                          n_iterations::Union{Int64, Nothing},
+                          optimizer::Any,
                           out::Variable,
                           args::Vararg) where T<:ApproximationMethod
         
@@ -56,7 +61,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         for i=1:n_args
             @ensureVariables(args[i])
         end
-        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples)
+        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, n_samples, n_iterations, optimizer)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -68,15 +73,19 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
 end
 
 function Nonlinear{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Unscented}))
-    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, out, args...)
+    return Nonlinear{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
 end
 
 function Nonlinear{Sampling}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
-    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, out, args...)
+    return Nonlinear{Sampling}(id, g, nothing, nothing, dims, n_samples, nothing, nothing, out, args...)
 end
 
 function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=nothing, dims=nothing, id=ForneyLab.generateId(Nonlinear{Extended}))
-    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, out, args...)
+    return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, nothing, nothing, out, args...)
+end
+
+function Nonlinear{Conjugate}(out::Variable, args::Vararg; g::Function, dims=nothing, n_samples=nothing, n_iterations=nothing, optimizer=nothing, id=ForneyLab.generateId(Nonlinear{Conjugate}))
+    return Nonlinear{Conjugate}(id, g, nothing, nothing, dims, n_samples, n_iterations, optimizer, out, args...)
 end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
@@ -85,6 +94,11 @@ function requiresBreaker(interface::Interface, partner_interface::Interface, par
     multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
 
     return backward && multi_in
+end
+
+# A breaker message is always required if interface is partnered with a Nonlinear{Conjugate} inbound
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Conjugate})
+    return (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
 end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Unscented/Extended} inbound and no inverse is available

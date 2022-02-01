@@ -138,7 +138,7 @@ function logNormalizer(::Type{Multivariate}, ::Type{<:Gaussian}; η::Vector)
     d = Int(-0.5 + 0.5*sqrt(1 + 4*length(η))) # Extract dimensionality
     η_1 = η[1:d]
     η_2 = reshape(η[d+1:end], d, d)
-    return η_1'*cholinv(-4*η_2)*η_1 - 0.5*logdet(-2*η_2)
+    return η_1'*pinv(-4*η_2)*η_1 - 0.5*logdet(-2*η_2)
 end
 
 logPdf(V::Type{Univariate}, ::Type{F}, x::Number; η::Vector) where F<:Gaussian = -0.5*log(2pi) + vcat(x, x^2)'*η - logNormalizer(V, F; η=η)
