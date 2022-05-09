@@ -274,7 +274,7 @@ function interfaceToScheduleEntry(schedule::Schedule)
     for entry in schedule
         interface = entry.interface
         mapping[interface] = entry
-        while (interface.partner != nothing) && isa(interface.partner.node, Terminal)
+        while (interface.partner !== nothing) && isa(interface.partner.node, Terminal)
             interface = interface.partner.node.outer_interface
             mapping[interface] = entry
         end

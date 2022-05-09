@@ -49,10 +49,10 @@ end
 """
 Create a message passing algorithm to infer marginals over a posterior distribution
 """
-function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], # Quantities of interest
-                                 pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+function messagePassingAlgorithm(target_variables::Vector{Variable}, # Quantities of interest
+                                 pfz::PosteriorFactorization; 
                                  ep_sites=Tuple[],
-                                 id=Symbol(""), 
+                                 id=Symbol(""),
                                  free_energy=false)
 
     if isempty(pfz.posterior_factors) # If no factorization is defined
@@ -92,11 +92,20 @@ function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], 
     return algo
 end
 
-messagePassingAlgorithm(target_variable::Variable,
-                        pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+messagePassingAlgorithm(target_variables::Vector{Variable};
                         ep_sites=Tuple[],
                         id=Symbol(""), 
-                        free_energy=false) = messagePassingAlgorithm([target_variable], pfz; ep_sites=ep_sites, id=id, free_energy=free_energy)
+                        free_energy=false) = messagePassingAlgorithm(target_variables, currentPosteriorFactorization(); ep_sites=ep_sites, id=id, free_energy=free_energy)
+
+messagePassingAlgorithm(target_variable::Variable;
+                        ep_sites=Tuple[],
+                        id=Symbol(""), 
+                        free_energy=false) = messagePassingAlgorithm([target_variable], currentPosteriorFactorization(); ep_sites=ep_sites, id=id, free_energy=free_energy)
+
+messagePassingAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                        ep_sites=Tuple[],
+                        id=Symbol(""), 
+                        free_energy=false) = messagePassingAlgorithm(Variable[], pfz; ep_sites=ep_sites, id=id, free_energy=free_energy)
 
 function interfaceToScheduleEntry(algo::InferenceAlgorithm)
     mapping = Dict{Interface, ScheduleEntry}()

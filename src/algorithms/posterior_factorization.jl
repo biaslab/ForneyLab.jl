@@ -85,7 +85,21 @@ function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T
             PosteriorFactor(arg, id=ids[i])
         end
     end
+
+    # Verify that all stochastic edges are covered by a posterior factor
+    uncovered_variables = uncoveredVariables(pfz)
+    isempty(uncovered_variables) || error("Edges for stochastic variables $([var.id for var in uncovered_variables]) must be covered by a posterior factor")
+
     return pfz
+end
+
+function uncoveredVariables(pfz::PosteriorFactorization)
+    stochastic_edges = setdiff(Set(pfz.graph.edges), pfz.deterministic_edges)
+    covered_stochastic_edges = Set(Iterators.flatten([pf.internal_edges for (_, pf) in pfz.posterior_factors]))
+    uncovered_edges = setdiff(stochastic_edges, covered_stochastic_edges)
+    uncovered_variables = Set([edge.variable for edge in uncovered_edges])
+
+    return uncovered_variables
 end
 
 iterate(pfz::PosteriorFactorization) = iterate(pfz.posterior_factors)
@@ -216,7 +230,6 @@ Return the local stochastic regions around `node`
 function localStochasticRegions(node::FactorNode, pfz::PosteriorFactorization)
     regions = Region[]
     for interface in node.interfaces
-        partner = ultimatePartner(interface)
         if !(interface.edge in pfz.deterministic_edges) # If edge is stochastic
             push!(regions, region(node, interface.edge))
         end
