@@ -141,7 +141,7 @@ end
 
     msg = ruleSPGaussianMomentsVGGN(Message(Univariate, Gaussian{Moments}, m=1.0, v=2.0), Message(Univariate, Gaussian{Moments}, m=3.0, v=4.0), nothing)
     @test isa(msg, Message{Function, Univariate})
-    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*(2.0 + 4.0 + 1.0))*(1.0 - 3.0)^2
 end
 
 @testset "SPGaussianMomentsVPGN" begin
@@ -151,7 +151,7 @@ end
 
     msg = ruleSPGaussianMomentsVPGN(Message(Univariate, PointMass, m=1.0), Message(Univariate, Gaussian{Moments}, m=3.0, v=4.0), nothing)
     @test isa(msg, Message{Function, Univariate})
-    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*(4.0 + 1.0))*(1.0 - 3.0)^2
 end
 
 @testset "SPGaussianMomentsOutNSP" begin
