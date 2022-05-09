@@ -39,6 +39,7 @@ end
 @testset "prod!" begin
     # Multivariate
     @test Distribution(Multivariate, Dirichlet, a=[2.0, 2.0]) * Distribution(Multivariate, Dirichlet, a=[2.0, 3.0]) == Distribution(Multivariate, Dirichlet, a=[3.0, 4.0])
+    @test Distribution(Multivariate, Dirichlet, a=[2.0, 2.0]) * Distribution(Univariate, Beta, a=2.0, b=3.0) == Distribution(Multivariate, Dirichlet, a=[3.0, 4.0])
     @test Distribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) * Distribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) == Distribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
     @test Distribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) * Distribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) == Distribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
 

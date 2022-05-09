@@ -85,6 +85,15 @@ function prod!( x::Distribution{V, Dirichlet},
 end
 
 @symmetrical function prod!(x::Distribution{Multivariate, Dirichlet},
+                            y::Distribution{Univariate, Beta},
+                            z::Distribution{Multivariate, Dirichlet}=Distribution(Multivariate, Dirichlet, a=ones(2)))
+
+    z.params[:a] = x.params[:a] + [y.params[:a], y.params[:b]] .- 1.0
+
+    return z
+end
+
+@symmetrical function prod!(x::Distribution{Multivariate, Dirichlet},
                             y::Distribution{Multivariate, PointMass},
                             z::Distribution{Multivariate, PointMass}=Distribution(Multivariate, PointMass, m=[NaN]))
 

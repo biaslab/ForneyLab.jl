@@ -44,6 +44,7 @@ end
 
 @testset "prod!" begin
     @test Distribution(Categorical, p=[0.2, 0.8])*Distribution(Categorical, p=[0.8, 0.2]) == Distribution(Categorical, p=[0.5, 0.5])
+    @test Distribution(Categorical, p=[0.2, 0.8])*Distribution(Bernoulli, p=0.8) == Distribution(Categorical, p=[0.5, 0.5])
     @test Distribution(Categorical, p=[0.25, 0.5, 0.25]) * Distribution(Categorical, p=[1/3, 1/3, 1/3]) == Distribution(Categorical, p=[0.25, 0.5, 0.25])
     @test Distribution(Categorical, p=[0.0, 0.5, 0.5]) * Distribution(Categorical, p=[1.0, 0.0, 0.0]) == Distribution(Categorical, p=ones(3)/3)
 end
