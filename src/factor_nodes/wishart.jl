@@ -36,28 +36,28 @@ end
 
 slug(::Type{Wishart}) = "W"
 
-format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
+format(dist::Distribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
 
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
-ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+Distribution(::Type{MatrixVariate}, ::Type{Wishart}; v=mat(1.0), nu=1.0) = Distribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+Distribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = Distribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 
-dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
+dims(dist::Distribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
-vague(::Type{Wishart}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims[1]), nu=Float64(dims[1]))
+vague(::Type{Wishart}, dims::Tuple{Int64, Int64}) = Distribution(MatrixVariate, Wishart, v=huge*diageye(dims[1]), nu=Float64(dims[1]))
 
 vague(::Type{Union{Gamma, Wishart}}, dims::Tuple{Int64, Int64}) = vague(Wishart, dims)
 vague(::Type{Union{Gamma, Wishart}}, dims::Tuple) = vague(Gamma) # Univariate fallback
 
-unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
+unsafeMean(dist::Distribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 
-function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+function unsafeDetLogMean(dist::Distribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
     logdet(dist.params[:v])
 end
 
-function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsafe variance
+function unsafeVar(dist::Distribution{MatrixVariate, Wishart}) # unsafe variance
     d = dims(dist)[1]
     M = fill!(similar(Matrix(dist.params[:v])), NaN)
     for i = 1:d
@@ -68,21 +68,21 @@ function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsa
     return M
 end
 
-function logPdf(dist::ProbabilityDistribution{MatrixVariate, Wishart},x)
+function logPdf(dist::Distribution{MatrixVariate, Wishart},x)
     d = dims(dist)[1]
     0.5*((dist.params[:nu]-d-1)*logdet(x) - tr(inv(dist.params[:v])*x) - dist.params[:nu]*d*log(2) - dist.params[:nu]*logdet(dist.params[:v])) - logmvgamma(d,0.5*dist.params[:nu])
 end
 
-function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+function isProper(dist::Distribution{MatrixVariate, Wishart})
     (size(dist.params[:v], 1) == size(dist.params[:v], 2)) || return false
     (dist.params[:nu] > size(dist.params[:v], 1) - 1) || return false
     isRoundedPosDef(dist.params[:v]) || return false
     return true
 end
 
-function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
-                y::ProbabilityDistribution{MatrixVariate, Wishart},
-                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0))
+function prod!( x::Distribution{MatrixVariate, Wishart},
+                y::Distribution{MatrixVariate, Wishart},
+                z::Distribution{MatrixVariate, Wishart}=Distribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0))
 
     d = dims(x)[1]
     z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]
@@ -91,9 +91,9 @@ function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
     return z
 end
 
-@symmetrical function prod!(x::ProbabilityDistribution{MatrixVariate, Wishart},
-                            y::ProbabilityDistribution{MatrixVariate, PointMass},
-                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
+@symmetrical function prod!(x::Distribution{MatrixVariate, Wishart},
+                            y::Distribution{MatrixVariate, PointMass},
+                            z::Distribution{MatrixVariate, PointMass}=Distribution(MatrixVariate, PointMass, m=mat(NaN)))
 
     isRoundedPosDef(y.params[:m]) || error("PointMass location $(y.params[:m]) should be positive definite")
     z.params[:m] = deepcopy(y.params[:m])
@@ -101,7 +101,7 @@ end
     return z
 end
 
-function naturalParams(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+function naturalParams(dist::Distribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     return vcat(-0.5*vec(cholinv(dist.params[:v])), 0.5*(dist.params[:nu]-d-1))
 end
@@ -110,7 +110,7 @@ function standardDistribution(V::Type{MatrixVariate}, F::Type{Wishart}; η::Vect
     d = Int(sqrt(length(η) - 1))
     η_1 = reshape(η[1:end-1], d, d)
     η_2 = η[end]
-    return ProbabilityDistribution(V, F, v=cholinv(-2.0*η_1), nu=2*η_2+d+1)
+    return Distribution(V, F, v=cholinv(-2.0*η_1), nu=2*η_2+d+1)
 end
 
 function logNormalizer(::Type{MatrixVariate}, ::Type{Wishart}; η::Vector)
@@ -123,7 +123,7 @@ end
 logPdf(V::Type{MatrixVariate}, F::Type{Wishart}, x::Matrix; η::Vector) = vcat(vec(x), logdet(x))'*η - logNormalizer(V, F; η=η)
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+function differentialEntropy(dist::Distribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     0.5*(d + 1.0)*logdet(dist.params[:v]) +
     0.5*d*(d + 1.0)*log(2) +
@@ -134,7 +134,7 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishar
 end
 
 # Average energy functional
-function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_v::ProbabilityDistribution{MatrixVariate}, marg_nu::ProbabilityDistribution{Univariate, PointMass})
+function averageEnergy(::Type{Wishart}, marg_out::Distribution{MatrixVariate}, marg_v::Distribution{MatrixVariate}, marg_nu::Distribution{Univariate, PointMass})
     d = dims(marg_out)[1]
     0.5*marg_nu.params[:m]*unsafeDetLogMean(marg_v) +
     0.5*marg_nu.params[:m]*d*log(2) +

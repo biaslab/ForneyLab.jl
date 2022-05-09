@@ -1,9 +1,9 @@
 export ruleVBSoftmaxOut, ruleVBSoftmaxIn1, ruleVBSoftmaxXi, ruleVBSoftmaxA
 
 function ruleVBSoftmaxOut(marg_out::Any, 
-                          marg_in1::ProbabilityDistribution{Multivariate}, 
-                          marg_xi::ProbabilityDistribution{Multivariate},
-                          marg_a::ProbabilityDistribution{Univariate})
+                          marg_in1::Distribution{Multivariate}, 
+                          marg_xi::Distribution{Multivariate},
+                          marg_a::Distribution{Univariate})
     
     b_bar = unsafeBoundMean(marg_in1, marg_xi, marg_a)
     a = exp.(unsafeMean(marg_in1) .- b_bar)
@@ -11,10 +11,10 @@ function ruleVBSoftmaxOut(marg_out::Any,
     return Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution, 
+function ruleVBSoftmaxIn1(marg_out::Distribution, 
                           marg_in1::Any, 
-                          marg_xi::ProbabilityDistribution{Multivariate},
-                          marg_a::ProbabilityDistribution{Univariate})
+                          marg_xi::Distribution{Multivariate},
+                          marg_a::Distribution{Univariate})
     
     xi_hat = unsafeMode(marg_xi)
     a_hat = unsafeMode(marg_a)
@@ -27,20 +27,20 @@ function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution,
     xi = mu_plus.*diag(gam) + (gam - Diagonal(diag(gam)))'*mu_min
     W = Diagonal(vec(sum(gam, dims=1)))
 
-    return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=W)
+    return Message(Multivariate, Gaussian{Canonical}, xi=xi, w=W)
 end
 
-function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution, 
-                         marg_in1::ProbabilityDistribution{Multivariate}, 
+function ruleVBSoftmaxXi(marg_out::Distribution, 
+                         marg_in1::Distribution{Multivariate}, 
                          marg_xi::Any,
-                         marg_a::ProbabilityDistribution{Univariate})
+                         marg_a::Distribution{Univariate})
     
     return Message(Multivariate, Function, mode=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- unsafeMode(marg_a)).^2))
 end
 
-function ruleVBSoftmaxA(marg_out::ProbabilityDistribution, 
-                        marg_in1::ProbabilityDistribution{Multivariate}, 
-                        marg_xi::ProbabilityDistribution{Multivariate},
+function ruleVBSoftmaxA(marg_out::Distribution, 
+                        marg_in1::Distribution{Multivariate}, 
+                        marg_xi::Distribution{Multivariate},
                         marg_a::Any)
     
     xi_hat = unsafeMode(marg_xi)

@@ -15,7 +15,7 @@ using ForneyLab: SPPointMassConstraintOut
     @test outboundType(SPPointMassConstraintOut) == Message{PointMass}
     @test isApplicable(SPPointMassConstraintOut, [Nothing]) 
 
-    @test ruleSPPointMassConstraintOut(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=0.0)
+    @test ruleSPPointMassConstraintOut(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=0.0)
 end
 
 
@@ -25,7 +25,7 @@ end
 
 @testset "PointMassConstraint integration" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(0.0, 1.0)
+    @RV x ~ Gaussian{Moments}(0.0, 1.0)
     PointMassConstraint(x)
     
     pfz = PosteriorFactorization(fg)

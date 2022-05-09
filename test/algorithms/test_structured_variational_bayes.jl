@@ -3,7 +3,7 @@ module StructuredVariationalBayesTest
 using Test
 using ForneyLab
 using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, messagePassingSchedule
-using ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
+using ForneyLab: VBGaussianMomentsOut, SVBGaussianPrecisionMGVD, SVBGaussianPrecisionOutVGD, VBGammaOut, SVBGaussianPrecisionW
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -26,25 +26,25 @@ end
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{PointMass}, Distribution),
                            :name          => SVBMock1VGD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
+                           :inbound_types => (Message{PointMass}, Nothing, Distribution),
                            :name          => SVBMock2GVD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (ProbabilityDistribution, Nothing),
+                           :inbound_types => (Distribution, Nothing),
                            :name          => SVBMock3DV)
 
 @testset "@structuredVariationalRule" begin
     @test SVBMock1VGD <: StructuredVariationalRule{MockNode}
     @test SVBMock2GVD <: StructuredVariationalRule{MockNode}
     @test SVBMock3DV <: StructuredVariationalRule{MockNode}
-    @test isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution])
-    @test !isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution, ProbabilityDistribution])    
+    @test isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, Distribution])
+    @test !isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, Distribution, Distribution])    
 end
 
 @testset "inferUpdateRule!" begin
@@ -79,7 +79,7 @@ end
 @testset "messagePassingSchedule" begin
     g = FactorGraph()
     s_0 = Variable()
-    nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
+    nd_s_0 = Gaussian{Moments}(s_0, constant(0.0), constant(1.0))
     w = Variable()
     nd_w = Gamma(w, constant(1.0), constant(1.0))
 
@@ -89,13 +89,13 @@ end
     s_min = s_0
     for i = 1:3
         s_i = Variable()
-        nd_s_i = GaussianMeanPrecision(s_i, s_min, w)
+        nd_s_i = Gaussian{Precision}(s_i, s_min, w)
         push!(s, s_i)
         push!(nd_s, nd_s_i)
 
         s_min = s_i
     end
-    nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
+    nd_s_i = Gaussian{Moments}(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
     pfz = PosteriorFactorization()
@@ -105,28 +105,28 @@ end
     setTargets!(q_s, pfz, external_targets=true)
     schedule_q_s = messagePassingSchedule(q_s)
     @test length(schedule_q_s) == 8
-    @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
-    @test ScheduleEntry(nd_s[4].i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
-    @test ScheduleEntry(nd_s[3].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
-    @test ScheduleEntry(nd_s[2].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
-    @test ScheduleEntry(nd_s[1].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
-    @test ScheduleEntry(nd_s[1].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
-    @test ScheduleEntry(nd_s[2].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
-    @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
+    @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMomentsOut) in schedule_q_s
+    @test ScheduleEntry(nd_s[4].i[:out], VBGaussianMomentsOut) in schedule_q_s
+    @test ScheduleEntry(nd_s[3].i[:m], SVBGaussianPrecisionMGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[2].i[:m], SVBGaussianPrecisionMGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[1].i[:m], SVBGaussianPrecisionMGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[1].i[:out], SVBGaussianPrecisionOutVGD) in schedule_q_s
+    @test ScheduleEntry(nd_s[2].i[:out], SVBGaussianPrecisionOutVGD) in schedule_q_s
+    @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianPrecisionOutVGD) in schedule_q_s
 
     setTargets!(q_w, pfz, external_targets=true)
     schedule_q_w = messagePassingSchedule(q_w)
     @test length(schedule_q_w) == 6
     @test ScheduleEntry(nd_w.i[:out], VBGammaOut) in schedule_q_w
-    @test ScheduleEntry(nd_s[1].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
-    @test ScheduleEntry(nd_s[2].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
-    @test ScheduleEntry(nd_s[3].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
+    @test ScheduleEntry(nd_s[1].i[:w], SVBGaussianPrecisionW) in schedule_q_w
+    @test ScheduleEntry(nd_s[2].i[:w], SVBGaussianPrecisionW) in schedule_q_w
+    @test ScheduleEntry(nd_s[3].i[:w], SVBGaussianPrecisionW) in schedule_q_w
 end
 
 @testset "messagePassingAlgorithm" begin
     g = FactorGraph()
     s_0 = Variable()
-    nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
+    nd_s_0 = Gaussian{Moments}(s_0, constant(0.0), constant(1.0))
     w = Variable()
     nd_w = Gamma(w, constant(1.0), constant(1.0))
 
@@ -136,13 +136,13 @@ end
     s_min = s_0
     for i = 1:3
         s_i = Variable()
-        nd_s_i = GaussianMeanPrecision(s_i, s_min, w)
+        nd_s_i = Gaussian{Precision}(s_i, s_min, w)
         push!(s, s_i)
         push!(nd_s, nd_s_i)
 
         s_min = s_i
     end
-    nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
+    nd_s_i = Gaussian{Moments}(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
     pfz = PosteriorFactorization([s_0; s], w)

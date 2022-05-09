@@ -1,19 +1,19 @@
 @naiveVariationalRule(:node_type     => Softmax,
                       :outbound_type => Message{Categorical},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution, Distribution),
                       :name          => VBSoftmaxOut)
 
 @naiveVariationalRule(:node_type     => Softmax,
-                      :outbound_type => Message{GaussianWeightedMeanPrecision},
-                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :outbound_type => Message{Gaussian{Canonical}},
+                      :inbound_types => (Distribution, Nothing, Distribution, Distribution),
                       :name          => VBSoftmaxIn1)
 
 @naiveVariationalRule(:node_type     => Softmax,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing, ProbabilityDistribution),
+                      :inbound_types => (Distribution, Distribution, Nothing, Distribution),
                       :name          => VBSoftmaxXi)
 
 @naiveVariationalRule(:node_type     => Softmax,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Distribution, Distribution, Nothing),
                       :name          => VBSoftmaxA)

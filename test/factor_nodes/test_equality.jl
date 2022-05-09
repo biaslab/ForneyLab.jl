@@ -12,18 +12,18 @@ using ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli
 
 @testset "SPEqualityGaussian" begin
     @test SPEqualityGaussian <: SumProductRule{Equality}
-    @test outboundType(SPEqualityGaussian) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPEqualityGaussian) == Message{Gaussian{Canonical}}
     @test isApplicable(SPEqualityGaussian, [Message{Gaussian}, Message{Gaussian}, Nothing])
     @test isApplicable(SPEqualityGaussian, [Message{Gaussian}, Nothing, Message{Gaussian}])
     @test isApplicable(SPEqualityGaussian, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-    @test ruleSPEqualityGaussian(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=4.0, w=6.0)
-    @test ruleSPEqualityGaussian(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), nothing, Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=4.0, w=6.0)
-    @test ruleSPEqualityGaussian(nothing, Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=4.0, w=6.0)
+    @test ruleSPEqualityGaussian(Message(Univariate, Gaussian{Canonical}, xi=1.0, w=2.0), Message(Univariate, Gaussian{Canonical}, xi=3.0, w=4.0), nothing) == Message(Univariate, Gaussian{Canonical}, xi=4.0, w=6.0)
+    @test ruleSPEqualityGaussian(Message(Univariate, Gaussian{Canonical}, xi=1.0, w=2.0), nothing, Message(Univariate, Gaussian{Canonical}, xi=3.0, w=4.0)) == Message(Univariate, Gaussian{Canonical}, xi=4.0, w=6.0)
+    @test ruleSPEqualityGaussian(nothing, Message(Univariate, Gaussian{Canonical}, xi=1.0, w=2.0), Message(Univariate, Gaussian{Canonical}, xi=3.0, w=4.0)) == Message(Univariate, Gaussian{Canonical}, xi=4.0, w=6.0)
 
-    @test ruleSPEqualityGaussian(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0)), nothing) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0], w=mat(6.0))
-    @test ruleSPEqualityGaussian(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), nothing, Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0], w=mat(6.0))
-    @test ruleSPEqualityGaussian(nothing, Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0], w=mat(6.0))
+    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian{Canonical}, xi=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian{Canonical}, xi=[3.0], w=mat(4.0)), nothing) == Message(Multivariate, Gaussian{Canonical}, xi=[4.0], w=mat(6.0))
+    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian{Canonical}, xi=[1.0], w=mat(2.0)), nothing, Message(Multivariate, Gaussian{Canonical}, xi=[3.0], w=mat(4.0))) == Message(Multivariate, Gaussian{Canonical}, xi=[4.0], w=mat(6.0))
+    @test ruleSPEqualityGaussian(nothing, Message(Multivariate, Gaussian{Canonical}, xi=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian{Canonical}, xi=[3.0], w=mat(4.0))) == Message(Multivariate, Gaussian{Canonical}, xi=[4.0], w=mat(6.0))
 end
 
 @testset "SPEqualityGammaWishart" begin
@@ -102,12 +102,12 @@ end
     @test !isApplicable(SPEqualityPointMass, [Message{PointMass}, Message{PointMass}, Nothing])
     @test !isApplicable(SPEqualityPointMass, [Message{Gaussian}, Message{Gaussian}, Nothing])
 
-    @test ruleSPEqualityPointMass(Message(Univariate, PointMass, m=1.0), Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), nothing) == Message(Univariate, PointMass, m=1.0)
-    @test ruleSPEqualityPointMass(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), Message(Univariate, PointMass, m=1.0), nothing) == Message(Univariate, PointMass, m=1.0)
-    @test ruleSPEqualityPointMass(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=1.0)
-    @test ruleSPEqualityPointMass(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=1.0)
+    @test ruleSPEqualityPointMass(Message(Univariate, PointMass, m=1.0), Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), nothing) == Message(Univariate, PointMass, m=1.0)
+    @test ruleSPEqualityPointMass(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), Message(Univariate, PointMass, m=1.0), nothing) == Message(Univariate, PointMass, m=1.0)
+    @test ruleSPEqualityPointMass(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=1.0)
+    @test ruleSPEqualityPointMass(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=1.0)
 
-    @test ruleSPEqualityPointMass(Message(Multivariate, PointMass, m=[1.0, 2.0]), Message(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)), nothing) == Message(Multivariate, PointMass, m=[1.0, 2.0])
+    @test ruleSPEqualityPointMass(Message(Multivariate, PointMass, m=[1.0, 2.0]), Message(Multivariate, Gaussian{Moments}, m=zeros(2), v=diageye(2)), nothing) == Message(Multivariate, PointMass, m=[1.0, 2.0])
 
     @test ruleSPEqualityPointMass(Message(MatrixVariate, PointMass, m=diageye(2)), Message(MatrixVariate, Wishart, nu=3.0, v=diageye(2)), nothing) == Message(MatrixVariate, PointMass, m=diageye(2))
 
@@ -125,7 +125,7 @@ end
 
 @testset "SPEqualityFnG" begin
     @test SPEqualityFnG <: SumProductRule{Equality}
-    @test outboundType(SPEqualityFnG) == Message{GaussianMeanVariance}
+    @test outboundType(SPEqualityFnG) == Message{Gaussian{Moments}}
     @test isApplicable(SPEqualityFnG, [Nothing, Message{Function}, Message{Gaussian}])
     @test !isApplicable(SPEqualityFnG, [Message{Function}, Message{Function}, Nothing])
     @test !isApplicable(SPEqualityFnG, [Message{Beta}, Nothing, Message{Gamma}])
@@ -144,7 +144,7 @@ end
 
 @testset "SPEqualityGFactor" begin
     @test SPEqualityGFactor <: SumProductRule{Equality}
-    @test outboundType(SPEqualityGFactor) == Message{GaussianMeanVariance}
+    @test outboundType(SPEqualityGFactor) == Message{Gaussian{Moments}}
     @test !isApplicable(SPEqualityGFactor, [Nothing, Message{Function}, Message{Poisson}])
     @test !isApplicable(SPEqualityGFactor, [Nothing, Message{Function}, Message{Gaussian}])
     @test !isApplicable(SPEqualityGFactor, [Message{Function}, Message{Function}, Nothing])

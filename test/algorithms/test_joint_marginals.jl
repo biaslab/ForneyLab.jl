@@ -24,13 +24,13 @@ mutable struct MockNode <: FactorNode
 end
 
 @marginalRule(:node_type     => MockNode,
-              :inbound_types => (Message, Message, ProbabilityDistribution),
+              :inbound_types => (Message, Message, Distribution),
               :name          => MMockMMD)
 
 @testset "@marginalRule" begin
     @test MMockMMD <: MarginalRule{MockNode}
-    @test isApplicable(MMockMMD, [Message, Message, ProbabilityDistribution])
-    @test !isApplicable(MMockMMD, [Message, Message, ProbabilityDistribution, ProbabilityDistribution])    
+    @test isApplicable(MMockMMD, [Message, Message, Distribution])
+    @test !isApplicable(MMockMMD, [Message, Message, Distribution, Distribution])    
 end
 
 @testset "inferMarginalRule" begin
@@ -38,7 +38,7 @@ end
     nd = MockNode([constant(0.0), constant(0.0), constant(0.0)])
     cluster = Cluster(nd, [nd.i[1].edge, nd.i[2].edge])
 
-    @test inferMarginalRule(cluster, [Message, Message, ProbabilityDistribution]) == MMockMMD
+    @test inferMarginalRule(cluster, [Message, Message, Distribution]) == MMockMMD
 end
 
 mutable struct SPMockNode <: SumProductRule{MockNode} end

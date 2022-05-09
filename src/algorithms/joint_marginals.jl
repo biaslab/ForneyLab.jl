@@ -91,7 +91,7 @@ function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, T
             push!(inbound_types, Nothing)
         elseif !(current_region in encountered_external_regions)
             # Edge is external and cluster is not yet encountered, accept probability distribution
-            push!(inbound_types, ProbabilityDistribution)
+            push!(inbound_types, Distribution)
             push!(encountered_external_regions, current_region) # Register current region with encountered external regions
         end
     end
@@ -181,7 +181,7 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), Message)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif isClamped(inbound_interface)
             # Edge is clamped and external, hard-code marginal of clamp node
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Distribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])

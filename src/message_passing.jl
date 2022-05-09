@@ -1,27 +1,31 @@
 export
 Message,
+M,
 MessageUpdateRule,
 ScheduleEntry,
 Schedule
 
 """Encodes a message, which is a probability distribution with a scaling factor"""
-struct Message{family<:FactorFunction, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
-    dist::ProbabilityDistribution{var_type, family}
+struct Message{family<:FactorFunction, var_type<:VariateType} # Note that parameter order is switched w.r.t. Distribution, for ease of overloading
+    dist::Distribution{var_type, family}
     scaling_factor::Any
 
-    Message{F, V}(dist::ProbabilityDistribution{V, F}) where {F, V}= new(dist) # Constructor for unspecified scaling factor
+    Message{F, V}(dist::Distribution{V, F}) where {F, V}= new(dist) # Constructor for unspecified scaling factor
 end
 
-Message(dist::ProbabilityDistribution{V, F}) where {F<:FactorFunction, V<:VariateType} = Message{F, V}(dist)
+Message(dist::Distribution{V, F}) where {F<:FactorFunction, V<:VariateType} = Message{F, V}(dist)
 
-Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorFunction, V<:VariateType} = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
+Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorFunction, V<:VariateType} = Message{family, var_type}(Distribution(var_type, family; kwargs...))
 
 function Message(family::Type{F}; kwargs...) where F
-    dist = ProbabilityDistribution(family; kwargs...)
+    dist = Distribution(family; kwargs...)
     var_type = variateType(dist)
 
     return Message{family, var_type}(dist)
 end
+
+"""Shorthand notation for Message definition"""
+const M = Message
 
 family(msg_type::Type{Message{F}}) where F<:FactorFunction = F
 

@@ -14,19 +14,19 @@
                 :name          => SPProbitIn1BN)
 
 @expectationPropagationRule(:node_type     => Probit,
-                            :outbound_type => Message{GaussianWeightedMeanPrecision},
+                            :outbound_type => Message{Gaussian{Canonical}},
                             :inbound_types => (Message{Bernoulli}, Message{Gaussian}),
                             :outbound_id   => 2,
                             :name          => EPProbitIn1BG)
 
 @expectationPropagationRule(:node_type     => Probit,
-                            :outbound_type => Message{GaussianWeightedMeanPrecision},
+                            :outbound_type => Message{Gaussian{Canonical}},
                             :inbound_types => (Message{Categorical}, Message{Gaussian}),
                             :outbound_id   => 2,
                             :name          => EPProbitIn1CG)
 
 @expectationPropagationRule(:node_type     => Probit,
-                            :outbound_type => Message{GaussianWeightedMeanPrecision},
+                            :outbound_type => Message{Gaussian{Canonical}},
                             :inbound_types => (Message{PointMass}, Message{Gaussian}),
                             :outbound_id   => 2,
                             :name          => EPProbitIn1PG)

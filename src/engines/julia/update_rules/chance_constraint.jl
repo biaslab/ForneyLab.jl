@@ -85,7 +85,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
         W_fw  = W_tilde - W_bw
     end
 
-    return Message(Univariate, GaussianWeightedMeanPrecision, xi=xi_fw, w=W_fw)
+    return Message(Univariate, Gaussian{Canonical}, xi=xi_fw, w=W_fw)
 end
 
 

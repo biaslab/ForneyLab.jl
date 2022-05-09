@@ -6,10 +6,10 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
 
 @testset "assembleCountingNumbers!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(0.0, 1.0)
     @RV z = x + y
-    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    @RV w ~ Gaussian{Precision}(z, 1.0)
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()
@@ -18,9 +18,9 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     assembleCountingNumbers!(pfz)
 
     cl = first(pf.target_clusters)
-    nd1 = fg.nodes[:gaussianmeanprecision_1]
-    nd2 = fg.nodes[:gaussianmeanprecision_2]
-    nd3 = fg.nodes[:gaussianmeanprecision_3]
+    nd1 = fg.nodes[:gaussian_1]
+    nd2 = fg.nodes[:gaussian_2]
+    nd3 = fg.nodes[:gaussian_3]
 
     @test pfz.entropy_counting_numbers[x] == 0
     @test pfz.entropy_counting_numbers[cl] == 1
@@ -35,8 +35,8 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
 
     # Regression test
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(placeholder(:mx), placeholder(:vx))
-    @RV y ~ GaussianMeanVariance(placeholder(:my), placeholder(:vy))
+    @RV x ~ Gaussian{Moments}(placeholder(:mx), placeholder(:vx))
+    @RV y ~ Gaussian{Moments}(placeholder(:my), placeholder(:vy))
     @RV z = dot(x, 1.0) + dot(y, 1.0)
     placeholder(z, :z)
 
@@ -46,8 +46,8 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     assembleCountingNumbers!(pfz)
 
     cl = first(pf.target_clusters)
-    nd1 = fg.nodes[:gaussianmeanvariance_1]
-    nd2 = fg.nodes[:gaussianmeanvariance_2]
+    nd1 = fg.nodes[:gaussian_1]
+    nd2 = fg.nodes[:gaussian_2]
     v1 = fg.variables[:variable_1]
     v2 = fg.variables[:variable_2]
 
@@ -62,10 +62,10 @@ end
 
 @testset "assembleFreeEnergy!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(0.0, 1.0)
     @RV z = x + y
-    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    @RV w ~ Gaussian{Precision}(z, 1.0)
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()
@@ -74,9 +74,9 @@ end
     assembleFreeEnergy!(algo)
 
     cl = first(pf.target_clusters)
-    nd1 = fg.nodes[:gaussianmeanprecision_1]
-    nd2 = fg.nodes[:gaussianmeanprecision_2]
-    nd3 = fg.nodes[:gaussianmeanprecision_3]
+    nd1 = fg.nodes[:gaussian_1]
+    nd2 = fg.nodes[:gaussian_2]
+    nd3 = fg.nodes[:gaussian_3]
 
     @test algo.entropies[1][:counting_number] == 1
     @test algo.entropies[1][:inbound].target == cl

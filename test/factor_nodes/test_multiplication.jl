@@ -11,19 +11,19 @@ using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicatio
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()
     a = constant(1.0)
-    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV x ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @RV z = a*x
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 
     g = FactorGraph()
-    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV x ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @RV z = 1.0*x
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 
     g = FactorGraph()
-    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV x ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @RV z = x*1.0
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
@@ -42,20 +42,20 @@ end
 
 @testset "SPMultiplicationOutNGP" begin
     @test SPMultiplicationOutNGP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutNGP) == Message{GaussianMeanVariance}
+    @test outboundType(SPMultiplicationOutNGP) == Message{Gaussian{Moments}}
     @test isApplicable(SPMultiplicationOutNGP, [Nothing, Message{Gaussian}, Message{PointMass}])
 
-    @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
-    @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Multivariate, PointMass, m=[2.0])) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutNGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, Gaussian{Moments}, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian{Moments}, m=2.0, v=12.0)
+    @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, Gaussian{Moments}, m=1.0, v=3.0), Message(Multivariate, PointMass, m=[2.0])) == Message(Multivariate, Gaussian{Moments}, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutNGP(nothing, Message(Multivariate, Gaussian{Moments}, m=[1.0], v=mat(3.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian{Moments}, m=[2.0], v=mat(12.0))
 end
 
 @testset "SPMultiplicationOutNPG" begin
     @test SPMultiplicationOutNPG <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutNPG) == Message{GaussianMeanVariance}
+    @test outboundType(SPMultiplicationOutNPG) == Message{Gaussian{Moments}}
     @test isApplicable(SPMultiplicationOutNPG, [Nothing, Message{PointMass}, Message{Gaussian}])
 
-    @test ruleSPMultiplicationOutNPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
+    @test ruleSPMultiplicationOutNPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gaussian{Moments}, m=1.0, v=3.0)) == Message(Univariate, Gaussian{Moments}, m=2.0, v=12.0)
 end
 
 @testset "SPMultiplicationOutNPP" begin
@@ -69,12 +69,12 @@ end
 
 @testset "SPMultiplicationIn1GNP" begin
     @test SPMultiplicationIn1GNP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationIn1GNP) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPMultiplicationIn1GNP) == Message{Gaussian{Canonical}}
     @test isApplicable(SPMultiplicationIn1GNP, [Message{Gaussian}, Nothing, Message{PointMass}])
 
-    @test ruleSPMultiplicationIn1GNP(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
-    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0 + tiny)
-    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(12.0 + tiny))
+    @test ruleSPMultiplicationIn1GNP(Message(Univariate, Gaussian{Canonical}, xi=1.0, w=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian{Canonical}, xi=2.0, w=12.0)
+    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, Gaussian{Canonical}, xi=[1.0], w=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, Gaussian{Canonical}, xi=2.0, w=12.0 + tiny)
+    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, Gaussian{Canonical}, xi=[1.0], w=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian{Canonical}, xi=[2.0], w=mat(12.0 + tiny))
 end
 
 @testset "SPMultiplicationIn1PNP" begin
@@ -88,10 +88,10 @@ end
 
 @testset "SPMultiplicationAGPN" begin
     @test SPMultiplicationAGPN <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationAGPN) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPMultiplicationAGPN) == Message{Gaussian{Canonical}}
     @test isApplicable(SPMultiplicationAGPN, [Message{Gaussian}, Message{PointMass}, Nothing])
 
-    @test ruleSPMultiplicationAGPN(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
+    @test ruleSPMultiplicationAGPN(Message(Univariate, Gaussian{Canonical}, xi=1.0, w=3.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, Gaussian{Canonical}, xi=2.0, w=12.0)
 end
 
 @testset "SPMultiplicationAPPN" begin
@@ -142,7 +142,7 @@ end
     fg = FactorGraph()
 
     @RV τ ~ Gamma(1, 1)
-    @RV x ~ GaussianMeanPrecision(0.0, 10*τ)
+    @RV x ~ Gaussian{Precision}(0.0, 10*τ)
     placeholder(x, :x)
 
     q = PosteriorFactorization(τ, ids=[:T])

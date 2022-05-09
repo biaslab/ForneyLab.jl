@@ -7,11 +7,11 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
 
 @testset "PosteriorFactor" begin
     g = FactorGraph()
-    @RV m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV m ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @RV w ~ Gamma(constant(1.0), constant(1.0))
     y = Variable[]
     for i = 1:3
-        @RV y_i ~ GaussianMeanPrecision(m, w)
+        @RV y_i ~ Gaussian{Precision}(m, w)
         placeholder(y_i, :y, index=i)
         push!(y, y_i)
     end
@@ -41,10 +41,10 @@ end
 
 @testset "setTargets!" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV x ~ Gaussian{Precision}(0.0, 1.0)
+    @RV y ~ Gaussian{Precision}(0.0, 1.0)
     @RV z = x + y
-    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    @RV w ~ Gaussian{Precision}(z, 1.0)
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()

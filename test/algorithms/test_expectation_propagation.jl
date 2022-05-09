@@ -3,7 +3,7 @@ module ExpectationPropagationTest
 using Test
 using ForneyLab
 using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
-using ForneyLab: EPProbitIn1PG, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG, messagePassingSchedule
+using ForneyLab: EPProbitIn1PG, SPGaussianMomentsOutNPP, SPClamp, VBGaussianPrecisionOut, SPProbitOutNG, messagePassingSchedule
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -38,7 +38,7 @@ end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
-    @RV m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV m ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     nd = MockNode([constant(0.0), m])
     inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
 
@@ -51,7 +51,7 @@ end
 @testset "messagePassingSchedule" begin
     fg = FactorGraph()
     m = Variable()
-    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    nd_m = Gaussian{Moments}(m, constant(0.0), constant(1.0))
     z = Variable[]
     nd_z = FactorNode[]
     for i = 1:3
@@ -71,18 +71,18 @@ end
     @test length(schedule) == 15
     @test schedule[5] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1PG)
     @test schedule[8] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1PG)
-    @test schedule[3] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
+    @test schedule[3] == ScheduleEntry(nd_m.i[:out], SPGaussianMomentsOutNPP)
     @test schedule[11] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1PG)
 end
 
 @testset "messagePassingSchedule" begin
     fg = FactorGraph()
     m = Variable()
-    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    nd_m = Gaussian{Moments}(m, constant(0.0), constant(1.0))
     w = Variable()
     nd_w = Gamma(w, constant(0.01), constant(0.01))
     y = Variable()
-    nd_y = GaussianMeanPrecision(y, m, w)
+    nd_y = Gaussian{Precision}(y, m, w)
     z = Variable()
     nd_z = Probit(z, y)
     placeholder(z, :z)
@@ -94,7 +94,7 @@ end
     schedule = messagePassingSchedule(q_y_z)
 
     @test length(schedule) == 3
-    @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
+    @test ScheduleEntry(nd_y.i[:out], VBGaussianPrecisionOut) in schedule
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1PG) in schedule
 end
@@ -102,7 +102,7 @@ end
 @testset "messagePassingAlgorithm" begin
     fg = FactorGraph()
     m = Variable()
-    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    nd_m = Gaussian{Moments}(m, constant(0.0), constant(1.0))
     z = Variable[]
     nd_z = FactorNode[]
     for i = 1:3
@@ -122,11 +122,11 @@ end
 @testset "messagePassingAlgorithm" begin
     fg = FactorGraph()
     m = Variable()
-    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    nd_m = Gaussian{Moments}(m, constant(0.0), constant(1.0))
     w = Variable()
     nd_w = Gamma(w, constant(0.01), constant(0.01))
     y = Variable()
-    nd_y = GaussianMeanPrecision(y, m, w)
+    nd_y = Gaussian{Precision}(y, m, w)
     z = Variable()
     nd_z = Probit(z, y)
     placeholder(z, :z)

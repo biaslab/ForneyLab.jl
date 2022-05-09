@@ -8,7 +8,7 @@ using ForneyLab: SPExponentialOutNG, SPExponentialOutNP, SPExponentialIn1LN, SPE
 @testset "Exponential node construction through exp() syntax" begin
     g = FactorGraph()
 
-    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV x ~ Gaussian{Moments}(constant(0.0), constant(1.0))
     @RV z = exp(x)
 
     @test isa(z, Variable)
@@ -25,7 +25,7 @@ end
     @test outboundType(SPExponentialOutNG) == Message{LogNormal}
     @test isApplicable(SPExponentialOutNG, [Nothing, Message{Gaussian}])
 
-    @test ruleSPExponentialOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
+    @test ruleSPExponentialOutNG(nothing, Message(Univariate, Gaussian{Moments}, m=1.0, v=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
 end
 
 @testset "SPExponentialOutNP" begin
@@ -38,10 +38,10 @@ end
 
 @testset "SPExponentialIn1LN" begin
     @test SPExponentialIn1LN <: SumProductRule{Exponential}
-    @test outboundType(SPExponentialIn1LN) == Message{GaussianMeanVariance}
+    @test outboundType(SPExponentialIn1LN) == Message{Gaussian{Moments}}
     @test isApplicable(SPExponentialIn1LN, [Message{LogNormal}, Nothing])
 
-    @test ruleSPExponentialIn1LN(Message(Univariate, LogNormal, m=1.0, s=2.0), nothing) == Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)
+    @test ruleSPExponentialIn1LN(Message(Univariate, LogNormal, m=1.0, s=2.0), nothing) == Message(Univariate, Gaussian{Moments}, m=1.0, v=2.0)
 end
 
 @testset "SPExponentialIn1PN" begin

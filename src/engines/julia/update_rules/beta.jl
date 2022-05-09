@@ -52,13 +52,13 @@ function ruleSPBetaBMMN(msg_out::Message{FactorNode, Univariate},
 end
 
 ruleVBBetaOut(marg_out::Any, 
-              dist_a::ProbabilityDistribution{Univariate}, 
-              dist_b::ProbabilityDistribution{Univariate}) = 
+              dist_a::Distribution{Univariate}, 
+              dist_b::Distribution{Univariate}) = 
     Message(Univariate, Beta, a=unsafeMean(dist_a), b=unsafeMean(dist_b))
 
-function ruleVBBetaA(dist_out::ProbabilityDistribution{Univariate},
+function ruleVBBetaA(dist_out::Distribution{Univariate},
                      dist_a::Any, 
-                     dist_b::ProbabilityDistribution{Univariate})
+                     dist_b::Distribution{Univariate})
 
     logGamAsumB(a) = sum(loggamma.(a.+sample(dist_b,default_n_samples)))/default_n_samples
     logp(a) = (a-1)*unsafeLogMean(dist_out) + logGamAsumB(a) - loggamma(a)
@@ -66,8 +66,8 @@ function ruleVBBetaA(dist_out::ProbabilityDistribution{Univariate},
     return Message(Univariate, Function, log_pdf = logp)
 end
 
-function ruleVBBetaB(dist_out::ProbabilityDistribution{Univariate},
-                     dist_a::ProbabilityDistribution{Univariate}, dist_b::Any)
+function ruleVBBetaB(dist_out::Distribution{Univariate},
+                     dist_a::Distribution{Univariate}, dist_b::Any)
 
     logGamAsumB(b) = sum(loggamma.(b.+sample(dist_a,default_n_samples)))/default_n_samples
     logp(b) = (b-1)*unsafeMirroredLogMean(dist_out) + logGamAsumB(b) - loggamma(b)

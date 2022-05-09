@@ -61,7 +61,7 @@ function generateId(t::Type)
         elseif t <: Variable
             graph.variables
         end
-    if collection != nothing
+    if collection !== nothing
         # Increase counter until we have a unique id
         while haskey(collection, id)
             counter += 1

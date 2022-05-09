@@ -31,15 +31,15 @@ end
 
 @testset "SPMomentConstraintOutG" begin
     @test SPMomentConstraintOutG <: SumProductRule{MomentConstraint}
-    @test outboundType(SPMomentConstraintOutG) == Message{GaussianWeightedMeanPrecision}
+    @test outboundType(SPMomentConstraintOutG) == Message{Gaussian{Canonical}}
     @test isApplicable(SPMomentConstraintOutG, [Nothing]) 
 
-    @test ruleSPMomentConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), g, 0.95, 0.5) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.5449452063991789, w=1.123838185932649)
-    @test ruleSPMomentConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), f, 2.0, 0.0) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0000018622402607, w=9.31120130553964e-7)
+    @test ruleSPMomentConstraintOutG(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), g, 0.95, 0.5) == Message(Univariate, Gaussian{Canonical}, xi=1.5449452063991789, w=1.123838185932649)
+    @test ruleSPMomentConstraintOutG(Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0), f, 2.0, 0.0) == Message(Univariate, Gaussian{Canonical}, xi=2.0000018622402607, w=9.31120130553964e-7)
 end
 
 @testset "averageEnergy" begin
-    @test averageEnergy(MomentConstraint, ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)) == 0.0
+    @test averageEnergy(MomentConstraint, Distribution(Gaussian{Moments}, m=0.0, v=1.0)) == 0.0
 end
 
 
@@ -49,7 +49,7 @@ end
 
 @testset "MomentConstraint integration" begin
     fg = FactorGraph()
-    @RV x ~ GaussianMeanVariance(0.0, 1.0)
+    @RV x ~ Gaussian{Moments}(0.0, 1.0)
     MomentConstraint(x; g=f, G=1.0, eta_init=0.0)
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(x)

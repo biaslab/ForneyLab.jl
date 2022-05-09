@@ -15,10 +15,10 @@
 
 @naiveVariationalRule(:node_type     => Bernoulli,
                       :outbound_type => Message{Bernoulli},
-                      :inbound_types => (Nothing, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution),
                       :name          => VBBernoulliOut)
 
 @naiveVariationalRule(:node_type     => Bernoulli,
                       :outbound_type => Message{Beta},
-                      :inbound_types => (ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Nothing),
                       :name          => VBBernoulliIn1)

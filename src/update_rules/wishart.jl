@@ -5,5 +5,5 @@
 
 @naiveVariationalRule(:node_type     => Wishart,
                  	  :outbound_type => Message{Wishart},
-                 	  :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                 	  :inbound_types => (Nothing, Distribution, Distribution),
                  	  :name          => VBWishartOut)

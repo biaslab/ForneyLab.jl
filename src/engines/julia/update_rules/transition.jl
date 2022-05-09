@@ -49,58 +49,58 @@ function ruleSPTransitionIn1CNP(msg_out::Message{Categorical, Univariate},
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBTransitionOut(   dist_out::Nothing,
-                                dist_in1::ProbabilityDistribution,
-                                dist_a::ProbabilityDistribution{MatrixVariate})
+function ruleVBTransitionOut(dist_out::Nothing,
+                             dist_in1::Distribution,
+                             dist_a::Distribution{MatrixVariate})
 
     a = clamp.(exp.(unsafeLogMean(dist_a)*unsafeMeanVector(dist_in1)), tiny, Inf)
     
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBTransitionIn1(   dist_out::ProbabilityDistribution,
-                                dist_in1::Nothing,
-                                dist_a::ProbabilityDistribution{MatrixVariate})
+function ruleVBTransitionIn1(dist_out::Distribution,
+                             dist_in1::Nothing,
+                             dist_a::Distribution{MatrixVariate})
 
     a = clamp.(exp.(unsafeLogMean(dist_a)'*unsafeMeanVector(dist_out)), tiny, Inf)
     
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-ruleVBTransitionA(  dist_out::ProbabilityDistribution,
-                    dist_in1::ProbabilityDistribution,
-                    dist_a::Nothing) =
+ruleVBTransitionA(dist_out::Distribution,
+                  dist_in1::Distribution,
+                  dist_a::Nothing) =
     Message(MatrixVariate, Dirichlet, a=unsafeMeanVector(dist_out)*unsafeMeanVector(dist_in1)' .+ 1)
 
-function ruleSVBTransitionOutVCD(   dist_out::Nothing,
-                                    msg_in1::Message{Categorical, Univariate},
-                                    dist_a::ProbabilityDistribution{MatrixVariate})
+function ruleSVBTransitionOutVCD(dist_out::Nothing,
+                                 msg_in1::Message{Categorical, Univariate},
+                                 dist_a::Distribution{MatrixVariate})
 
     a = clamp.(exp.(unsafeLogMean(dist_a))*msg_in1.dist.params[:p], tiny, Inf)
 
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleSVBTransitionIn1CVD(   msg_out::Message{Categorical, Univariate},
-                                    dist_in1::Nothing,
-                                    dist_a::ProbabilityDistribution{MatrixVariate})
+function ruleSVBTransitionIn1CVD(msg_out::Message{Categorical, Univariate},
+                                 dist_in1::Nothing,
+                                 dist_a::Distribution{MatrixVariate})
 
     a = clamp.(exp.(unsafeLogMean(dist_a))'*msg_out.dist.params[:p], tiny, Inf)
 
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-ruleSVBTransitionADV(   dist_out_in1::ProbabilityDistribution{Multivariate, Contingency},
-                        dist_a::Nothing)=
+ruleSVBTransitionADV(dist_out_in1::Distribution{Multivariate, Contingency},
+                     dist_a::Nothing)=
     Message(MatrixVariate, Dirichlet, a=dist_out_in1.params[:p] .+ 1)
 
 function ruleMTransitionCCD(msg_out::Message{Categorical, Univariate},
                             msg_in1::Message{Categorical, Univariate},
-                            dist_a::ProbabilityDistribution{MatrixVariate})
+                            dist_a::Distribution{MatrixVariate})
 
     B = Diagonal(msg_out.dist.params[:p])*clamp.(exp.(unsafeLogMean(dist_a)), tiny, huge)*Diagonal(msg_in1.dist.params[:p])
 
-    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
+    Distribution(Multivariate, Contingency, p=B./sum(B))
 end
 
 function ruleMTransitionCCN(msg_out::Message{Categorical, Univariate},
@@ -109,5 +109,5 @@ function ruleMTransitionCCN(msg_out::Message{Categorical, Univariate},
 
     B = Diagonal(msg_out.dist.params[:p])*msg_a.dist.params[:m]*Diagonal(msg_in1.dist.params[:p])
 
-    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
+    Distribution(Multivariate, Contingency, p=B./sum(B))
 end

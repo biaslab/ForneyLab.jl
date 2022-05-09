@@ -13,10 +13,10 @@
 
 @naiveVariationalRule(:node_type     => Poisson,
                       :outbound_type => Message{Poisson},
-                      :inbound_types => (Nothing, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution),
                       :name          => VBPoissonOut)
 
 @naiveVariationalRule(:node_type     => Poisson,
                       :outbound_type => Message{Gamma},
-                      :inbound_types => (ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Nothing),
                       :name          => VBPoissonL)

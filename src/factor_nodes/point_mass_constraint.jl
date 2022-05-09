@@ -35,6 +35,6 @@ slug(::Type{PointMassConstraint}) = "δ"
 # A breaker message is required if interface is partnered with a point-mass constraint
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = true
 
-breakerParameters(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+breakerParameters(interface::Interface, partner_interface::Interface, partner_node::PointMassConstraint) = (Message{Gaussian{Moments}, Univariate}, ()) # Univariate only
 
 isDeltaConstraint(::PointMassConstraint) = true

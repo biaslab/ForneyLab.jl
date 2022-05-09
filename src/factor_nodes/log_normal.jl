@@ -36,32 +36,32 @@ end
 
 slug(::Type{LogNormal}) = "log𝒩"
 
-format(dist::ProbabilityDistribution{Univariate, LogNormal}) = "$(slug(LogNormal))(m=$(format(dist.params[:m])), s=$(format(dist.params[:s])))"
+format(dist::Distribution{Univariate, LogNormal}) = "$(slug(LogNormal))(m=$(format(dist.params[:m])), s=$(format(dist.params[:s])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
-ProbabilityDistribution(::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
+Distribution(::Type{Univariate}, ::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = Distribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
+Distribution(::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = Distribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
 
-dims(dist::ProbabilityDistribution{Univariate, LogNormal}) = ()
+dims(dist::Distribution{Univariate, LogNormal}) = ()
 
-vague(::Type{LogNormal}) = ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=huge)
+vague(::Type{LogNormal}) = Distribution(Univariate, LogNormal, m=1.0, s=huge)
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, LogNormal}) = exp(dist.params[:m] + 0.5*dist.params[:s])
-unsafeLogMean(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params[:m]
+unsafeMean(dist::Distribution{Univariate, LogNormal}) = exp(dist.params[:m] + 0.5*dist.params[:s])
+unsafeLogMean(dist::Distribution{Univariate, LogNormal}) = dist.params[:m]
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, LogNormal}) = (exp(dist.params[:s]) - 1.0)*exp(2.0*dist.params[:m] + dist.params[:s])
-unsafeLogVar(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params[:s]
+unsafeVar(dist::Distribution{Univariate, LogNormal}) = (exp(dist.params[:s]) - 1.0)*exp(2.0*dist.params[:m] + dist.params[:s])
+unsafeLogVar(dist::Distribution{Univariate, LogNormal}) = dist.params[:s]
 
-unsafeCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = unsafeVar(dist)
-unsafeLogCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params[:s]
+unsafeCov(dist::Distribution{Univariate, LogNormal}) = unsafeVar(dist)
+unsafeLogCov(dist::Distribution{Univariate, LogNormal}) = dist.params[:s]
 
-logPdf(dist::ProbabilityDistribution{Univariate, LogNormal},x) = -0.5*(log(2pi)+log(dist.params[:s])) -log(x) -0.5*(log(x)-dist.params[:m])^2/dist.params[:s]
-isProper(dist::ProbabilityDistribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
+logPdf(dist::Distribution{Univariate, LogNormal},x) = -0.5*(log(2pi)+log(dist.params[:s])) -log(x) -0.5*(log(x)-dist.params[:m])^2/dist.params[:s]
+isProper(dist::Distribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
 
-sample(dist::ProbabilityDistribution{Univariate, LogNormal}) = exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
+sample(dist::Distribution{Univariate, LogNormal}) = exp(dist.params[:m]+sqrt(dist.params[:s])*randn())
 
-naturalParams(dist::ProbabilityDistribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
+naturalParams(dist::Distribution{Univariate, LogNormal}) = [dist.params[:m]/dist.params[:s], -0.5/dist.params[:s]]
 
-standardDistribution(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = ProbabilityDistribution(V, F, m=-(0.5/η[2])*η[1], s=-0.5/η[2])
+standardDistribution(V::Type{Univariate}, F::Type{LogNormal}; η::Vector) = Distribution(V, F, m=-(0.5/η[2])*η[1], s=-0.5/η[2])
 
 logNormalizer(::Type{Univariate}, ::Type{LogNormal}; η::Vector) = -η[1]^2/(4*η[2]) - 0.5*log(-2*η[2])
 
@@ -70,11 +70,11 @@ logPdf(V::Type{Univariate}, F::Type{LogNormal}, x::Number; η::Vector) = -0.5*lo
 """
 Gamma approximation to the log-normal distribution using Laplace's method
 """
-laplace(::Type{Gamma}, dist::ProbabilityDistribution{Univariate, LogNormal}) = ProbabilityDistribution(Univariate, Gamma, a=1/dist.params[:s], b=1/dist.params[:s]*exp(-dist.params[:m]))
+laplace(::Type{Gamma}, dist::Distribution{Univariate, LogNormal}) = Distribution(Univariate, Gamma, a=1/dist.params[:s], b=1/dist.params[:s]*exp(-dist.params[:m]))
 
-@symmetrical function prod!(x::ProbabilityDistribution{Univariate, LogNormal},
-                            y::ProbabilityDistribution{Univariate, Gamma},
-                            z::ProbabilityDistribution{Univariate, Gamma}=ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0))
+@symmetrical function prod!(x::Distribution{Univariate, LogNormal},
+                            y::Distribution{Univariate, Gamma},
+                            z::Distribution{Univariate, Gamma}=Distribution(Univariate, Gamma, a=1.0, b=1.0))
 
     x_approx = laplace(Gamma, x)
     z.params[:a] = x_approx.params[:a] + y.params[:a] - 1.0
@@ -83,9 +83,9 @@ laplace(::Type{Gamma}, dist::ProbabilityDistribution{Univariate, LogNormal}) = P
     return z
 end
 
-@symmetrical function prod!(x::ProbabilityDistribution{Univariate, LogNormal},
-                            y::ProbabilityDistribution{Univariate, PointMass},
-                            z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0))
+@symmetrical function prod!(x::Distribution{Univariate, LogNormal},
+                            y::Distribution{Univariate, PointMass},
+                            z::Distribution{Univariate, PointMass}=Distribution(Univariate, PointMass, m=0.0))
 
     (y.params[:m] > 0.0) || error("PointMass location $(y.params[:m]) should be positive")
     z.params[:m] = y.params[:m]
@@ -94,14 +94,14 @@ end
 end
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Univariate, LogNormal})
+function differentialEntropy(dist::Distribution{Univariate, LogNormal})
     0.5*log(dist.params[:s]) +
     dist.params[:m] + 0.5 +
     0.5*log(2*pi)
 end
 
 # Average energy functional
-function averageEnergy(::Type{LogNormal}, marg_out::ProbabilityDistribution{Univariate}, marg_m::ProbabilityDistribution{Univariate}, marg_s::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{LogNormal}, marg_out::Distribution{Univariate}, marg_m::Distribution{Univariate}, marg_s::Distribution{Univariate})
     unsafeLogMean(marg_out) +
     0.5*log(2*pi) +
     0.5*unsafeLogMean(marg_s) +

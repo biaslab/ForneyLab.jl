@@ -1,11 +1,11 @@
 import Base: split
 
 export
-ruleSPNonlinearUTOutNG,
-ruleSPNonlinearUTOutNGX,
-ruleSPNonlinearUTIn1GG,
-ruleSPNonlinearUTInGX,
-ruleMNonlinearUTInGX
+ruleSPDeltaUTOutNG,
+ruleSPDeltaUTOutNGX,
+ruleSPDeltaUTIn1GG,
+ruleSPDeltaUTInGX,
+ruleMDeltaUTInGX
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -116,7 +116,7 @@ function smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out,
 end
 
 """
-RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 """
 function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     P = cholinv(V_tilde + V_bw_out)
@@ -135,60 +135,60 @@ end
 #-----------------------
 
 # Forward rule (unscented transform)
-function ruleSPNonlinearUTOutNG(g::Function,
-                                msg_out::Nothing,
-                                msg_in1::Message{<:Gaussian};
-                                alpha::Float64=default_alpha)
+function ruleSPDeltaUTOutNG(g::Function,
+                            msg_out::Nothing,
+                            msg_in1::Message{<:Gaussian};
+                            alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument forward rule (unscented transform)
-function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
-                                 msg_out::Nothing,
-                                 msgs_in::Vararg{Message{<:Gaussian}};
-                                 alpha::Float64=default_alpha)
+function ruleSPDeltaUTOutNGX(g::Function, # Needs to be in front of Vararg
+                             msg_out::Nothing,
+                             msgs_in::Vararg{Message{<:Gaussian}};
+                             alpha::Float64=default_alpha)
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with given inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(g::Function,
-                                g_inv::Function,
-                                msg_out::Message{<:Gaussian},
-                                msg_in1::Nothing;
-                                alpha::Float64=default_alpha)
+function ruleSPDeltaUTIn1GG(g::Function,
+                            g_inv::Function,
+                            msg_out::Message{<:Gaussian},
+                            msg_in1::Nothing;
+                            alpha::Float64=default_alpha)
 
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Multi-argument backward rule with given inverse (unscented transform)
-function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
-                               g_inv::Function,
-                               msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
-                               alpha::Float64=default_alpha)
+function ruleSPDeltaUTInGX(g::Function, # Needs to be in front of Vararg
+                           g_inv::Function,
+                           msg_out::Message{<:Gaussian},
+                           msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}};
+                           alpha::Float64=default_alpha)
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms, Vs, g_inv; alpha=alpha)
 
-    return Message(variateType(m_tilde), GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(variateType(m_tilde), Gaussian{Moments}, m=m_tilde, v=V_tilde)
 end
 
 # Backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(g::Function,
-                                msg_out::Message{<:Gaussian},
-                                msg_in1::Message{<:Gaussian};
-                                alpha::Float64=default_alpha)
+function ruleSPDeltaUTIn1GG(g::Function,
+                            msg_out::Message{<:Gaussian},
+                            msg_in1::Message{<:Gaussian};
+                            alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
@@ -197,15 +197,15 @@ function ruleSPNonlinearUTIn1GG(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_bw_in1, V_bw_in1) = smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
 
-    return Message(variateType(m_bw_in1), GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+    return Message(variateType(m_bw_in1), Gaussian{Moments}, m=m_bw_in1, v=V_bw_in1)
 end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTInGX(g::Function,
-                               inx::Int64, # Index of inbound interface inx
-                               msg_out::Message{<:Gaussian},
-                               msgs_in::Vararg{Message{<:Gaussian}};
-                               alpha::Float64=default_alpha)
+function ruleSPDeltaUTInGX(g::Function,
+                           inx::Int64, # Index of inbound interface inx
+                           msg_out::Message{<:Gaussian},
+                           msgs_in::Vararg{Message{<:Gaussian}};
+                           alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -226,13 +226,13 @@ function ruleSPNonlinearUTInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(xi_bw_inx), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleMNonlinearUTInGX(g::Function,
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Message{<:Gaussian}};
-                              alpha::Float64=default_alpha)
+function ruleMDeltaUTInGX(g::Function,
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Message{<:Gaussian}};
+                          alpha::Float64=default_alpha)
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -244,7 +244,7 @@ function ruleMNonlinearUTInGX(g::Function,
     # Compute joint marginal on in's
     (m_in, V_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, Gaussian{Moments}, m=m_in, v=V_in)
 end
 
 
@@ -253,7 +253,7 @@ end
 #---------------------------
 
 # Unscented transform and extended approximation
-function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
+function collectSumProductNodeInbounds(node::Delta{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -261,7 +261,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
+    multi_in = isMultiIn(node) # Boolean to indicate a Delta node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     undefined_inverse = (node.g_inv === nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] === nothing))
 
@@ -283,7 +283,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1]) && undefined_inverse
             # Collect the breaker message for a backward update without given inverse
-            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The Delta node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
@@ -306,7 +306,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     return inbounds
 end
 
-function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Delta, entry::MarginalEntry)
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -327,7 +327,7 @@ function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
 
         if isClamped(inbound_interface)
             # Edge is clamped, hard-code marginal of constant node
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Distribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])

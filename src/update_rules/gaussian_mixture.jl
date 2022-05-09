@@ -6,7 +6,7 @@ function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{<:Type}
         if (i == 2)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -21,7 +21,7 @@ function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{<:Type}
         if (i == 2)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -31,7 +31,7 @@ function matchPVInputs(input_types::Vector{<:Type})
     Nothing_positions = []
     p_positions = []
     for (i, input_type) in enumerate(input_types)
-        if matches(input_type, ProbabilityDistribution)
+        if matches(input_type, Distribution)
             push!(p_positions, i)
         elseif (input_type == Nothing)
             push!(Nothing_positions, i)
@@ -42,7 +42,7 @@ function matchPVInputs(input_types::Vector{<:Type})
 end
 
 mutable struct VBGaussianMixtureM <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureM}) = Message{GaussianMeanPrecision}
+outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian{Precision}}
 function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
@@ -80,14 +80,14 @@ function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{<:Type})
 end
 
 mutable struct VBGaussianMixtureOut <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureOut}) = Message{GaussianWeightedMeanPrecision}
+outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian{Canonical}}
 function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{<:Type})
     iseven(length(input_types)) || return false
     for (i, input_type) in enumerate(input_types)
         if (i == 1)
             (input_type == Nothing) || return false
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true

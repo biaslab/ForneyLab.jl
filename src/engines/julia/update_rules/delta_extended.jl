@@ -1,11 +1,11 @@
 import Base: vec
 
 export
-ruleSPNonlinearEOutNG,
-ruleSPNonlinearEOutNGX,
-ruleSPNonlinearEIn1GG,
-ruleSPNonlinearEInGX,
-ruleMNonlinearEInGX
+ruleSPDeltaEOutNG,
+ruleSPDeltaEOutNGX,
+ruleSPDeltaEIn1GG,
+ruleSPDeltaEInGX,
+ruleMDeltaEInGX
 
 """
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
@@ -21,7 +21,7 @@ ForneyLab.vec(d::Float64) = [d] # Extend vectorization to Float
 
 """
 Return local linearization of g around expansion point x_hat
-for Nonlinear node with single input interface
+for Delta node with single input interface
 """
 function localLinearizationSingleIn(g::Function, x_hat::Float64)
     a = ForwardDiff.derivative(g, x_hat)
@@ -39,7 +39,7 @@ end
 
 """
 Return local linearization of g around expansion point x_hat
-for Nonlinear node with multiple input interfaces
+for Delta node with multiple input interfaces
 """
 function localLinearizationMultiIn(g::Function, x_hat::Vector{Float64})
     g_unpacked(x::Vector) = g(x...)
@@ -64,22 +64,22 @@ end
 #-----------------------
 
 # Forward rule
-function ruleSPNonlinearEOutNG(g::Function,
-                               msg_out::Nothing,
-                               msg_in1::Message{<:Gaussian})
+function ruleSPDeltaEOutNG(g::Function,
+                           msg_out::Nothing,
+                           msg_in1::Message{<:Gaussian})
     
     (m_in1, V_in1) = unsafeMeanCov(msg_in1.dist)
     (A, b) = localLinearizationSingleIn(g, m_in1)
     m = A*m_in1 + b
     V = A*V_in1*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Multi-argument forward rule
-function ruleSPNonlinearEOutNGX(g::Function, # Needs to be in front of Vararg
-                                msg_out::Nothing,
-                                msgs_in::Vararg{Message{<:Gaussian}})
+function ruleSPDeltaEOutNGX(g::Function, # Needs to be in front of Vararg
+                            msg_out::Nothing,
+                            msgs_in::Vararg{Message{<:Gaussian}})
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(g, ms_fw_in)
@@ -87,28 +87,28 @@ function ruleSPNonlinearEOutNGX(g::Function, # Needs to be in front of Vararg
     m = A*m_fw_in + b
     V = A*V_fw_in*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Backward rule with given inverse
-function ruleSPNonlinearEIn1GG(g::Function,
-                               g_inv::Function,
-                               msg_out::Message{<:Gaussian},
-                               msg_in1::Nothing)
+function ruleSPDeltaEIn1GG(g::Function,
+                           g_inv::Function,
+                           msg_out::Message{<:Gaussian},
+                           msg_in1::Nothing)
 
     (m_out, V_out) = unsafeMeanCov(msg_out.dist)
     (A, b) = localLinearizationSingleIn(g_inv, m_out)
     m = A*m_out + b
     V = A*V_out*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Multi-argument backward rule with given inverse
-function ruleSPNonlinearEInGX(g::Function, # Needs to be in front of Vararg
-                              g_inv::Function,
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}})
+function ruleSPDeltaEInGX(g::Function, # Needs to be in front of Vararg
+                          g_inv::Function,
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Union{Message{<:Gaussian}, Nothing}})
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(g_inv, ms)
@@ -116,13 +116,13 @@ function ruleSPNonlinearEInGX(g::Function, # Needs to be in front of Vararg
     m = A*mc + b
     V = A*Vc*A'
 
-    return Message(variateType(m), GaussianMeanVariance, m=m, v=V)
+    return Message(variateType(m), Gaussian{Moments}, m=m, v=V)
 end
 
 # Backward rule with unknown inverse
-function ruleSPNonlinearEIn1GG(g::Function,
-                               msg_out::Message{<:Gaussian},
-                               msg_in1::Message{<:Gaussian})
+function ruleSPDeltaEIn1GG(g::Function,
+                           msg_out::Message{<:Gaussian},
+                           msg_in1::Message{<:Gaussian})
 
     m_in1 = unsafeMean(msg_in1.dist)
     (m_out, W_out) = unsafeMeanPrecision(msg_out.dist)
@@ -130,14 +130,14 @@ function ruleSPNonlinearEIn1GG(g::Function,
     xi = A'*W_out*(m_out - b)
     W = A'*W_out*A
 
-    return Message(variateType(xi), GaussianWeightedMeanPrecision, xi=xi, w=W)
+    return Message(variateType(xi), Gaussian{Canonical}, xi=xi, w=W)
 end
 
 # Multi-argument backward rule with unknown inverse
-function ruleSPNonlinearEInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian},
-                              msgs_in::Vararg{Message{<:Gaussian}})
+function ruleSPDeltaEInGX(g::Function,
+                          inx::Int64, # Index of inbound interface inx
+                          msg_out::Message{<:Gaussian},
+                          msgs_in::Vararg{Message{<:Gaussian}})
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -162,12 +162,12 @@ function ruleSPNonlinearEInGX(g::Function,
     xi_bw_inx = xi_inx - xi_fw_inx
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef violations
 
-    return Message(variateType(xi_bw_inx), GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    return Message(variateType(xi_bw_inx), Gaussian{Canonical}, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleMNonlinearEInGX(g::Function,
-                             msg_out::Message{<:Gaussian},
-                             msgs_in::Vararg{Message{<:Gaussian}})
+function ruleMDeltaEInGX(g::Function,
+                         msg_out::Message{<:Gaussian},
+                         msgs_in::Vararg{Message{<:Gaussian}})
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -182,5 +182,5 @@ function ruleMNonlinearEInGX(g::Function,
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_in, V_in) = smoothRTS(m_fw_out, V_fw_out, C_fw, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
+    return Distribution(Multivariate, Gaussian{Moments}, m=m_in, v=V_in)
 end

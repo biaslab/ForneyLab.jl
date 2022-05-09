@@ -1,16 +1,16 @@
-@sumProductRule(:node_type     => Nonlinear{Extended},
-                :outbound_type => Message{GaussianMeanVariance},
+@sumProductRule(:node_type     => Delta{Extended},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{Gaussian}),
-                :name          => SPNonlinearEOutNG)
+                :name          => SPDeltaEOutNG)
 
-@sumProductRule(:node_type     => Nonlinear{Extended},
+@sumProductRule(:node_type     => Delta{Extended},
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{Gaussian}, Nothing),
-                :name          => SPNonlinearEIn1GG)
+                :name          => SPDeltaEIn1GG)
 
-mutable struct SPNonlinearEOutNGX <: SumProductRule{Nonlinear{Extended}} end
-outboundType(::Type{SPNonlinearEOutNGX}) = Message{GaussianMeanVariance}
-function isApplicable(::Type{SPNonlinearEOutNGX}, input_types::Vector{<:Type})
+mutable struct SPDeltaEOutNGX <: SumProductRule{Delta{Extended}} end
+outboundType(::Type{SPDeltaEOutNGX}) = Message{Gaussian{Moments}}
+function isApplicable(::Type{SPDeltaEOutNGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false
@@ -22,9 +22,9 @@ function isApplicable(::Type{SPNonlinearEOutNGX}, input_types::Vector{<:Type})
     return true
 end
 
-mutable struct SPNonlinearEInGX <: SumProductRule{Nonlinear{Extended}} end
-outboundType(::Type{SPNonlinearEInGX}) = Message{Gaussian}
-function isApplicable(::Type{SPNonlinearEInGX}, input_types::Vector{<:Type})
+mutable struct SPDeltaEInGX <: SumProductRule{Delta{Extended}} end
+outboundType(::Type{SPDeltaEInGX}) = Message{Gaussian}
+function isApplicable(::Type{SPDeltaEInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] != Nothing) || return false
@@ -42,8 +42,8 @@ function isApplicable(::Type{SPNonlinearEInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs - 1)
 end
 
-mutable struct MNonlinearEInGX <: MarginalRule{Nonlinear{Extended}} end
-function isApplicable(::Type{MNonlinearEInGX}, input_types::Vector{<:Type})
+mutable struct MDeltaEInGX <: MarginalRule{Delta{Extended}} end
+function isApplicable(::Type{MDeltaEInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable

@@ -5,10 +5,10 @@
 
 @naiveVariationalRule(:node_type     => Dirichlet,
                       :outbound_type => Message{Dirichlet},
-                      :inbound_types => (Nothing, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution),
                       :name          => VBDirichletOut)
 
 @naiveVariationalRule(:node_type     => Dirichlet,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Nothing),
                       :name          => VBDirichletIn1)

@@ -5,17 +5,17 @@ using ForneyLab
 using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, <<, matches, flatten, Cluster
 
 @testset "Message" begin
-    msg = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    @test isa(msg, Message{GaussianMeanVariance})
-    @test isa(msg, Message{GaussianMeanVariance, Univariate})
+    msg = Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    @test isa(msg, Message{Gaussian{Moments}})
+    @test isa(msg, Message{Gaussian{Moments}, Univariate})
     @test !isa(msg, Message{PointMass})
-    @test !isa(msg, Message{GaussianMeanPrecision})
-    @test !isa(msg, Message{GaussianMeanVariance, Multivariate})
-    @test !isa(msg, Message{GaussianMeanVariance, MatrixVariate})
-    @test msg.dist == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    @test !isa(msg, Message{Gaussian{Precision}})
+    @test !isa(msg, Message{Gaussian{Moments}, Multivariate})
+    @test !isa(msg, Message{Gaussian{Moments}, MatrixVariate})
+    @test msg.dist == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
 
     @test Message(Univariate, PointMass, m=0.0) == Message(Univariate, PointMass, m=0.0)
-    @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
     @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, PointMass, m=1.0)
 end
 
@@ -23,18 +23,22 @@ end
     @test <<(Message{Gaussian}, Message)
     @test <<(Message{Gaussian, Univariate}, Message)
     @test <<(Message{Gaussian, Univariate}, Message{Gaussian, Univariate})
-    @test <<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Univariate})
-    @test !<<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Multivariate})
-    @test !<<(Message{GaussianMeanVariance, Univariate}, Message{PointMass, Univariate})
-    @test <<(Message{GaussianMeanVariance, Univariate}, Message{Gaussian})
+    @test <<(Message{Gaussian{Moments}, Univariate}, Message{Gaussian, Univariate})
+    @test !<<(Message{Gaussian{Moments}, Univariate}, Message{Gaussian, Multivariate})
+    @test !<<(Message{Gaussian{Moments}, Univariate}, Message{PointMass, Univariate})
+    @test <<(Message{Gaussian{Moments}, Univariate}, Message{Gaussian})
     @test <<(Message{Gaussian}, Message{Gaussian})
-    @test <<(Message{GaussianMeanVariance}, Message{Gaussian})
+    @test <<(Message{Gaussian{Moments}}, Message{Gaussian})
     @test !<<(Nothing, Message{Gaussian})
-    @test !<<(Nothing, Message{GaussianMeanVariance})
+    @test !<<(Nothing, Message{Gaussian{Moments}})
     @test <<(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
     @test <<(Message{Gamma}, Message{Union{Gamma, Wishart}})
-    @test !<<(Message{GaussianMeanVariance, Univariate}, ProbabilityDistribution{Univariate, GaussianMeanVariance})
-    @test !<<(ProbabilityDistribution{Univariate, GaussianMeanVariance}, Message{GaussianMeanVariance, Univariate})
+    @test !<<(Message{Gaussian{Moments}, Univariate}, Distribution{Univariate, Gaussian{Moments}})
+    @test !<<(Distribution{Univariate, Gaussian{Moments}}, Message{Gaussian{Moments}, Univariate})
+end
+
+@testset "Message constructor alias" begin
+    @test M(Univariate, Gaussian{Moments}, m=0.0, v=1.0) == Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
 end
 
 @testset "matches" begin

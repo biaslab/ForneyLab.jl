@@ -54,10 +54,10 @@ Examples:
 
 ```
 # Automatically create new Variable x, try to assign x.id = :x if this id is available
-@RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+@RV x ~ Gaussian(constant(0.0), constant(1.0))
 
 # Explicitly specify the id of the Variable
-@RV [id=:my_y] y ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+@RV [id=:my_y] y ~ Gaussian(constant(0.0), constant(1.0))
 
 # Automatically assign z.id = :z if this id is not yet taken
 @RV z = x + y

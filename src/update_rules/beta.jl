@@ -15,17 +15,17 @@
 
 @naiveVariationalRule(:node_type     => Beta,
                       :outbound_type => Message{Beta},
-                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBBetaOut)
 
 @naiveVariationalRule(:node_type     => Beta,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
+                      :inbound_types => (Distribution, Nothing, Distribution),
                       :name          => VBBetaA)
 
 @naiveVariationalRule(:node_type     => Beta,
                       :outbound_type => Message{Function},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
+                      :inbound_types => (Distribution, Distribution, Nothing),
                       :name          => VBBetaB)
 
 

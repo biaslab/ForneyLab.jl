@@ -1,10 +1,10 @@
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
                 :name          => SPMultiplicationOutNGP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{Gaussian{Moments}},
                 :inbound_types => (Nothing, Message{PointMass}, Message{Gaussian}),
                 :name          => SPMultiplicationOutNPG)
 
@@ -14,7 +14,7 @@
                 :name          => SPMultiplicationOutNPP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{GaussianWeightedMeanPrecision},
+                :outbound_type => Message{Gaussian{Canonical}},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
                 :name          => SPMultiplicationIn1GNP)
 
@@ -24,7 +24,7 @@
                 :name          => SPMultiplicationIn1PNP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{GaussianWeightedMeanPrecision},
+                :outbound_type => Message{Gaussian{Canonical}},
                 :inbound_types => (Message{Gaussian}, Message{PointMass}, Nothing),
                 :name          => SPMultiplicationAGPN)
 

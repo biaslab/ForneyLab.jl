@@ -69,7 +69,7 @@ function isApplicable(::Type{SVBTransitionMixtureOutNCCDX}, input_types::Vector{
         elseif (i == 3)
             matches(input_type, Message{Categorical}) || return false            
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -86,7 +86,7 @@ function isApplicable(::Type{SVBTransitionMixtureIn1CNCDX}, input_types::Vector{
         elseif (i == 3)
             matches(input_type, Message{Categorical}) || return false            
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -103,7 +103,7 @@ function isApplicable(::Type{SVBTransitionMixtureZCCNDX}, input_types::Vector{<:
         elseif (i == 2)
             matches(input_type, Message{Categorical}) || return false            
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true
@@ -140,7 +140,7 @@ function isApplicable(::Type{MTransitionMixtureCCCDX}, input_types::Vector{<:Typ
         elseif (i == 3)
             matches(input_type, Message{Categorical}) || return false            
         else
-            matches(input_type, ProbabilityDistribution) || return false
+            matches(input_type, Distribution) || return false
         end
     end
     return true

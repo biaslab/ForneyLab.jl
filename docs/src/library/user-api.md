@@ -56,7 +56,7 @@ ForneyLab.algorithmSourceCode
 ```@docs
 ForneyLab.Message
 ForneyLab.PointMass
-ForneyLab.ProbabilityDistribution
+ForneyLab.Distribution
 ```
 
 ## Helper
