@@ -1,0 +1,23 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  A factor graph approach to automated design of
+  Bayesian signal processing algorithms
+message: >-
+  Please cite the ForneyLab software package as
+  indicated below
+type: software
+authors:
+  - given-names: Marco
+    family-names: Cox
+  - given-names: Thijs
+    name-particle: van de
+    family-names: Laar
+  - given-names: Bert
+    name-particle: de
+    family-names: Vries
+identifiers:
+  - type: doi
+    value: 10.1016/j.ijar.2018.11.002
