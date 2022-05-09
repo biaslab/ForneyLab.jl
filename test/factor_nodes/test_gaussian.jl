@@ -5,6 +5,12 @@ using ForneyLab
 using ForneyLab: naturalParams, standardDistribution
 using LinearAlgebra: Diagonal
 
+@testset "Gaussian distribution constructor aliases" begin
+    @test Distribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    @test Distribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0) == Distribution(Univariate, Gaussian{Precision}, m=0.0, w=1.0)
+    @test Distribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0) == Distribution(Univariate, Gaussian{Canonical}, xi=0.0, w=1.0)
+end
+
 @testset "sample" begin
     # Univariate
     @test isa(sample(Distribution(Univariate, Gaussian{Moments}, m=1.0, v=2.0)), Float64)

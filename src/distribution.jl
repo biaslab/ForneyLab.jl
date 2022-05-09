@@ -2,6 +2,7 @@ export
 FactorFunction,
 Distribution,
 P,
+ProbabilityDistribution,
 Univariate,
 Multivariate,
 MatrixVariate,
@@ -32,8 +33,9 @@ struct Distribution{var_type<:VariateType, family<:FactorFunction}
     params::Dict
 end
 
-"""Shorthand notation for Distribution definition"""
+"""Aliases for Distribution definition"""
 const P = Distribution
+const ProbabilityDistribution = Distribution # For backwards compatibility
 
 """Sample multiple realizations from a probability distribution"""
 sample(dist::Distribution, n_samples::Int64) = [sample(dist) for i in 1:n_samples] # TODO: individual samples can be optimized

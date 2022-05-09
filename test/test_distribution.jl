@@ -18,6 +18,11 @@ end
     @test length(samples) == 10
 end
 
+@testset "Distribution constructor aliases" begin
+    @test P(Univariate, Gaussian{Moments}, m=0.0, v=1.0) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+    @test ProbabilityDistribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0) == Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+end
+
 @testset "Univariate" begin
     # Distribution should be parameterized on a node type (distribution family)
     gaussian = Distribution(Univariate, Gaussian{Moments}, m=0.0, v=1.0)

@@ -1,4 +1,13 @@
-export Gaussian, Moments, Precision, Canonical, prod!, convert
+export 
+Gaussian, 
+Moments, 
+Precision, 
+Canonical, 
+prod!, 
+convert,
+GaussianMeanVariance,
+GaussianMeanPrecision,
+GaussianWeightedMeanPrecision
 
 abstract type GaussianParameterization end
 abstract type Moments <: GaussianParameterization end
@@ -61,6 +70,11 @@ mutable struct Gaussian{T<:GaussianParameterization} <: SoftFactor
         return self
     end
 end
+
+"""Aliases for Gaussian definitions"""
+const GaussianMeanVariance = Gaussian{Moments}  # For backwards compatibility
+const GaussianMeanPrecision = Gaussian{Precision}
+const GaussianWeightedMeanPrecision = Gaussian{Canonical}
 
 slug(::Type{<:Gaussian}) = "𝒩"
 

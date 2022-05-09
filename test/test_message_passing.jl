@@ -37,6 +37,10 @@ end
     @test !<<(Distribution{Univariate, Gaussian{Moments}}, Message{Gaussian{Moments}, Univariate})
 end
 
+@testset "Message constructor alias" begin
+    @test M(Univariate, Gaussian{Moments}, m=0.0, v=1.0) == Message(Univariate, Gaussian{Moments}, m=0.0, v=1.0)
+end
+
 @testset "matches" begin
     @test matches(Message{Gaussian}, Message{FactorFunction})
     @test matches(Message{FactorFunction}, Message{Gaussian})
