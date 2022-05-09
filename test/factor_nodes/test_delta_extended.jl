@@ -48,6 +48,16 @@ end
     @test b == [-1.0]
 end
 
+@testset "Delta construction alias" begin
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    nd = Nonlinear{Extended}(y, x, g=g)
+    
+    @test typeof(nd) == Delta{Extended}
+    @test nd.id == :delta_1
+end
+
 @testset "requiresBreaker and breakerParameters" begin
     # Without given inverse
     fg = FactorGraph()

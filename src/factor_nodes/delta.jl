@@ -1,4 +1,4 @@
-export Delta, Unscented, Sampling, Extended, Conjugate
+export Delta, Nonlinear, Unscented, Sampling, Extended, Conjugate
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
@@ -71,6 +71,9 @@ mutable struct Delta{T<:ApproximationMethod} <: DeltaFactor
         return self
     end
 end
+
+"""Alias for Delta definition"""
+const Nonlinear = Delta # For backwards compatibility
 
 function Delta{Unscented}(out::Variable, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=nothing, id=ForneyLab.generateId(Delta{Unscented}))
     return Delta{Unscented}(id, g, g_inv, alpha, dims, nothing, nothing, nothing, out, args...)
