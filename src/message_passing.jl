@@ -198,7 +198,7 @@ end
 """
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
 """
-function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
+function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Union{Nothing, Interface}, Type}(nothing => Nothing))
     for entry in schedule
         (entry.message_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
         if !isconcretetype(entry.message_update_rule)

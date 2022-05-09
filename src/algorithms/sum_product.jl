@@ -14,10 +14,10 @@ message out of the specified `outbound_interface`.
 """
 function internalSumProductSchedule(cnode::CompositeFactor,
                                     outbound_interface::Interface,
-                                    inferred_outbound_types::Dict{Interface, <:Type})
+                                    inferred_outbound_types::Dict)
 
     # Collect types of messages towards the CompositeFactor
-    msg_types = Dict{Interface, Type}()
+    msg_types = Dict{Union{Interface, Nothing}, Type}(nothing => Nothing) # Initialize with fallback
     for (idx, terminal) in enumerate(cnode.terminals)
         (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
         msg_types[terminal.interfaces[1]] = inferred_outbound_types[cnode.interfaces[idx].partner]
@@ -51,7 +51,7 @@ end
 
 function inferUpdateRule!(entry::ScheduleEntry,
                           rule_type::Type{T},
-                          inferred_outbound_types::Dict{Interface, <:Type}
+                          inferred_outbound_types::Dict
                          ) where T<:SumProductRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
@@ -85,7 +85,7 @@ end
 
 function collectInboundTypes(entry::ScheduleEntry,
                              ::Type{T},
-                             inferred_outbound_types::Dict{Interface, <:Type}
+                             inferred_outbound_types::Dict
                             ) where T<:SumProductRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces

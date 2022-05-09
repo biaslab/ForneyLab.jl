@@ -71,7 +71,7 @@ function messagePassingSchedule(pf::PosteriorFactor)
         end
     end
 
-    breaker_types = breakerTypes(collect(pf.breaker_interfaces))
+    breaker_types = breakerTypes(collect(pf.breaker_interfaces)) # CONTINUE
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule

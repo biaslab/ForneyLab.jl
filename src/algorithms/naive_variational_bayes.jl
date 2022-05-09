@@ -12,7 +12,7 @@ Infer the update rule that computes the message for `entry`, as dependent on the
 """
 function inferUpdateRule!(  entry::ScheduleEntry,
                             rule_type::Type{T},
-                            inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
+                            inferred_outbound_types::Dict) where T<:NaiveVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -42,7 +42,7 @@ Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes(   entry::ScheduleEntry,
                                 ::Type{T},
-                                inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
+                                inferred_outbound_types::Dict) where T<:NaiveVariationalRule
     inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface === entry.interface

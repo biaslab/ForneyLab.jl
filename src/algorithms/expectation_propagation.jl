@@ -11,7 +11,7 @@ messagePassingSchedule(variable::Variable) = messagePassingSchedule([variable])
 
 function inferUpdateRule!(entry::ScheduleEntry,
                           rule_type::Type{T},
-                          inferred_outbound_types::Dict{Interface, <:Type}
+                          inferred_outbound_types::Dict
                          ) where T<:ExpectationPropagationRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
@@ -41,7 +41,7 @@ end
 
 function collectInboundTypes(entry::ScheduleEntry,
                              ::Type{T},
-                             inferred_outbound_types::Dict{Interface, <:Type}
+                             inferred_outbound_types::Dict
                             ) where T<:ExpectationPropagationRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces

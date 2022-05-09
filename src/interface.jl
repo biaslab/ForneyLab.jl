@@ -65,7 +65,7 @@ end
 Constructs breaker types dictionary for breaker sites
 """
 function breakerTypes(breaker_sites::Vector{Interface})
-    breaker_types = Dict{Interface, Type}() # Initialize Interface to Message dictionary
+    breaker_types = Dict{Union{Interface, Nothing}, Type}(nothing => Nothing) # Initialize with fallback
     for site in breaker_sites
         (breaker_type, _) = breakerParameters(site)
         breaker_types[site] = breaker_type
