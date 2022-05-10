@@ -11,9 +11,9 @@ abstract type StructuredVariationalRule{factor_type} <: MessageUpdateRule end
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
 """
 function inferUpdateRule!(entry::ScheduleEntry,
-                          rule_type::Type{T},
-                          inferred_outbound_types::Dict
-                         ) where T<:StructuredVariationalRule
+                          rule_type::Type{<:StructuredVariationalRule},
+                          inferred_outbound_types::Dict)
+
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -26,13 +26,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     end
 
     # Select and set applicable rule
-    if isempty(applicable_rules)
-        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
-    elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
-    else
-        entry.message_update_rule = first(applicable_rules)
-    end
+    entry.message_update_rule = selectApplicableRule(rule_type, entry, inbound_types, applicable_rules)
 
     return entry
 end

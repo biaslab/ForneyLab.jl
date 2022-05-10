@@ -37,6 +37,10 @@ end
 const P = Distribution
 const ProbabilityDistribution = Distribution # For backwards compatibility
 
+"""Distribution formatting for concise printing"""
+format(::Type{<:Distribution{V}}) where V<:VariateType = "Distribution{$V}"
+format(::Type{<:Distribution{V, F}}) where {V<:VariateType, F<:FactorFunction} = "Distribution{$V, $F}"
+
 """Sample multiple realizations from a probability distribution"""
 sample(dist::Distribution, n_samples::Int64) = [sample(dist) for i in 1:n_samples] # TODO: individual samples can be optimized
 

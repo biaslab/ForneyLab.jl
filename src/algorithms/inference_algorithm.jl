@@ -126,3 +126,32 @@ function targetToMarginalEntry(algo::InferenceAlgorithm)
 
     return mapping    
 end
+
+"""Select an applicable update rule for scheduling"""
+function selectApplicableRule(rule_type::Type,
+                              entry::ScheduleEntry, # Message update
+                              inbound_types::Vector{<:Type}, 
+                              applicable_rules::Vector{<:Type})
+
+    if isempty(applicable_rules)
+        error("No applicable $(rule_type) for interface :$(handle(entry.interface)) of $(entry.interface.node.id) with inbound types:\n[$(join(format.(inbound_types), ", "))]")
+    elseif length(applicable_rules) > 1
+        error("Multiple applicable $(rule_type) for interface :$(handle(entry.interface)) of $(entry.interface.node.id) with inbound types:\n[$(join(format.(inbound_types), ", "))]\n[$(join(applicable_rules, ", "))]")
+    else
+        return first(applicable_rules)
+    end
+end
+
+function selectApplicableRule(rule_type::Type,
+                              cluster::Cluster, # Marginal update
+                              inbound_types::Vector{<:Type}, 
+                              applicable_rules::Vector{<:Type})
+
+    if isempty(applicable_rules)
+        error("No applicable $(rule_type) for $(cluster.node.id) with inbound types:\n[$(join(format.(inbound_types), ", "))]")
+    elseif length(applicable_rules) > 1
+        error("Multiple applicable $(rule_type) for $(cluster.node.id) with inbound types:\n[$(join(format.(inbound_types), ", "))]\n[$(join(applicable_rules, ", "))]")
+    else
+        return first(applicable_rules)
+    end
+end
