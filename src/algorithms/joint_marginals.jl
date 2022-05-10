@@ -35,7 +35,8 @@ Infer the rule that computes the joint marginal over `cluster`
 function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(MarginalRule{typeof(cluster.node)})
+    rule_type = MarginalRule{typeof(cluster.node)}
+    for rule in leaftypes(rule_type)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end

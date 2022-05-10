@@ -57,3 +57,23 @@
                       :outbound_type => Message{Gaussian{Moments}},
                       :inbound_types => (Nothing, Distribution, Distribution),
                       :name          => VBGaussianMomentsOut)
+
+@structuredVariationalRule(:node_type     => Gaussian{Moments},
+                           :outbound_type => Message{Gaussian{Moments}},
+                           :inbound_types => (Nothing, Message{Gaussian}, Distribution),
+                           :name          => SVBGaussianMomentsOutVGD)
+
+@structuredVariationalRule(:node_type     => Gaussian{Moments},
+                           :outbound_type => Message{Gaussian{Moments}},
+                           :inbound_types => (Message{Gaussian}, Nothing, Distribution),
+                           :name          => SVBGaussianMomentsMGVD)
+
+@marginalRule(:node_type => Gaussian{Moments},
+              :inbound_types => (Message{Gaussian}, Message{Gaussian}, Distribution),
+              :name => MGaussianMomentsGGD)
+             
+@marginalRule(:node_type => Gaussian{Moments},
+              :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing), # Variance is marginalized out
+              :name => MGaussianMomentsGGN)
+             
+

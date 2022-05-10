@@ -3,7 +3,7 @@ module GaussianMomentsTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeMeanPrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-using ForneyLab: SPGaussianMomentsOutNGS, SPGaussianMomentsOutNPP,SPGaussianMomentsMSNP, SPGaussianMomentsMPNP, SPGaussianMomentsOutNGP, SPGaussianMomentsMGNP, SPGaussianMomentsVGGN, SPGaussianMomentsVPGN, SPGaussianMomentsOutNSP, VBGaussianMomentsM, VBGaussianMomentsOut, bootstrap
+using ForneyLab: SPGaussianMomentsOutNGS, SPGaussianMomentsOutNPP, SPGaussianMomentsMSNP, SPGaussianMomentsMPNP, SPGaussianMomentsOutNGP, SPGaussianMomentsMGNP, SPGaussianMomentsVGGN, SPGaussianMomentsVPGN, SPGaussianMomentsOutNSP, VBGaussianMomentsM, VBGaussianMomentsOut, SVBGaussianMomentsMGVD, SVBGaussianMomentsOutVGD, MGaussianMomentsGGD, MGaussianMomentsGGN, bootstrap
 
 @testset "default Gaussian{Moments} node definition" begin
     fg = FactorGraph()
@@ -203,6 +203,42 @@ end
 
     @test ruleVBGaussianMomentsOut(nothing, Distribution(Univariate, Gaussian{Moments}, m=1.0, v=2.0), Distribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gaussian{Moments}, m=1.0, v=3.0)
     @test ruleVBGaussianMomentsOut(nothing, Distribution(Multivariate, Gaussian{Moments}, m=[1.0], v=mat(2.0)), Distribution(MatrixVariate, PointMass, m=mat(3.0))) == Message(Multivariate, Gaussian{Moments}, m=[1.0], v=mat(3.0))
+end
+
+@testset "SVBGaussianMomentsMGVD" begin
+    @test SVBGaussianMomentsMGVD <: StructuredVariationalRule{Gaussian{Moments}}
+    @test outboundType(SVBGaussianMomentsMGVD) == Message{Gaussian{Moments}}
+    @test isApplicable(SVBGaussianMomentsMGVD, [Message{Gaussian}, Nothing, Distribution])
+
+    @test ruleSVBGaussianMomentsMGVD(Message(Univariate, Gaussian{Moments}, m=3.0, v=4.0), nothing, Distribution(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian{Moments}, m=3.0, v=6.0)
+    @test ruleSVBGaussianMomentsMGVD(Message(Multivariate, Gaussian{Moments}, m=[3.0], v=mat(4.0)), nothing, Distribution(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian{Moments}, m=[3.0], v=mat(6.0))
+end
+
+@testset "SVBGaussianMomentsOutVGD" begin
+    @test SVBGaussianMomentsOutVGD <: StructuredVariationalRule{Gaussian{Moments}}
+    @test outboundType(SVBGaussianMomentsOutVGD) == Message{Gaussian{Moments}}
+    @test isApplicable(SVBGaussianMomentsOutVGD, [Nothing, Message{Gaussian}, Distribution])
+
+    @test ruleSVBGaussianMomentsOutVGD(nothing, Message(Univariate, Gaussian{Moments}, m=3.0, v=4.0), Distribution(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian{Moments}, m=3.0, v=6.0)
+    @test ruleSVBGaussianMomentsOutVGD(nothing, Message(Multivariate, Gaussian{Moments}, m=[3.0], v=mat(4.0)), Distribution(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian{Moments}, m=[3.0], v=mat(6.0))
+end
+
+@testset "MGaussianMomentsGGD" begin
+    @test MGaussianMomentsGGD <: MarginalRule{Gaussian{Moments}}
+    @test isApplicable(MGaussianMomentsGGD, [Message{Gaussian}, Message{Gaussian}, Distribution])
+    @test !isApplicable(MGaussianMomentsGGD, [Message{Gaussian}, Message{Gaussian}, Nothing])
+
+    @test ruleMGaussianMomentsGGD(Message(Univariate, Gaussian{Precision}, m=1.0, w=2.0), Message(Univariate, Gaussian{Precision}, m=3.0, w=4.0), Distribution(Univariate, PointMass, m=2.0)) == Distribution(Multivariate, Gaussian{Moments}, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
+    @test ruleMGaussianMomentsGGD(Message(Multivariate, Gaussian{Precision}, m=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian{Precision}, m=[3.0], w=mat(4.0)), Distribution(MatrixVariate, PointMass, m=mat(2.0))) == Distribution(Multivariate, Gaussian{Moments}, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
+end
+
+@testset "MGaussianMomentsGGN" begin
+    @test MGaussianMomentsGGN <: MarginalRule{Gaussian{Moments}}
+    @test isApplicable(MGaussianMomentsGGN, [Message{Gaussian}, Message{Gaussian}, Nothing])
+    @test !isApplicable(MGaussianMomentsGGN, [Message{Gaussian}, Message{Gaussian}, Distribution])
+
+    @test ruleMGaussianMomentsGGN(Message(Univariate, Gaussian{Precision}, m=1.0, w=2.0), Message(Univariate, Gaussian{Precision}, m=3.0, w=4.0), Message(Univariate, PointMass, m=2.0)) == Distribution(Multivariate, Gaussian{Moments}, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
+    @test ruleMGaussianMomentsGGN(Message(Multivariate, Gaussian{Precision}, m=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian{Precision}, m=[3.0], w=mat(4.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Distribution(Multivariate, Gaussian{Moments}, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
