@@ -11,7 +11,7 @@ messagePassingSchedule(variable::Variable) = messagePassingSchedule([variable])
 
 function inferUpdateRule!(entry::ScheduleEntry,
                           rule_type::Type{T},
-                          inferred_outbound_types::Dict{Interface, <:Type}
+                          inferred_outbound_types::Dict
                          ) where T<:ExpectationPropagationRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
@@ -28,20 +28,14 @@ function inferUpdateRule!(entry::ScheduleEntry,
     end
 
     # Select and set applicable rule
-    if isempty(applicable_rules)
-        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
-    elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
-    else
-        entry.message_update_rule = first(applicable_rules)
-    end
+    entry.message_update_rule = selectApplicableRule(rule_type, entry, inbound_types, applicable_rules)
 
     return entry
 end
 
 function collectInboundTypes(entry::ScheduleEntry,
                              ::Type{T},
-                             inferred_outbound_types::Dict{Interface, <:Type}
+                             inferred_outbound_types::Dict
                             ) where T<:ExpectationPropagationRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces

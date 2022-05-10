@@ -111,6 +111,17 @@ function prod!( x::Distribution{Univariate, Categorical},
 end
 
 @symmetrical function prod!(x::Distribution{Univariate, Categorical},
+                            y::Distribution{Univariate, Bernoulli},
+                            z::Distribution{Univariate, Categorical}=Distribution(Univariate, Categorical, p=ones(size(x.params[:p]))./length(x.params[:p])))
+
+    z.params[:p][:] = clamp.(x.params[:p] .* [y.params[:p], 1.0-y.params[:p]], tiny, Inf) # Soften vanishing probabilities
+    norm = sum(z.params[:p])
+    z.params[:p] = z.params[:p]./norm
+
+    return z
+end
+
+@symmetrical function prod!(x::Distribution{Univariate, Categorical},
                             y::Distribution{Multivariate, PointMass},
                             z::Distribution{Multivariate, PointMass}=Distribution(Multivariate, PointMass, m=[0.0]))
 

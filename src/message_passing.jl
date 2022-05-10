@@ -27,7 +27,11 @@ end
 """Shorthand notation for Message definition"""
 const M = Message
 
-family(msg_type::Type{Message{F}}) where F<:FactorFunction = F
+family(::Type{Message{F}}) where F<:FactorFunction = F
+
+"""Message formatting for concise printing"""
+format(::Type{<:Message{F}}) where F<:FactorFunction = "Message{$F}"
+format(::Type{<:Message{F, V}}) where {F<:FactorFunction, V<:VariateType} = "Message{$F, $V}"
 
 function show(io::IO, msg::Message)
     if isdefined(msg, :scaling_factor)
@@ -198,7 +202,7 @@ end
 """
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
 """
-function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
+function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Union{Nothing, Interface}, Type}(nothing => Missing))
     for entry in schedule
         (entry.message_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
         if !isconcretetype(entry.message_update_rule)
@@ -274,7 +278,7 @@ function interfaceToScheduleEntry(schedule::Schedule)
     for entry in schedule
         interface = entry.interface
         mapping[interface] = entry
-        while (interface.partner != nothing) && isa(interface.partner.node, Terminal)
+        while (interface.partner !== nothing) && isa(interface.partner.node, Terminal)
             interface = interface.partner.node.outer_interface
             mapping[interface] = entry
         end

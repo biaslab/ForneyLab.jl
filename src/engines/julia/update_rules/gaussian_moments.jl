@@ -10,7 +10,11 @@ ruleSPGaussianMomentsMSNP,
 ruleSPGaussianMomentsOutNGS,
 ruleSPGaussianMomentsMGNS,
 ruleVBGaussianMomentsM,
-ruleVBGaussianMomentsOut
+ruleVBGaussianMomentsOut,
+ruleSVBGaussianMomentsOutVGD,
+ruleSVBGaussianMomentsMGVD,
+ruleMGaussianMomentsGGD,
+ruleMGaussianMomentsGGN
 
 ruleSPGaussianMomentsOutNPP(msg_out::Nothing,
                             msg_mean::Message{PointMass, V},
@@ -93,3 +97,47 @@ ruleVBGaussianMomentsOut(dist_out::Any,
                          dist_mean::Distribution{V},
                          dist_var::Distribution) where V<:VariateType =
     Message(V, Gaussian{Moments}, m=unsafeMean(dist_mean), v=unsafeMean(dist_var))
+
+ruleSVBGaussianMomentsOutVGD(dist_out::Any, # Only implemented for PointMass variance
+                             msg_mean::Message{<:Gaussian, V},
+                             dist_var::Distribution{<:VariateType, PointMass}) where V<:VariateType = 
+    Message(V, Gaussian{Moments}, m=unsafeMean(msg_mean.dist), v=unsafeCov(msg_mean.dist) + unsafeMean(dist_var))
+
+ruleSVBGaussianMomentsMGVD(msg_out::Message{F, V}, # Only implemented for PointMass variance
+                           dist_mean::Any,
+                           dist_var::Distribution{<:VariateType, PointMass}) where {F<:Gaussian, V<:VariateType} =
+    Message(V, Gaussian{Moments}, m=unsafeMean(msg_out.dist), v=unsafeCov(msg_out.dist) + unsafeMean(dist_var))
+
+function ruleMGaussianMomentsGGD( # Only implemented for PointMass variance
+    msg_out::Message{<:Gaussian, V},
+    msg_mean::Message{<:Gaussian, V},
+    dist_var::Distribution{<:VariateType, PointMass}) where V<:VariateType
+
+    d_mean = convert(Distribution{V, Gaussian{Canonical}}, msg_mean.dist)
+    d_out = convert(Distribution{V, Gaussian{Canonical}}, msg_out.dist)
+    
+    xi_y = d_out.params[:xi]
+    W_y = d_out.params[:w]
+    xi_m = d_mean.params[:xi]
+    W_m = d_mean.params[:w]
+    W_bar = cholinv(unsafeMean(dist_var))
+
+    return Distribution(Multivariate, Gaussian{Canonical}, xi=[xi_y; xi_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
+end
+
+function ruleMGaussianMomentsGGN(
+    msg_out::Message{<:Gaussian, V},
+    msg_mean::Message{<:Gaussian, V},
+    msg_var::Message{PointMass}) where V<:VariateType
+
+    d_mean = convert(Distribution{V, Gaussian{Canonical}}, msg_mean.dist)
+    d_out = convert(Distribution{V, Gaussian{Canonical}}, msg_out.dist)
+    
+    xi_y = d_out.params[:xi]
+    W_y = d_out.params[:w]
+    xi_m = d_mean.params[:xi]
+    W_m = d_mean.params[:w]
+    W_bar = cholinv(msg_var.dist.params[:m])
+
+    return Distribution(Multivariate, Gaussian{Canonical}, xi=[xi_y; xi_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
+end

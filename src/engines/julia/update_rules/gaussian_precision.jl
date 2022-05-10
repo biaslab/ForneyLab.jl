@@ -82,14 +82,10 @@ function ruleSVBGaussianPrecisionW(
     end
 end
 
-function ruleSVBGaussianPrecisionMGVD(msg_out::Message{F, V},
-                                      dist_mean::Any,
-                                      dist_prec::Distribution) where {F<:Gaussian, V<:VariateType}
-
-    d_out = convert(Distribution{V, Gaussian{Moments}}, msg_out.dist)
-
-    Message(V, Gaussian{Moments}, m=d_out.params[:m], v=d_out.params[:v] + cholinv(unsafeMean(dist_prec)))
-end
+ruleSVBGaussianPrecisionMGVD(msg_out::Message{F, V},
+                             dist_mean::Any,
+                             dist_prec::Distribution) where {F<:Gaussian, V<:VariateType} =
+    Message(V, Gaussian{Moments}, m=unsafeMean(msg_out.dist), v=unsafeCov(msg_out.dist) + cholinv(unsafeMean(dist_prec)))
 
 function ruleMGaussianPrecisionGGD(
     msg_out::Message{<:Gaussian, V},

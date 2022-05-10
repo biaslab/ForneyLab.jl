@@ -14,10 +14,10 @@ message out of the specified `outbound_interface`.
 """
 function internalSumProductSchedule(cnode::CompositeFactor,
                                     outbound_interface::Interface,
-                                    inferred_outbound_types::Dict{Interface, <:Type})
+                                    inferred_outbound_types::Dict)
 
     # Collect types of messages towards the CompositeFactor
-    msg_types = Dict{Interface, Type}()
+    msg_types = Dict{Union{Interface, Nothing}, Type}(nothing => Missing) # Initialize with fallback
     for (idx, terminal) in enumerate(cnode.terminals)
         (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
         msg_types[terminal.interfaces[1]] = inferred_outbound_types[cnode.interfaces[idx].partner]
@@ -51,7 +51,7 @@ end
 
 function inferUpdateRule!(entry::ScheduleEntry,
                           rule_type::Type{T},
-                          inferred_outbound_types::Dict{Interface, <:Type}
+                          inferred_outbound_types::Dict
                          ) where T<:SumProductRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
@@ -65,19 +65,12 @@ function inferUpdateRule!(entry::ScheduleEntry,
     end
 
     # Select and set applicable rule
-    if isempty(applicable_rules)
-        if isa(entry.interface.node, CompositeFactor)
-            # No 'shortcut rule' available for CompositeFactor.
-            # Try to fall back to msg passing on the internal graph.
-            entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
-            entry.message_update_rule = entry.internal_schedule[end].message_update_rule
-        else
-            error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
-        end
-    elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
+    if isempty(applicable_rules) && isa(entry.interface.node, CompositeFactor)
+        # No shortcut rule available for CompositeFactor, fall back to message passing on the internal graph.
+        entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
+        entry.message_update_rule = entry.internal_schedule[end].message_update_rule
     else
-        entry.message_update_rule = first(applicable_rules)
+        entry.message_update_rule = selectApplicableRule(rule_type, entry, inbound_types, applicable_rules)
     end
 
     return entry
@@ -85,7 +78,7 @@ end
 
 function collectInboundTypes(entry::ScheduleEntry,
                              ::Type{T},
-                             inferred_outbound_types::Dict{Interface, <:Type}
+                             inferred_outbound_types::Dict
                             ) where T<:SumProductRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces

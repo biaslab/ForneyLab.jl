@@ -43,6 +43,7 @@ function FactorGraph()
                                             Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
 end
+
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
@@ -108,8 +109,8 @@ function nodes(edgeset::Set{Edge})
     # Return all nodes connected to edgeset
     connected_nodes = Set{FactorNode}()
     for edge in edgeset
-        (edge.a == nothing) || push!(connected_nodes, edge.a.node)
-        (edge.b == nothing) || push!(connected_nodes, edge.b.node)
+        (edge.a === nothing) || push!(connected_nodes, edge.a.node)
+        (edge.b === nothing) || push!(connected_nodes, edge.b.node)
     end
 
     return connected_nodes
@@ -160,7 +161,7 @@ interface.partner. In case of a Terminal node, it finds the first
 non-Terminal partner on a higher level factor graph.
 """
 function ultimatePartner(interface::Interface)
-    if (interface.partner != nothing) && isa(interface.partner.node, Terminal)
+    if (interface.partner !== nothing) && isa(interface.partner.node, Terminal)
         return ultimatePartner(interface.partner.node.outer_interface)
     else
         return interface.partner
@@ -193,8 +194,8 @@ function deterministicEdgeSet(root_edge::Edge)
     # Collect all interfaces in edge set
     interfaces = Interface[]
     for edge in edge_set
-        (edge.a == nothing) || push!(interfaces, edge.a)
-        (edge.b == nothing) || push!(interfaces, edge.b)
+        (edge.a === nothing) || push!(interfaces, edge.a)
+        (edge.b === nothing) || push!(interfaces, edge.b)
     end
     
     # Identify a schedule that propagates through the entire edge set
@@ -210,8 +211,8 @@ function deterministicEdgeSet(root_edge::Edge)
     # Determine deterministic edges
     deterministic_edges = Set{Edge}()
     for edge in edge_set
-        deterministic_a = (edge.a != nothing) && is_deterministic[edge.a]
-        deterministic_b = (edge.b != nothing) && is_deterministic[edge.b]
+        deterministic_a = (edge.a !== nothing) && is_deterministic[edge.a]
+        deterministic_b = (edge.b !== nothing) && is_deterministic[edge.b]
 
         # An edge is deterministic if any of its interfaces are deterministic
         if deterministic_a || deterministic_b
@@ -242,7 +243,7 @@ function isDeterministic(interface::Interface, is_deterministic::Dict{Interface,
     for iface in node.interfaces
         if iface != interface
             partner = ultimatePartner(iface)
-            if partner == nothing # Dangling edge
+            if partner === nothing # Dangling edge
                 push!(inbounds_deterministic, false) # Unconstrained inbound is considered stochastic (uninformative)
             else
                 push!(inbounds_deterministic, is_deterministic[partner])

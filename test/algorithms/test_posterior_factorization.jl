@@ -81,4 +81,14 @@ end
     @test deterministicEdges(fg) == Set{Edge}([e_1, e_2, e_3])
 end
 
+@testset "Graph with incomplete posterior factorization coverage" begin
+    fg = FactorGraph()
+
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(a, 1.0)
+    @RV c ~ GaussianMeanVariance(b, 1.0)
+    
+    @test_throws Exception PosteriorFactorization(a, b)
+end
+
 end # module
