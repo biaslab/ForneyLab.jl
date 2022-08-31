@@ -15,7 +15,7 @@ We designed ForneyLab with a focus on flexible and modular modeling of time-seri
 
 The current version supports [belief propagation](https://en.wikipedia.org/wiki/Belief_propagation) (sum-product message passing), [variational message passing](https://en.wikipedia.org/wiki/Variational_message_passing) and [expectation propagation](https://en.wikipedia.org/wiki/Expectation_propagation).
 
-The [ForneyLab project page](http://forneylab.org) provides more background on ForneyLab as well as pointers to related literature and talks. For a practical introduction, have a look at [the demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo).
+The [ForneyLab project page](https://biaslab.github.io/project/forneylab/) provides more background on ForneyLab as well as pointers to related literature and talks. For a practical introduction, have a look at [the demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo).
 
 Documentation
 =============
@@ -48,7 +48,7 @@ Getting started
 ===============
 
 There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to get you started.
-Additionally, the [ForneyLab project page](http://forneylab.org) contains a talk and other resources that might be helpful.
+Additionally, the [ForneyLab project page](https://biaslab.github.io/project/forneylab/) contains a talk and other resources that might be helpful.
 
 
 License
