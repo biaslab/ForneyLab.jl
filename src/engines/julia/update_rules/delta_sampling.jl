@@ -103,7 +103,7 @@ function ruleSPDeltaSInMX(g::Function,
         samples_in = []
         for i=1:length(msgs_in)
             if i==inx
-                push!(samples_in, collect(Iterators.repeat([z], n_samples)))
+                push!(samples_in, Base.repeat([z], n_samples))
             else
                 push!(samples_in, sample(msgs_in[i].dist, n_samples))
             end
