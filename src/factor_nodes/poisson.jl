@@ -66,20 +66,42 @@ logPdf(V::Type{Univariate}, F::Type{Poisson}, x::Number; η::Vector) = -logfacto
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
 # @ref https://arxiv.org/pdf/1708.06394.pdf
-function apprSum(l, j=100)
-    sum([(l)^(k)*logfactorial(k)/exp(logfactorial(k)) for k in collect(0:j)])
+function approximatePowerSum(l, j=150)
+    (l == 0.0) && return 0.0
+    (l > 110.0) && error("Cannot approximate power sum for Poisson distribution with l>110")
+
+    s = zero(BigFloat)
+    lk = one(BigFloat)
+    for k = 1:j
+        lk *= l
+        s += lk*loggamma(k + 1)/gamma(k + 1)
+    end
+
+    return convert(Float64, s)
 end
 
 # Entropy functional
 # @ref https://en.wikipedia.org/wiki/Poisson_distribution
 function differentialEntropy(dist::Distribution{Univariate, Poisson})
-    l = clamp(dist.params[:l], tiny, huge)
-    l*(1-log(l)) + exp(-l)*apprSum(l)
+    l = dist.params[:l]
+    (l == 0.0) && return 0.0
+    
+    if l <= 50.0
+        return l*(1-log(l)) + exp(-l)*approximatePowerSum(l)
+    else
+        return 0.5*log(2*pi*ℯ*l) - 1/(12*l) - 1/(24*l^2) - 19/(360*l^3)
+    end
 end
 
-# Average energy functional
+# Average energy functionals
 function averageEnergy(::Type{Poisson}, marg_out::Distribution{Univariate}, marg_l::Distribution{Univariate})
     unsafeMean(marg_l) -
     unsafeMean(marg_out)*unsafeLogMean(marg_l) +
-    exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))
+    exp(-unsafeMean(marg_out))*approximatePowerSum(unsafeMean(marg_out))
+end
+
+function averageEnergy(::Type{Poisson}, marg_out::Distribution{Univariate, PointMass}, marg_l::Distribution{Univariate})
+    unsafeMean(marg_l) -
+    unsafeMean(marg_out)*unsafeLogMean(marg_l) +
+    sum(log.(1:unsafeMean(marg_out)))
 end
