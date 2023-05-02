@@ -11,7 +11,7 @@ ruleSPPoissonLPN(msg_out::Message{PointMass, Univariate}, msg_l::Nothing) =
     Message(Univariate, Gamma, a=msg_out.dist.params[:m] + 1.0, b=1.0)
 
 ruleVBPoissonOut(marg_out::Any, marg_l::Distribution{Univariate, Gamma}) =
-    Message(Univariate, Poisson, l=(marg_l.params[:a] - 0.5) / marg_l.params[:b])
+    Message(Univariate, Poisson, l=exp(digamma(marg_l.params[:a]))/marg_l.params[:b])
 
 ruleVBPoissonL(marg_out::Distribution{Univariate}, marg_l::Any) =
     Message(Univariate, Gamma, a=unsafeMean(marg_out) + 1.0, b=1.0)
