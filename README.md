@@ -54,4 +54,4 @@ Additionally, the [ForneyLab project page](https://biaslab.github.io/project/for
 License
 =======
 
-(c) 2019 GN Store Nord A/S. Permission to use this software for any non-commercial purpose is granted. See `LICENSE.md` file for details.
+MIT License, Copyright (c) 2022 BIASlab http://biaslab.org see `LICENSE.md` file for details.
