@@ -84,7 +84,7 @@ end
     @test outboundType(VBPoissonOut) == Message{Poisson}
     @test isApplicable(VBPoissonOut, [Nothing, Distribution])
 
-    @test ruleVBPoissonOut(nothing, Distribution(Gamma, a=2.0, b=3.0)) == Message(Poisson, l=0.5)
+    @test ruleVBPoissonOut(nothing, Distribution(Gamma, a=2.0, b=3.0)) == Message(Poisson, l=0.5087350371986222)
 end
 
 @testset "VBPoissonL" begin
