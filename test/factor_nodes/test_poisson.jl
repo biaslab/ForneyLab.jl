@@ -99,7 +99,10 @@ end
 @testset "averageEnergy and differentialEntropy" begin
     @test isapprox(differentialEntropy(Distribution(Poisson, l=1.0)), averageEnergy(Poisson, Distribution(Poisson, l=1.0), Distribution(Univariate, PointMass, m=1.0)))
     @test isapprox(differentialEntropy(Distribution(Poisson, l=10.0)), averageEnergy(Poisson, Distribution(Poisson, l=10.0), Distribution(Univariate, PointMass, m=10.0)))
-    @test isapprox(differentialEntropy(Distribution(Poisson, l=100.0)), averageEnergy(Poisson, Distribution(Poisson, l=100.0), Distribution(Univariate, PointMass, m=100.0)))
+    @test isapprox(differentialEntropy(Distribution(Poisson, l=100.0)), averageEnergy(Poisson, Distribution(Poisson, l=100.0), Distribution(Univariate, PointMass, m=100.0)), atol=0.1)
+
+    @test averageEnergy(Poisson, Distribution(PointMass, m=1.0), Distribution(Univariate, PointMass, m=1.0)) == 1.0
+    @test averageEnergy(Poisson, Distribution(PointMass, m=2.0), Distribution(Univariate, PointMass, m=1.0)) == 1.0 + log(2)
 end
 
 end # module

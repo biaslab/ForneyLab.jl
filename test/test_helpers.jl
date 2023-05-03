@@ -86,7 +86,7 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test bar(1, Tuple{Float64, Float32}((1.0, 1.0f0))) === bar(Tuple{Float64, Float32}((1.0, 1.0f0)), 1)
         @test bar(1, Tuple{Float32, Float64}((1.0f0, 1.0))) === bar(Tuple{Float32, Float64}((1.0f0, 1.0)), 1)
 
-        @symmetrical function baz(a::Int, b::Float64, c::String) where A where B where C
+        @symmetrical function baz(a::Int, b::Float64, c::String)
             return 1
         end
 
